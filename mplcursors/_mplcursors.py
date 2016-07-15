@@ -130,7 +130,7 @@ class Cursor:
         ann = sel.annotation
         hl = sel.highlight
         ax = ann.axes
-        ax.texts.remove(ann)
+        ann.remove()
         if hl is not None:
-            ax.artists.remove(hl)
+            hl.remove()
         ax.figure.canvas.draw_idle()

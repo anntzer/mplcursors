@@ -13,7 +13,7 @@ Containment = namedtuple("Containment", "artist dist target info")
 
 @singledispatch
 def contains(artist, event):
-    return
+    raise NotImplementedError("Support for {} is missing".format(type(artist)))
 
 
 _Containment = namedtuple("_Containment", "artist dist target")
