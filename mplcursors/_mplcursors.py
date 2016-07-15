@@ -12,7 +12,12 @@ def _default_fmt(d):
     ax = d["ax"]
     x = d["x"]
     y = d["y"]
-    return "x: {}\ny: {}".format(ax.format_xdata(x), ax.format_ydata(y))
+    artist = d["artist"]
+    if artist.get_label():
+        return "{}\nx: {}\ny: {}".format(
+            artist.get_label(), ax.format_xdata(x), ax.format_ydata(y))
+    else:
+        return "x: {}\ny: {}".format(ax.format_xdata(x), ax.format_ydata(y))
 
 
 _default_annotation_kwargs = dict(
@@ -105,6 +110,8 @@ class Cursor:
             hl = copy.copy(artist)
             hl.set(**self._highlight_kwargs)
             ax.add_artist(hl)
+        else:
+            hl = None
         if not self._multiple:
             while self._selections:
                 self._remove_selection(self._selections[-1])

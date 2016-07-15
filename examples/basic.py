@@ -1,7 +1,14 @@
-from matplotlib import pyplot as plt
+"""A very basic exmaple of the functionality of mpldatacursor."""
+import matplotlib.pyplot as plt
+import numpy as np
 from mplcursors import Cursor
 
+data = np.outer(range(10), range(1, 5))
+
 fig, ax = plt.subplots()
-l,  = ax.plot([1, 2, 3])
-Cursor([l], highlight=True)
+lines = ax.plot(data)
+ax.set_title('Click somewhere on a line')
+
+Cursor(lines)
+
 plt.show()

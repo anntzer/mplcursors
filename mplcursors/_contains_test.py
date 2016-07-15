@@ -44,10 +44,10 @@ def contains(artist, event):
                                  artist_ys[verts_argmin]))
     verts_info = ContainmentInfo(
         verts_min, verts_target,
-        dict(ax=ax, x=verts_target[0], y=verts_target[1]))
+        dict(ax=ax, x=verts_target[0], y=verts_target[1], artist=artist))
 
     if artist.get_linestyle() in ["None", "none", " ", "", None]:
-        return vertices_info
+        return verts_info
 
     # Find the closest projection.
     # Unit vectors for each segment.
@@ -76,5 +76,5 @@ def contains(artist, event):
         projs_target = data_to_axes((proj_x, proj_y))
         projs_info = ContainmentInfo(
             projs_min, projs_target,
-            dict(ax=ax, x=projs_target[0], y=projs_target[1]))
+            dict(ax=ax, x=projs_target[0], y=projs_target[1], artist=artist))
         return projs_info
