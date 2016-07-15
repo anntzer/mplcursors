@@ -1,4 +1,3 @@
-# FIXME _contains_test for PathCollections.
 import numpy as np
 import matplotlib.pyplot as plt
 import mplcursors

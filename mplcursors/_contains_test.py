@@ -2,6 +2,7 @@ from collections import namedtuple
 from functools import singledispatch
 
 from matplotlib import cbook
+from matplotlib.collections import PathCollection
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 import numpy as np
@@ -51,13 +52,13 @@ def _(artist, event):
             artist.drawStyles[artist.get_drawstyle()]]
     artist_xs, artist_ys = drawstyle_conv(artist_xs, artist_ys)
     ax = artist.axes
-    data_to_axes = ax.transData.inverted().transform_point
+    px_to_data = ax.transData.inverted().transform_point
 
     # Find the closest vertex.
     d2_verts = (artist_xs - x) ** 2 + (artist_ys - y) ** 2
     verts_argmin = np.argmin(d2_verts)
     verts_min = np.sqrt(d2_verts[verts_argmin])
-    verts_target = data_to_axes((artist_xs[verts_argmin],
+    verts_target = px_to_data((artist_xs[verts_argmin],
                                  artist_ys[verts_argmin]))
     verts_info = Line2DContainment(artist, verts_min, verts_target)
 
@@ -88,9 +89,29 @@ def _(artist, event):
     else:
         proj_x = artist_xs[projs_argmin] + dot[projs_argmin] * uxs[projs_argmin]
         proj_y = artist_ys[projs_argmin] + dot[projs_argmin] * uys[projs_argmin]
-        projs_target = data_to_axes((proj_x, proj_y))
+        projs_target = px_to_data((proj_x, proj_y))
         projs_info = Line2DContainment(artist, projs_min, projs_target)
         return projs_info
+
+
+class PathCollectionContainment(_Containment):
+    __str__ = Line2DContainment.__str__
+
+
+@contains.register(PathCollection)
+def _(artist, event):
+    contains, info = artist.contains(event)
+    if not contains:
+        return
+    # Snapping, really only works for scatter plots.
+    ax = artist.axes
+    idxs = info["ind"]
+    offsets = artist.get_offsets()[idxs]
+    d2 = ((ax.transData.transform(offsets) -
+           [event.x, event.y]) ** 2).sum(axis=1)
+    argmin = d2.argmin()
+    return PathCollectionContainment(
+        artist, np.sqrt(d2[argmin]), offsets[argmin])
 
 
 class ImageContainment(_Containment):

@@ -34,6 +34,7 @@ class Cursor:
     def __init__(self,
                  artists,
                  *,
+                 hover=False,
                  multiple=False,
                  format=str,
                  annotation_kwargs=None,
@@ -64,8 +65,14 @@ class Cursor:
 
         for figure in self._figures:
             type(self)._keep_alive.setdefault(figure, []).append(self)
-            figure.canvas.mpl_connect(
-                "button_press_event", self._on_button_press)
+            if hover:
+                if multiple:
+                    raise ValueError("`hover` and `multiple` are incompatible")
+                figure.canvas.mpl_connect(
+                    "motion_notify_event", self._on_display_button_press)
+            else:
+                figure.canvas.mpl_connect(
+                    "button_press_event", self._on_button_press)
 
         self._selections = []
 
