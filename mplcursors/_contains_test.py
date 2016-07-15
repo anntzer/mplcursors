@@ -2,11 +2,12 @@ from collections import namedtuple
 from functools import singledispatch
 
 from matplotlib import cbook
+from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 import numpy as np
 
 
-ContainmentInfo = namedtuple("ContainmentInfo", "dist target info")
+Containment = namedtuple("Containment", "artist dist target info")
 
 
 @singledispatch
@@ -14,8 +15,24 @@ def contains(artist, event):
     return
 
 
+_Containment = namedtuple("_Containment", "artist dist target")
+
+
+class Line2DContainment(_Containment):
+    def __str__(self):
+        artist = self.artist
+        ax = artist.axes
+        x, y = self.target
+        label = artist.get_label()
+        if label.startswith("_"):
+            return "x: {}\ny: {}".format(ax.format_xdata(x), ax.format_ydata(y))
+        else:
+            return "{}\nx: {}\ny: {}".format(
+                label, ax.format_xdata(x), ax.format_ydata(y))
+
+
 @contains.register(Line2D)
-def contains(artist, event):
+def _(artist, event):
     contains, _ = artist.contains(event)
     if not contains:
         return
@@ -42,9 +59,7 @@ def contains(artist, event):
     verts_min = np.sqrt(d2_verts[verts_argmin])
     verts_target = data_to_axes((artist_xs[verts_argmin],
                                  artist_ys[verts_argmin]))
-    verts_info = ContainmentInfo(
-        verts_min, verts_target,
-        dict(ax=ax, x=verts_target[0], y=verts_target[1], artist=artist))
+    verts_info = Line2DContainment(artist, verts_min, verts_target)
 
     if artist.get_linestyle() in ["None", "none", " ", "", None]:
         return verts_info
@@ -74,7 +89,24 @@ def contains(artist, event):
         proj_x = artist_xs[projs_argmin] + dot[projs_argmin] * uxs[projs_argmin]
         proj_y = artist_ys[projs_argmin] + dot[projs_argmin] * uys[projs_argmin]
         projs_target = data_to_axes((proj_x, proj_y))
-        projs_info = ContainmentInfo(
-            projs_min, projs_target,
-            dict(ax=ax, x=projs_target[0], y=projs_target[1], artist=artist))
+        projs_info = Line2DContainment(artist, projs_min, projs_target)
         return projs_info
+
+
+class ImageContainment(_Containment):
+    def __str__(self):
+        artist = self.artist
+        ax = artist.axes
+        x, y = self.target
+        event = namedtuple("event", "xdata ydata")(x, y)
+        return "x: {}\ny: {}\nz: {}".format(ax.format_xdata(x),
+                                            ax.format_ydata(y),
+                                            artist.get_cursor_data(event))
+
+
+@contains.register(AxesImage)
+def _(artist, event):
+    contains, _ = artist.contains(event)
+    if not contains:
+        return
+    return ImageContainment(artist, 0, (event.xdata, event.ydata))

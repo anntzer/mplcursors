@@ -8,18 +8,6 @@ from . import _contains_test
 __all__ = ["Cursor"]
 
 
-def _default_fmt(d):
-    ax = d["ax"]
-    x = d["x"]
-    y = d["y"]
-    artist = d["artist"]
-    if artist.get_label():
-        return "{}\nx: {}\ny: {}".format(
-            artist.get_label(), ax.format_xdata(x), ax.format_ydata(y))
-    else:
-        return "x: {}\ny: {}".format(ax.format_xdata(x), ax.format_ydata(y))
-
-
 _default_annotation_kwargs = dict(
     xytext=(-15, 15), textcoords="offset points",
     bbox=dict(boxstyle="round,pad=.5", fc="yellow", alpha=.5, ec="k"),
@@ -47,7 +35,7 @@ class Cursor:
                  artists,
                  *,
                  multiple=False,
-                 format=_default_fmt,
+                 format=str,
                  annotation_kwargs=None,
                  highlight=False,
                  display_button=1,
@@ -97,15 +85,15 @@ class Cursor:
             containment = _contains_test.contains(
                 artist, per_axes_event[artist.axes])
             if containment:
-                containments.append((containment, artist))
+                containments.append(containment)
         if not containments:
             return
-        containment, artist = min(containments)
+        containment = min(containments, key=lambda c: c.dist)
+        artist = containment.artist
         ax = artist.axes
-        ann = ax.annotate(
-            self._format(containment.info),
-            xy=containment.target,
-            **self._annotation_kwargs)
+        ann = ax.annotate(self._format(containment),
+                          xy=containment.target,
+                          **self._annotation_kwargs)
         if self._highlight_kwargs is not None:
             hl = copy.copy(artist)
             hl.set(**self._highlight_kwargs)
