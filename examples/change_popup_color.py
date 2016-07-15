@@ -1,7 +1,7 @@
-# FIXME kwargs.
+# FIXME: bbox and arrowprops are not merged.
 import matplotlib.pyplot as plt
 import numpy as np
-from mpldatacursor import datacursor
+import mplcursors
 
 fig, axes = plt.subplots(ncols=2)
 
@@ -12,10 +12,14 @@ right_artist = axes[1].imshow(np.arange(100).reshape(10,10))
 axes[1].set(title='Fancy white background')
 
 # Make the text pop up "underneath" the line and remove the box...
-dc1 = datacursor(left_artist, xytext=(15, -15), bbox=None)
+dc1 = mplcursors.cursor(
+    left_artist, annotation_kwargs=dict(xytext=(15, -15), bbox=None))
 
 # Make the box have a white background with a fancier connecting arrow
-dc2 = datacursor(right_artist, bbox=dict(fc='white'),
-                 arrowprops=dict(arrowstyle='simple', fc='white', alpha=0.5))
+dc2 = mplcursors.cursor(
+    right_artist,
+    annotation_kwargs=dict(
+        bbox=dict(fc='white'),
+        arrowprops=dict(arrowstyle='simple', fc='white', alpha=0.5)))
 
 plt.show()

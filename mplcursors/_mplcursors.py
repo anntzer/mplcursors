@@ -45,9 +45,8 @@ class Cursor:
         self._artists = artists
         self._multiple = multiple
         self._format = format
-        self._annotation_kwargs = (
-            _default_annotation_kwargs if annotation_kwargs is None
-            else annotation_kwargs)
+        self._annotation_kwargs = dict(
+            _default_annotation_kwargs, **annotation_kwargs or {})
         self._draggable = draggable
         self._highlight_kwargs = (
             None if highlight is False
