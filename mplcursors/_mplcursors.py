@@ -11,7 +11,7 @@ __all__ = ["Cursor"]
 _default_annotation_kwargs = dict(
     xytext=(-15, 15), textcoords="offset points",
     bbox=dict(boxstyle="round,pad=.5", fc="yellow", alpha=.5, ec="k"),
-    arrowprops=dict(arrowstyle="->", connectionstyle="arc3", ec="k")
+    arrowprops=dict(arrowstyle="->", connectionstyle="arc3", shrinkB=0, ec="k")
 )
 _default_highlight_kwargs = dict(c="yellow", mec="yellow", lw=3, mew=3)
 
@@ -37,6 +37,7 @@ class Cursor:
                  multiple=False,
                  format=str,
                  annotation_kwargs=None,
+                 draggable=False,
                  highlight=False,
                  display_button=1,
                  hide_button=3):
@@ -47,6 +48,7 @@ class Cursor:
         self._annotation_kwargs = (
             _default_annotation_kwargs if annotation_kwargs is None
             else annotation_kwargs)
+        self._draggable = draggable
         self._highlight_kwargs = (
             None if highlight is False
             else _default_highlight_kwargs if highlight is True
@@ -94,6 +96,8 @@ class Cursor:
         ann = ax.annotate(self._format(containment),
                           xy=containment.target,
                           **self._annotation_kwargs)
+        if self._draggable:
+            ann.draggable()
         if self._highlight_kwargs is not None:
             hl = copy.copy(artist)
             hl.set(**self._highlight_kwargs)
