@@ -41,7 +41,6 @@ class Cursor:
                  multiple=False,
                  transformer=lambda c: c,
                  annotation_kwargs=None,
-                 draggable=False,
                  highlight=False,
                  display_button=1,
                  hide_button=3):
@@ -51,7 +50,6 @@ class Cursor:
         self._transformer = transformer
         self._annotation_kwargs = dict(
             default_annotation_kwargs, **annotation_kwargs or {})
-        self._draggable = draggable
         self._highlight_kwargs = (
             None if highlight is False
             else default_highlight_kwargs if highlight is True
@@ -80,22 +78,23 @@ class Cursor:
         self._selections = []
         self._callbacks = CallbackRegistry()
 
-    @property
-    def callbacks(self):
-        return self._callbacks
-
     def add_annotation(self, pick_info):
-        ann = pick_info.artist.axes.annotate(
+        return pick_info.artist.axes.annotate(
             pick_info.ann_text, xy=pick_info.target, **self._annotation_kwargs)
-        if self._draggable:
-            ann.draggable()
-        return ann
 
     def add_highlight(self, artist):
         hl = copy.copy(artist)
         hl.set(**self._highlight_kwargs)
         artist.axes.add_artist(hl)
         return hl
+
+    def connect(self, event, func):
+        if event not in ["add", "remove"]:
+            raise ValueError("Invalid cursor event: {}".format(event))
+        return self._callbacks.connect(event, func)
+
+    def disconnect(self, cid):
+        self._callbacks.disconnect(cid)
 
     def _on_button_press(self, event):
         if event.button == self._display_button:
@@ -117,19 +116,17 @@ class Cursor:
         if not pis:
             return
         pi = self._transformer(min(pis, key=lambda c: c.dist))
-        artist = pi.artist
-        ax = artist.axes
         ann = self.add_annotation(pi)
         extras = []
         if self._highlight_kwargs is not None:
-            extras.append(self.add_highlight(artist))
+            extras.append(self.add_highlight(pi.artist))
         if not self._multiple:
             while self._selections:
                 self._remove_selection(self._selections[-1])
         sel = _Selection(pi, ann, extras)
         self._selections.append(sel)
         self._callbacks.process("add", sel)
-        ax.figure.canvas.draw_idle()
+        pi.artist.figure.canvas.draw_idle()
 
     def _on_hide_button_press(self, event):
         for sel in self._selections:

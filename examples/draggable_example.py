@@ -12,6 +12,7 @@ fig, ax = plt.subplots()
 ax.set_title('Try dragging the annotation boxes')
 ax.plot(data)
 
-mplcursors.cursor(multiple=True, draggable=True)
+mplcursors.cursor(multiple=True).connect(
+    "add", lambda sel: sel.annotation.draggable())
 
 plt.show()
