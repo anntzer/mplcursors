@@ -3,6 +3,8 @@ import copy
 from types import MappingProxyType
 from weakref import WeakKeyDictionary
 
+from matplotlib.cbook import CallbackRegistry
+
 from . import _pick_info
 
 
@@ -26,7 +28,7 @@ def _reassigned_axes_event(event, ax):
     return event
 
 
-_Selection = namedtuple("_Selection", "annotation highlight")
+_Selection = namedtuple("_Selection", "pick_info annotation extras")
 
 
 class Cursor:
@@ -76,6 +78,24 @@ class Cursor:
                     "button_press_event", self._on_button_press)
 
         self._selections = []
+        self._callbacks = CallbackRegistry()
+
+    @property
+    def callbacks(self):
+        return self._callbacks
+
+    def add_annotation(self, pick_info):
+        ann = pick_info.artist.axes.annotate(
+            pick_info.ann_text, xy=pick_info.target, **self._annotation_kwargs)
+        if self._draggable:
+            ann.draggable()
+        return ann
+
+    def add_highlight(self, artist):
+        hl = copy.copy(artist)
+        hl.set(**self._highlight_kwargs)
+        artist.axes.add_artist(hl)
+        return hl
 
     def _on_button_press(self, event):
         if event.button == self._display_button:
@@ -99,19 +119,16 @@ class Cursor:
         pi = self._transformer(min(pis, key=lambda c: c.dist))
         artist = pi.artist
         ax = artist.axes
-        ann = ax.annotate(pi.ann_text, xy=pi.target, **self._annotation_kwargs)
-        if self._draggable:
-            ann.draggable()
+        ann = self.add_annotation(pi)
+        extras = []
         if self._highlight_kwargs is not None:
-            hl = copy.copy(artist)
-            hl.set(**self._highlight_kwargs)
-            ax.add_artist(hl)
-        else:
-            hl = None
+            extras.append(self.add_highlight(artist))
         if not self._multiple:
             while self._selections:
                 self._remove_selection(self._selections[-1])
-        self._selections.append(_Selection(ann, hl))
+        sel = _Selection(pi, ann, extras)
+        self._selections.append(sel)
+        self._callbacks.process("add", sel)
         ax.figure.canvas.draw_idle()
 
     def _on_hide_button_press(self, event):
@@ -122,13 +139,11 @@ class Cursor:
             contained, _ = ann.contains(event)
             if contained:
                 self._remove_selection(sel)
+                self._callbacks.process("remove", sel)
+            ax.axes.figure.canvas.draw_idle()
 
     def _remove_selection(self, sel):
         self._selections.remove(sel)
-        ann = sel.annotation
-        hl = sel.highlight
-        ax = ann.axes
-        ann.remove()
-        if hl is not None:
-            hl.remove()
-        ax.figure.canvas.draw_idle()
+        sel.annotation.remove()
+        for artist in sel.extras:
+            artist.remove()
