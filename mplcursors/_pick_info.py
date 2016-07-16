@@ -5,34 +5,30 @@ from matplotlib import cbook
 from matplotlib.collections import PathCollection
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 import numpy as np
 
 
-Containment = namedtuple("Containment", "artist dist target info")
+class PickInfo(namedtuple("_PickInfo", "artist dist target")):
+    @property
+    def ann_text(self):
+        try:
+            return self._ann_text
+        except AttributeError:
+            self._ann_text = get_ann_text(*self)
+            return self._ann_text
+
+    @ann_text.setter
+    def ann_text(self, value):
+        self._ann_text = value
 
 
 @singledispatch
-def contains(artist, event):
+def compute_pick(artist, event):
     raise NotImplementedError("Support for {} is missing".format(type(artist)))
 
 
-_Containment = namedtuple("_Containment", "artist dist target")
-
-
-class Line2DContainment(_Containment):
-    def __str__(self):
-        artist = self.artist
-        ax = artist.axes
-        x, y = self.target
-        label = artist.get_label()
-        if label.startswith("_"):
-            return "x: {}\ny: {}".format(ax.format_xdata(x), ax.format_ydata(y))
-        else:
-            return "{}\nx: {}\ny: {}".format(
-                label, ax.format_xdata(x), ax.format_ydata(y))
-
-
-@contains.register(Line2D)
+@compute_pick.register(Line2D)
 def _(artist, event):
     contains, _ = artist.contains(event)
     if not contains:
@@ -60,7 +56,7 @@ def _(artist, event):
     verts_min = np.sqrt(d2_verts[verts_argmin])
     verts_target = px_to_data((artist_xs[verts_argmin],
                                  artist_ys[verts_argmin]))
-    verts_info = Line2DContainment(artist, verts_min, verts_target)
+    verts_info = PickInfo(artist, verts_min, verts_target)
 
     if artist.get_linestyle() in ["None", "none", " ", "", None]:
         return verts_info
@@ -90,15 +86,11 @@ def _(artist, event):
         proj_x = artist_xs[projs_argmin] + dot[projs_argmin] * uxs[projs_argmin]
         proj_y = artist_ys[projs_argmin] + dot[projs_argmin] * uys[projs_argmin]
         projs_target = px_to_data((proj_x, proj_y))
-        projs_info = Line2DContainment(artist, projs_min, projs_target)
+        projs_info = PickInfo(artist, projs_min, projs_target)
         return projs_info
 
 
-class PathCollectionContainment(_Containment):
-    __str__ = Line2DContainment.__str__
-
-
-@contains.register(PathCollection)
+@compute_pick.register(PathCollection)
 def _(artist, event):
     contains, info = artist.contains(event)
     if not contains:
@@ -110,24 +102,43 @@ def _(artist, event):
     d2 = ((ax.transData.transform(offsets) -
            [event.x, event.y]) ** 2).sum(axis=1)
     argmin = d2.argmin()
-    return PathCollectionContainment(
-        artist, np.sqrt(d2[argmin]), offsets[argmin])
+    return PickInfo(artist, np.sqrt(d2[argmin]), offsets[argmin])
 
 
-class ImageContainment(_Containment):
-    def __str__(self):
-        artist = self.artist
-        ax = artist.axes
-        x, y = self.target
-        event = namedtuple("event", "xdata ydata")(x, y)
-        return "x: {}\ny: {}\nz: {}".format(ax.format_xdata(x),
-                                            ax.format_ydata(y),
-                                            artist.get_cursor_data(event))
-
-
-@contains.register(AxesImage)
+@compute_pick.register(AxesImage)
+@compute_pick.register(Patch)
 def _(artist, event):
     contains, _ = artist.contains(event)
     if not contains:
         return
-    return ImageContainment(artist, 0, (event.xdata, event.ydata))
+    return PickInfo(artist, 0, (event.xdata, event.ydata))
+
+
+@singledispatch
+def get_ann_text(artist, dist, target):
+    raise NotImplementedError("Support for {} is missing".format(type(artist)))
+
+
+@get_ann_text.register(Line2D)
+@get_ann_text.register(PathCollection)
+@get_ann_text.register(Patch)
+def _(artist, dist, target):
+    ax = artist.axes
+    x, y = target
+    label = artist.get_label()
+    if label.startswith("_"):
+        return "x: {}\ny: {}".format(ax.format_xdata(x), ax.format_ydata(y))
+    else:
+        return "{}\nx: {}\ny: {}".format(
+            label, ax.format_xdata(x), ax.format_ydata(y))
+
+
+@get_ann_text.register(AxesImage)
+def _(artist, dist, target):
+    artist = artist
+    ax = artist.axes
+    x, y = target
+    event = namedtuple("event", "xdata ydata")(x, y)
+    return "x: {}\ny: {}\nz: {}".format(ax.format_xdata(x),
+                                        ax.format_ydata(y),
+                                        artist.get_cursor_data(event))

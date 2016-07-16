@@ -2,7 +2,7 @@ from collections import namedtuple
 import copy
 from weakref import WeakKeyDictionary
 
-from . import _contains_test
+from . import _pick_info
 
 
 __all__ = ["Cursor"]
@@ -36,7 +36,7 @@ class Cursor:
                  *,
                  hover=False,
                  multiple=False,
-                 format=str,
+                 transformer=lambda c: c,
                  annotation_kwargs=None,
                  draggable=False,
                  highlight=False,
@@ -45,7 +45,7 @@ class Cursor:
 
         self._artists = artists
         self._multiple = multiple
-        self._format = format
+        self._transformer = transformer
         self._annotation_kwargs = dict(
             _default_annotation_kwargs, **annotation_kwargs or {})
         self._draggable = draggable
@@ -86,22 +86,19 @@ class Cursor:
         # Work around lack of support for twinned axes.
         per_axes_event = {ax: _reassigned_axes_event(event, ax)
                           for ax in self._axes}
-        containments = []
+        pis = []
         for artist in self._artists:
             if event.canvas is not artist.figure.canvas:
                 continue
-            containment = _contains_test.contains(
-                artist, per_axes_event[artist.axes])
-            if containment:
-                containments.append(containment)
-        if not containments:
+            pi = _pick_info.compute_pick(artist, per_axes_event[artist.axes])
+            if pi:
+                pis.append(pi)
+        if not pis:
             return
-        containment = min(containments, key=lambda c: c.dist)
-        artist = containment.artist
+        pi = self._transformer(min(pis, key=lambda c: c.dist))
+        artist = pi.artist
         ax = artist.axes
-        ann = ax.annotate(self._format(containment),
-                          xy=containment.target,
-                          **self._annotation_kwargs)
+        ann = ax.annotate(pi.ann_text, xy=pi.target, **self._annotation_kwargs)
         if self._draggable:
             ann.draggable()
         if self._highlight_kwargs is not None:

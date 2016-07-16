@@ -14,8 +14,9 @@ def cursor(artists_or_axes=None, **kwargs):
     for entry in artists_or_axes:
         if isinstance(entry, Axes):
             ax = entry
-            artists.extend(ax.lines + ax.patches + ax.collections + ax.images +
-                           ax.containers)
+            artists.extend(ax.lines + ax.patches + ax.collections + ax.images)
+            for container in ax.containers:
+                artists.extend(container)
         else:
             artist = entry
             artists.append(artist)

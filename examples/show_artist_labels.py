@@ -16,6 +16,9 @@ for i in range(1, 20):
     ax.plot(x, i * x, label='$y = {}x$'.format(i))
 
 # Use a DataCursor to interactively display the label for a selected line...
-mplcursors.cursor(format=lambda d: d["artist"].get_label())
+def transform(pick_info):
+    pick_info.ann_text = pick_info.artist.get_label()
+    return pick_info
+mplcursors.cursor(transformer=transform)
 
 plt.show()
