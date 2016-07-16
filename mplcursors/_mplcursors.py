@@ -1,19 +1,20 @@
 from collections import namedtuple
 import copy
+from types import MappingProxyType
 from weakref import WeakKeyDictionary
 
 from . import _pick_info
 
 
-__all__ = ["Cursor"]
+__all__ = ["Cursor", "default_annotation_kwargs", "default_highlight_kwargs"]
 
 
-_default_annotation_kwargs = dict(
+default_annotation_kwargs = MappingProxyType(dict(
     xytext=(-15, 15), textcoords="offset points",
     bbox=dict(boxstyle="round,pad=.5", fc="yellow", alpha=.5, ec="k"),
-    arrowprops=dict(arrowstyle="->", connectionstyle="arc3", shrinkB=0, ec="k")
-)
-_default_highlight_kwargs = dict(c="yellow", mec="yellow", lw=3, mew=3)
+    arrowprops=dict(arrowstyle="->", connectionstyle="arc3", shrinkB=0, ec="k")))
+default_highlight_kwargs = MappingProxyType(dict(
+    c="yellow", mec="yellow", lw=3, mew=3))
 
 
 def _reassigned_axes_event(event, ax):
@@ -47,12 +48,12 @@ class Cursor:
         self._multiple = multiple
         self._transformer = transformer
         self._annotation_kwargs = dict(
-            _default_annotation_kwargs, **annotation_kwargs or {})
+            default_annotation_kwargs, **annotation_kwargs or {})
         self._draggable = draggable
         self._highlight_kwargs = (
             None if highlight is False
-            else _default_highlight_kwargs if highlight is True
-            else highlight
+            else default_highlight_kwargs if highlight is True
+            else dict(default_annotation_kwargs, **highlight)
         )
         if display_button == hide_button:
             raise ValueError(

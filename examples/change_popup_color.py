@@ -1,4 +1,3 @@
-# FIXME: bbox and arrowprops are not merged.
 import matplotlib.pyplot as plt
 import numpy as np
 import mplcursors
@@ -19,7 +18,8 @@ dc1 = mplcursors.cursor(
 dc2 = mplcursors.cursor(
     right_artist,
     annotation_kwargs=dict(
-        bbox=dict(fc='white'),
-        arrowprops=dict(arrowstyle='simple', fc='white', alpha=0.5)))
+        bbox={**mplcursors.default_annotation_kwargs["bbox"], "fc": "white"},
+        arrowprops={**mplcursors.default_annotation_kwargs["arrowprops"],
+                    "arrowstyle": "simple", "fc": "white", "alpha": 0.5}))
 
 plt.show()
