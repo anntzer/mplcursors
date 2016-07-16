@@ -9,6 +9,14 @@ from matplotlib.patches import Patch
 import numpy as np
 
 
+class AttrArray(np.ndarray):
+    """An array subclass that can store additional attributes.
+    """
+
+    def __new__(cls, array):
+        return np.asarray(array).view(cls)
+
+
 class PickInfo(namedtuple("_PickInfo", "artist dist target")):
     @property
     def ann_text(self):
@@ -21,6 +29,13 @@ class PickInfo(namedtuple("_PickInfo", "artist dist target")):
     @ann_text.setter
     def ann_text(self, value):
         self._ann_text = value
+
+    def replace(self, **kwargs):
+        fields = {k: kwargs.pop(k) for k in self._fields if k in kwargs}
+        new = self._replace(**fields)
+        for k, v in kwargs.items():
+            setattr(new, k, v)
+        return new
 
 
 @singledispatch
@@ -51,15 +66,16 @@ def _(artist, event):
     px_to_data = ax.transData.inverted().transform_point
 
     # Find the closest vertex.
-    d2_verts = (artist_xs - x) ** 2 + (artist_ys - y) ** 2
-    verts_argmin = np.argmin(d2_verts)
-    verts_min = np.sqrt(d2_verts[verts_argmin])
-    verts_target = px_to_data((artist_xs[verts_argmin],
-                                 artist_ys[verts_argmin]))
-    verts_info = PickInfo(artist, verts_min, verts_target)
+    d2_vs = (artist_xs - x) ** 2 + (artist_ys - y) ** 2
+    vs_argmin = np.argmin(d2_vs)
+    vs_min = np.sqrt(d2_vs[vs_argmin])
+    vs_target = AttrArray(
+        px_to_data((artist_xs[vs_argmin], artist_ys[vs_argmin])))
+    vs_target.index = vs_argmin
+    vs_info = PickInfo(artist, vs_min, vs_target)
 
     if artist.get_linestyle() in ["None", "none", " ", "", None]:
-        return verts_info
+        return vs_info
 
     # Find the closest projection.
     # Unit vectors for each segment.
@@ -72,22 +88,24 @@ def _(artist, event):
     dxs = x - artist_xs[:-1]
     dys = y - artist_ys[:-1]
     # Cross-products.
-    d_projs = np.abs(dxs * uys - dys * uxs)
+    d_ps = np.abs(dxs * uys - dys * uxs)
     # Dot products.
     dot = dxs * uxs + dys * uys
     # Set the distance to infinity if the projection is not in the segment.
-    d_projs[~((0 < dot) & (dot < np.sqrt(dxs ** 2 + dys ** 2)))] = np.inf
-    projs_argmin = np.argmin(d_projs)
-    projs_min = d_projs[projs_argmin]
+    d_ps[~((0 < dot) & (dot < ds))] = np.inf
+    ps_argmin = np.argmin(d_ps)
+    ps_min = d_ps[ps_argmin]
 
-    if verts_min < projs_min:
-        return verts_info
+    if vs_min < ps_min:
+        return vs_info
     else:
-        proj_x = artist_xs[projs_argmin] + dot[projs_argmin] * uxs[projs_argmin]
-        proj_y = artist_ys[projs_argmin] + dot[projs_argmin] * uys[projs_argmin]
-        projs_target = px_to_data((proj_x, proj_y))
-        projs_info = PickInfo(artist, projs_min, projs_target)
-        return projs_info
+        p_x = artist_xs[ps_argmin] + dot[ps_argmin] * uxs[ps_argmin]
+        p_y = artist_ys[ps_argmin] + dot[ps_argmin] * uys[ps_argmin]
+        ps_target = AttrArray(px_to_data((p_x, p_y)))
+        if artist.drawStyles[artist.get_drawstyle()] == "_draw_lines":
+            ps_target.index = ps_argmin + dot[ps_argmin] / ds[ps_argmin]
+        ps_info = PickInfo(artist, ps_min, ps_target)
+        return ps_info
 
 
 @compute_pick.register(PathCollection)
@@ -102,7 +120,9 @@ def _(artist, event):
     d2 = ((ax.transData.transform(offsets) -
            [event.x, event.y]) ** 2).sum(axis=1)
     argmin = d2.argmin()
-    return PickInfo(artist, np.sqrt(d2[argmin]), offsets[argmin])
+    target = AttrArray(offsets[argmin])
+    target.index = idxs[argmin]
+    return PickInfo(artist, np.sqrt(d2[argmin]), target)
 
 
 @compute_pick.register(AxesImage)

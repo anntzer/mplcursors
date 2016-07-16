@@ -12,10 +12,14 @@ x = np.array([0, 0.05, 1, 2, 3, 4])
 fig, ax = plt.subplots()
 line, = ax.plot(x, x, 'ro')
 ax.margins(0.1)
+
+def transformer(pick_info):
+    pick_info.ann_text = labels[pick_info.target.index]
+    return pick_info
+
 mplcursors.cursor(
     ax,
-    format=lambda info: "{}\n{}".format(
-        info, labels[np.argmin(np.abs(x - info.target[0]))]))
+    transformer=lambda pi: pi.replace(ann_text=labels[pi.target.index]))
 
 plt.show()
 

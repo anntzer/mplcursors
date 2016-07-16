@@ -14,8 +14,8 @@ ax.set(xticks=range(9), xticklabels=labels, title='Hover over a bar')
 
 def transform(pick_info):
     x, y, width, height = pick_info.artist.get_bbox().bounds
-    pi = pick_info._replace(target=(x + width / 2, y + height))
-    pi.ann_text = "{}: {}".format(x + width / 2, height)
+    pi = pick_info.replace(target=(x + width / 2, y + height),
+                           ann_text="{}: {}".format(x + width / 2, height))
     return pi
 
 mplcursors.cursor(
