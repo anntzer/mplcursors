@@ -17,6 +17,10 @@ default_annotation_kwargs = MappingProxyType(dict(
     arrowprops=dict(arrowstyle="->", connectionstyle="arc3", shrinkB=0, ec="k")))
 default_highlight_kwargs = MappingProxyType(dict(
     c="yellow", mec="yellow", lw=3, mew=3))
+default_bindings = MappingProxyType(dict(
+    select=1, deselect=3,
+    previous="shift+left", next="shift+right",
+    toggle_visibility="d", toggle_enabled="t"))
 
 
 def _reassigned_axes_event(event, ax):
@@ -28,7 +32,7 @@ def _reassigned_axes_event(event, ax):
     return event
 
 
-_Selection = namedtuple("_Selection", "pick_info annotation extras")
+Selection = namedtuple("Selection", "pick_info annotation extras")
 
 
 class Cursor:
@@ -42,24 +46,25 @@ class Cursor:
                  transformer=lambda c: c,
                  annotation_kwargs=None,
                  highlight=False,
-                 display_button=1,
-                 hide_button=3):
+                 bindings=default_bindings):
 
         self._artists = artists
         self._multiple = multiple
         self._transformer = transformer
-        self._annotation_kwargs = dict(
-            default_annotation_kwargs, **annotation_kwargs or {})
+        self._annotation_kwargs = {
+            **default_annotation_kwargs, **(annotation_kwargs or {})}
         self._highlight_kwargs = (
             None if highlight is False
             else default_highlight_kwargs if highlight is True
-            else dict(default_annotation_kwargs, **highlight)
+            else {**default_highlight_kwargs, **highlight}
         )
-        if display_button == hide_button:
-            raise ValueError(
-                "`display_button` and `hide_button` must be different")
-        self._display_button = display_button
-        self._hide_button = hide_button
+        bindings = {**default_bindings, **bindings}
+        if set(bindings) != set(default_bindings):
+            raise ValueError("Unknown bindings")
+        actually_bound = {k: v for k, v in bindings.items() if v is not None}
+        if len(set(actually_bound.values())) != len(actually_bound):
+            raise ValueError("Duplicate bindings")
+        self._bindings = bindings
 
         self._figures = {artist.figure for artist in artists}
         self._axes = {artist.axes for artist in artists}
@@ -70,17 +75,39 @@ class Cursor:
                 if multiple:
                     raise ValueError("`hover` and `multiple` are incompatible")
                 figure.canvas.mpl_connect(
-                    "motion_notify_event", self._on_display_button_press)
+                    "motion_notify_event", self._on_select_button_press)
             else:
                 figure.canvas.mpl_connect(
                     "button_press_event", self._on_button_press)
+                figure.canvas.mpl_connect(
+                    "key_press_event", self._on_key_press)
 
+        self._enabled = True
         self._selections = []
         self._callbacks = CallbackRegistry()
 
+    @property
+    def enabled(self):
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, value):
+        self._enabled = value
+
     def add_annotation(self, pick_info):
-        return pick_info.artist.axes.annotate(
+        ann = pick_info.artist.axes.annotate(
             pick_info.ann_text, xy=pick_info.target, **self._annotation_kwargs)
+        extras = []
+        if self._highlight_kwargs is not None:
+            extras.append(self.add_highlight(pick_info.artist))
+        if not self._multiple:
+            while self._selections:
+                self._remove_selection(self._selections[-1])
+        sel = Selection(pick_info, ann, extras)
+        self._selections.append(sel)
+        self._callbacks.process("add", sel)
+        pick_info.artist.figure.canvas.draw_idle()
+        return ann
 
     def add_highlight(self, artist):
         hl = copy.copy(artist)
@@ -97,12 +124,14 @@ class Cursor:
         self._callbacks.disconnect(cid)
 
     def _on_button_press(self, event):
-        if event.button == self._display_button:
-            self._on_display_button_press(event)
-        if event.button == self._hide_button:
-            self._on_hide_button_press(event)
+        if event.button == self._bindings["select"]:
+            self._on_select_button_press(event)
+        if event.button == self._bindings["deselect"]:
+            self._on_deselect_button_press(event)
 
-    def _on_display_button_press(self, event):
+    def _on_select_button_press(self, event):
+        if event.canvas.widgetlock.locked() or not self.enabled:
+            return
         # Work around lack of support for twinned axes.
         per_axes_event = {ax: _reassigned_axes_event(event, ax)
                           for ax in self._axes}
@@ -115,20 +144,11 @@ class Cursor:
                 pis.append(pi)
         if not pis:
             return
-        pi = self._transformer(min(pis, key=lambda c: c.dist))
-        ann = self.add_annotation(pi)
-        extras = []
-        if self._highlight_kwargs is not None:
-            extras.append(self.add_highlight(pi.artist))
-        if not self._multiple:
-            while self._selections:
-                self._remove_selection(self._selections[-1])
-        sel = _Selection(pi, ann, extras)
-        self._selections.append(sel)
-        self._callbacks.process("add", sel)
-        pi.artist.figure.canvas.draw_idle()
+        self.add_annotation(self._transformer(min(pis, key=lambda c: c.dist)))
 
-    def _on_hide_button_press(self, event):
+    def _on_deselect_button_press(self, event):
+        if event.canvas.widgetlock.locked() or not self.enabled:
+            return
         for sel in self._selections:
             ann = sel.annotation
             if event.canvas is not ann.figure.canvas:
@@ -137,10 +157,27 @@ class Cursor:
             if contained:
                 self._remove_selection(sel)
                 self._callbacks.process("remove", sel)
-            ax.axes.figure.canvas.draw_idle()
+
+    def _on_key_press(self, event):
+        if event.key == self._bindings["toggle_enabled"]:
+            self.enabled = not self.enabled
+        elif event.key == self._bindings["toggle_visibility"]:
+            for sel in self._selections:
+                sel.annotation.set_visible(not sel.annotation.get_visible())
+                sel.annotation.figure.canvas.draw_idle()
+        if self._selections:
+            sel = self._selections[-1]
+        else:
+            return
+        if event.key == self._bindings["previous"]:
+            self.add_annotation(_pick_info.move(*sel.pick_info, -1))
+        elif event.key == self._bindings["next"]:
+            self.add_annotation(_pick_info.move(*sel.pick_info, 1))
 
     def _remove_selection(self, sel):
         self._selections.remove(sel)
+        sel.annotation.figure.canvas.draw_idle()
         sel.annotation.remove()
         for artist in sel.extras:
+            artist.figure.canvas.draw_idle()
             artist.remove()

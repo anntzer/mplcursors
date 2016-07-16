@@ -162,3 +162,22 @@ def _(artist, dist, target):
     return "x: {}\ny: {}\nz: {}".format(ax.format_xdata(x),
                                         ax.format_ydata(y),
                                         artist.get_cursor_data(event))
+
+
+@singledispatch
+def move(artist, dist, target, by):
+    return PickInfo(artist, dist, target)
+
+
+@move.register(Line2D)
+def _(artist, dist, target, by):
+    if not hasattr(target, "index"):
+        return PickInfo(artist, dist, target)
+    if by < 0:
+        new_idx = int(np.ceil(target.index) + by)
+    elif by > 0:
+        new_idx = int(np.floor(target.index) + by)
+    artist_xys = artist.get_xydata()
+    target = AttrArray(artist_xys[new_idx % len(artist_xys)])
+    target.index = new_idx
+    return PickInfo(artist, 0, target)
