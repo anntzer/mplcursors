@@ -94,6 +94,10 @@ class Cursor:
     def enabled(self, value):
         self._enabled = value
 
+    @property
+    def selections(self):
+        return self._selections[:]
+
     def add_annotation(self, pick_info):
         ann = pick_info.artist.axes.annotate(
             pick_info.ann_text, xy=pick_info.target, **self._annotation_kwargs)

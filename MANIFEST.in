@@ -1,0 +1,2 @@
+include versioneer.py
+include mplcursors/_version.py

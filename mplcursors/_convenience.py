@@ -4,6 +4,9 @@ from matplotlib.axes import Axes
 from ._mplcursors import Cursor
 
 
+__all__ = ["cursor"]
+
+
 def cursor(artists_or_axes=None, **kwargs):
     if artists_or_axes is None:
         artists_or_axes = [
