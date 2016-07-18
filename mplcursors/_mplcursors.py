@@ -13,15 +13,30 @@ __all__ = ["Cursor", "default_annotation_kwargs", "default_highlight_kwargs"]
 
 
 default_annotation_kwargs = MappingProxyType(dict(
-    xytext=(-15, 15), textcoords="offset points",
-    bbox=dict(boxstyle="round,pad=.5", fc="yellow", alpha=.5, ec="k"),
-    arrowprops=dict(arrowstyle="->", connectionstyle="arc3", shrinkB=0, ec="k")))
+    xytext=(-15, 15),
+    textcoords="offset points",
+    bbox=dict(
+        boxstyle="round,pad=.5",
+        fc="yellow",
+        alpha=.5,
+        ec="k"),
+    arrowprops=dict(
+        arrowstyle="->",
+        connectionstyle="arc3",
+        shrinkB=0,
+        ec="k")))
 default_highlight_kwargs = MappingProxyType(dict(
-    c="yellow", mec="yellow", lw=3, mew=3))
+    c="yellow",
+    mec="yellow",
+    lw=3,
+    mew=3))
 default_bindings = MappingProxyType(dict(
-    select=1, deselect=3,
-    previous="shift+left", next="shift+right",
-    toggle_visibility="d", toggle_enabled="t"))
+    select=1,
+    deselect=3,
+    previous="shift+left",
+    next="shift+right",
+    toggle_visibility="d",
+    toggle_enabled="t"))
 
 
 def _reassigned_axes_event(event, ax):
@@ -44,12 +59,12 @@ class Cursor:
                  *,
                  hover=False,
                  multiple=False,
-                 transformer=lambda c: c,
+                 transformer=lambda pi: pi,
                  annotation_kwargs=None,
                  highlight=False,
                  bindings=default_bindings):
 
-        self._artists = artists
+        self._artists = list(artists)  # Make a copy so that it doesn't change.
         self._multiple = multiple
         self._transformer = transformer
         self._annotation_kwargs = {
@@ -157,7 +172,8 @@ class Cursor:
                 pis.append(pi)
         if not pis:
             return
-        self.add_annotation(self._transformer(min(pis, key=lambda c: c.dist)))
+        self.add_annotation(
+            self._transformer(min(pis, key=lambda pi: pi.dist)))
 
     def _on_deselect_button_press(self, event):
         if event.canvas.widgetlock.locked() or not self.enabled:

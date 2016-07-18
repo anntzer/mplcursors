@@ -1,2 +1,3 @@
-* No support for point labels (just write your own formatter).
-* No support for contour plots (they're not real `Artists`).
+- No support for point labels (just write your own transformer).
+- No support for contour plots (they're not real `Artists`).
+- Nothing gets garbage collected so we leak a ton of memory.
