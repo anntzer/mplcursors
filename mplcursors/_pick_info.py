@@ -6,6 +6,7 @@ from matplotlib.collections import PathCollection
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
+from matplotlib.text import Text
 import numpy as np
 
 
@@ -132,6 +133,11 @@ def _(artist, event):
     if not contains:
         return
     return PickInfo(artist, 0, (event.xdata, event.ydata))
+
+
+@compute_pick.register(Text)
+def _(artist, event):
+    return
 
 
 @singledispatch

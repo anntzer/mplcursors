@@ -143,6 +143,9 @@ class Cursor:
                           for ax in self._axes}
         pis = []
         for artist in self._artists:
+            # e.g., removed artist.
+            if artist.axes is None:
+                continue
             if event.canvas is not artist.figure.canvas:
                 continue
             try:
