@@ -102,8 +102,7 @@ class Cursor:
     def add_annotation(self, pick_info):
         ann = pick_info.artist.axes.annotate(
             pick_info.ann_text, xy=pick_info.target, **self._annotation_kwargs)
-        # Switch default to draggable once matplotlib/matplotlib#6785 is fixed.
-        # ann.draggable(True, use_blit=True)
+        ann.draggable(use_blit=True)
         extras = []
         if self._highlight_kwargs is not None:
             extras.append(self.add_highlight(pick_info.artist))
@@ -188,6 +187,17 @@ class Cursor:
     def _remove_selection(self, sel):
         self._selections.remove(sel)
         sel.annotation.figure.canvas.draw_idle()
+        # Work around matplotlib/matplotlib#6785.
+        draggable = sel.annotation._draggable
+        if draggable:
+            draggable.disconnect()
+            try:
+                c = draggable._c1
+            except AttributeError:
+                pass
+            else:
+                draggable.canvas.mpl_disconnect(draggable._c1)
+        # (end of workaround).
         sel.annotation.remove()
         for artist in sel.extras:
             artist.figure.canvas.draw_idle()
