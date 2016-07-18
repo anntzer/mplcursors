@@ -1,6 +1,7 @@
 from collections import namedtuple
 import copy
 from types import MappingProxyType
+import warnings
 from weakref import WeakKeyDictionary
 
 from matplotlib.cbook import CallbackRegistry
@@ -101,6 +102,8 @@ class Cursor:
     def add_annotation(self, pick_info):
         ann = pick_info.artist.axes.annotate(
             pick_info.ann_text, xy=pick_info.target, **self._annotation_kwargs)
+        # Switch default to draggable once matplotlib/matplotlib#6785 is fixed.
+        # ann.draggable(True, use_blit=True)
         extras = []
         if self._highlight_kwargs is not None:
             extras.append(self.add_highlight(pick_info.artist))
@@ -143,7 +146,11 @@ class Cursor:
         for artist in self._artists:
             if event.canvas is not artist.figure.canvas:
                 continue
-            pi = _pick_info.compute_pick(artist, per_axes_event[artist.axes])
+            try:
+                pi = _pick_info.compute_pick(
+                    artist, per_axes_event[artist.axes])
+            except NotImplementedError as e:
+                warnings.warn(str(e))
             if pi:
                 pis.append(pi)
         if not pis:
