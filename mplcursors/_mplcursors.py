@@ -1,5 +1,6 @@
 from collections import namedtuple
 import copy
+from functools import partial
 from types import MappingProxyType
 import warnings
 from weakref import WeakKeyDictionary
@@ -82,21 +83,27 @@ class Cursor:
             raise ValueError("Duplicate bindings")
         self._bindings = bindings
 
-        self._figures = {artist.figure for artist in artists}
         self._axes = {artist.axes for artist in artists}
 
-        for figure in self._figures:
+        self._disconnect_cids = []
+        for figure in {artist.figure for artist in artists}:
             type(self)._keep_alive.setdefault(figure, []).append(self)
             if hover:
                 if multiple:
                     raise ValueError("`hover` and `multiple` are incompatible")
-                figure.canvas.mpl_connect(
+                cid = figure.canvas.mpl_connect(
                     "motion_notify_event", self._on_select_button_press)
+                self._disconnect_cids.append(
+                    partial(figure.canvas.mpl_disconnect, cid))
             else:
-                figure.canvas.mpl_connect(
+                cid = figure.canvas.mpl_connect(
                     "button_press_event", self._on_button_press)
-                figure.canvas.mpl_connect(
+                self._disconnect_cids.append(
+                    partial(figure.canvas.mpl_disconnect, cid))
+                cid = figure.canvas.mpl_connect(
                     "key_press_event", self._on_key_press)
+                self._disconnect_cids.append(
+                    partial(figure.canvas.mpl_disconnect, cid))
 
         self._enabled = True
         self._selections = []
@@ -111,8 +118,12 @@ class Cursor:
         self._enabled = value
 
     @property
+    def artists(self):
+        return tuple(self._artists)
+
+    @property
     def selections(self):
-        return self._selections[:]
+        return tuple(self._selections)
 
     def add_annotation(self, pick_info):
         ann = pick_info.artist.axes.annotate(
@@ -143,6 +154,12 @@ class Cursor:
 
     def disconnect(self, cid):
         self._callbacks.disconnect(cid)
+
+    def clear(self):
+        for disconnect_cid in self._disconnect_cids:
+            disconnect_cid()
+        while self._selections:
+            self._remove_selection(self._selections[-1])
 
     def _on_button_press(self, event):
         if event.button == self._bindings["select"]:
@@ -185,7 +202,6 @@ class Cursor:
             contained, _ = ann.contains(event)
             if contained:
                 self._remove_selection(sel)
-                self._callbacks.process("remove", sel)
 
     def _on_key_press(self, event):
         if event.key == self._bindings["toggle_enabled"]:
@@ -221,3 +237,4 @@ class Cursor:
         for artist in sel.extras:
             artist.figure.canvas.draw_idle()
             artist.remove()
+        self._callbacks.process("remove", sel)
