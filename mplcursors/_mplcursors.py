@@ -65,7 +65,12 @@ class Cursor:
                  highlight=False,
                  bindings=default_bindings):
 
-        self._artists = list(artists)  # Make a copy so that it doesn't change.
+        # Copy `artists` to maintain it constant.
+        self._artists = artists = list(artists)
+
+        for artist in artists:
+            type(self)._keep_alive.setdefault(artist, []).append(self)
+
         self._multiple = multiple
         self._transformer = transformer
         self._annotation_kwargs = {
@@ -84,30 +89,23 @@ class Cursor:
         self._bindings = bindings
 
         self._axes = {artist.axes for artist in artists}
-
-        self._disconnect_cids = []
-        for figure in {artist.figure for artist in artists}:
-            type(self)._keep_alive.setdefault(figure, []).append(self)
-            if hover:
-                if multiple:
-                    raise ValueError("`hover` and `multiple` are incompatible")
-                cid = figure.canvas.mpl_connect(
-                    "motion_notify_event", self._on_select_button_press)
-                self._disconnect_cids.append(
-                    partial(figure.canvas.mpl_disconnect, cid))
-            else:
-                cid = figure.canvas.mpl_connect(
-                    "button_press_event", self._on_button_press)
-                self._disconnect_cids.append(
-                    partial(figure.canvas.mpl_disconnect, cid))
-                cid = figure.canvas.mpl_connect(
-                    "key_press_event", self._on_key_press)
-                self._disconnect_cids.append(
-                    partial(figure.canvas.mpl_disconnect, cid))
-
         self._enabled = True
         self._selections = []
         self._callbacks = CallbackRegistry()
+
+        connect_pairs = [("key_press_event", self._on_key_press)]
+        if hover:
+            if multiple:
+                raise ValueError("`hover` and `multiple` are incompatible")
+            connect_pairs += [
+                ("motion_notify_event", self._on_select_button_press)]
+        else:
+            connect_pairs += [
+                ("button_press_event", self._on_button_press)]
+        self._disconnect_cids = [
+            partial(canvas.mpl_disconnect, canvas.mpl_connect(*pair))
+            for pair in connect_pairs
+            for canvas in {artist.figure.canvas for artist in artists}]
 
     @property
     def enabled(self):
