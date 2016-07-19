@@ -1,3 +1,3 @@
-- No support for point labels (just write your own transformer).
+- No support for point labels (write your own event handler).
 - No support for contour plots (they're not real `Artists`).
 - Nothing gets garbage collected so we leak a ton of memory.

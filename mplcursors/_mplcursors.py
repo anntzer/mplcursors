@@ -58,12 +58,10 @@ class Cursor:
     def __init__(self,
                  artists,
                  *,
-                 hover=False,
                  multiple=False,
-                 transformer=lambda pi: pi,
-                 annotation_kwargs=None,
                  highlight=False,
-                 bindings=default_bindings):
+                 bindings=default_bindings,
+                 hover=False):
 
         # Copy `artists` to maintain it constant.
         self._artists = artists = list(artists)
@@ -72,14 +70,8 @@ class Cursor:
             type(self)._keep_alive.setdefault(artist, []).append(self)
 
         self._multiple = multiple
-        self._transformer = transformer
-        self._annotation_kwargs = {
-            **default_annotation_kwargs, **(annotation_kwargs or {})}
-        self._highlight_kwargs = (
-            None if highlight is False
-            else default_highlight_kwargs if highlight is True
-            else {**default_highlight_kwargs, **highlight}
-        )
+        self._highlight = highlight
+
         bindings = {**default_bindings, **bindings}
         if set(bindings) != set(default_bindings):
             raise ValueError("Unknown bindings")
@@ -125,10 +117,12 @@ class Cursor:
 
     def add_annotation(self, pick_info):
         ann = pick_info.artist.axes.annotate(
-            pick_info.ann_text, xy=pick_info.target, **self._annotation_kwargs)
+            _pick_info.get_ann_text(*pick_info),
+            xy=pick_info.target,
+            **default_annotation_kwargs)
         ann.draggable(use_blit=True)
         extras = []
-        if self._highlight_kwargs is not None:
+        if self._highlight:
             extras.append(self.add_highlight(pick_info.artist))
         if not self._multiple:
             while self._selections:
@@ -141,13 +135,15 @@ class Cursor:
 
     def add_highlight(self, artist):
         hl = copy.copy(artist)
-        hl.set(**self._highlight_kwargs)
+        hl.set(**default_highlight_kwargs)
         artist.axes.add_artist(hl)
         return hl
 
-    def connect(self, event, func):
+    def connect(self, event, func=None):
         if event not in ["add", "remove"]:
             raise ValueError("Invalid cursor event: {}".format(event))
+        if func is None:
+            return partial(self.connect, event)
         return self._callbacks.connect(event, func)
 
     def disconnect(self, cid):
@@ -187,8 +183,7 @@ class Cursor:
                 pis.append(pi)
         if not pis:
             return
-        self.add_annotation(
-            self._transformer(min(pis, key=lambda pi: pi.dist)))
+        self.add_annotation(min(pis, key=lambda pi: pi.dist))
 
     def _on_deselect_button_press(self, event):
         if event.canvas.widgetlock.locked() or not self.enabled:

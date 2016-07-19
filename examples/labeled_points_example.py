@@ -1,4 +1,4 @@
-"""Implement mpldatacursor's "point labels" using PickInfo transformers.
+"""Implement mpldatacursor's "point labels" using event handlers.
 """
 import matplotlib.pyplot as plt
 import mplcursors
@@ -12,13 +12,9 @@ fig, ax = plt.subplots()
 line, = ax.plot(x, x, 'ro')
 ax.margins(0.1)
 
-def transformer(pick_info):
-    pick_info.ann_text = labels[pick_info.target.index]
-    return pick_info
-
-mplcursors.cursor(
-    ax,
-    transformer=lambda pi: pi.replace(ann_text=labels[pi.target.index]))
+mplcursors.cursor(ax).connect(
+    "add",
+    lambda sel: sel.annotation.set_text(labels[sel.pick_info.target.index]))
 
 plt.show()
 

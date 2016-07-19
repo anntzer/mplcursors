@@ -14,8 +14,8 @@ fig, ax = plt.subplots()
 ax.scatter(x, y, s=200)
 ax.set_title('Mouse over a point')
 
-mplcursors.cursor(
-    hover=True,
-    transformer=lambda pi: pi.replace(ann_text=labels[pi.target.index]))
+mplcursors.cursor(hover=True).connect(
+    "add",
+    lambda sel: sel.annotation.set_text(labels[sel.pick_info.target.index]))
 
 plt.show()

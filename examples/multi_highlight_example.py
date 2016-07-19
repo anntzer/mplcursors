@@ -26,10 +26,9 @@ def main():
     cursor = mplcursors.cursor(points + lines, highlight=True)
     pairs = {**dict(zip(points, lines)), **dict(zip(lines, points))}
 
+    @cursor.connect("add")
     def on_add(sel):
         sel.extras.append(cursor.add_highlight(pairs[sel.pick_info.artist]))
-
-    cursor.callbacks.connect("add", on_add)
 
     plt.show()
 

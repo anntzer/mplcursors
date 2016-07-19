@@ -18,25 +18,7 @@ class AttrArray(np.ndarray):
         return np.asarray(array).view(cls)
 
 
-class PickInfo(namedtuple("_PickInfo", "artist dist target")):
-    @property
-    def ann_text(self):
-        try:
-            return self._ann_text
-        except AttributeError:
-            self._ann_text = get_ann_text(*self)
-            return self._ann_text
-
-    @ann_text.setter
-    def ann_text(self, value):
-        self._ann_text = value
-
-    def replace(self, **kwargs):
-        fields = {k: kwargs.pop(k) for k in self._fields if k in kwargs}
-        new = self._replace(**fields)
-        for k, v in kwargs.items():
-            setattr(new, k, v)
-        return new
+PickInfo = namedtuple("PickInfo", "artist dist target")
 
 
 @singledispatch
