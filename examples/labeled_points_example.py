@@ -1,5 +1,4 @@
-"""
-Illustrates "point label" functionality.
+"""Implement mpldatacursor's "point labels" using PickInfo transformers.
 """
 import matplotlib.pyplot as plt
 import mplcursors

@@ -1,8 +1,6 @@
+"""Cursors on images.
 """
-A demonstration of using an ImageDataCursor to display image array values. This
-example also demonstrates using the ``display="single"`` option to display only
-one data cursor instead of one-per-axes.
-"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import mplcursors

@@ -1,5 +1,6 @@
-"""An example demonstrating displaying only a single annotation box cursor for
-multiple subplots."""
+"""A single annotation is displayed across all axes.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import mplcursors

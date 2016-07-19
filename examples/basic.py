@@ -1,4 +1,6 @@
-"""A very basic exmaple of the functionality of mpldatacursor."""
+"""A very basic example of mplcursor's functionalities.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 from mplcursors import Cursor

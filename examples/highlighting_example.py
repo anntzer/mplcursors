@@ -1,6 +1,4 @@
-"""
-An example of using a HighlightingDataCursor along with a custom formatter
-formatter function to highlight the selected artist and display its label.
+"""An example of highlighting cursors.
 """
 import numpy as np
 import matplotlib.pyplot as plt

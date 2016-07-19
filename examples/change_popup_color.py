@@ -1,3 +1,6 @@
+"""Changing properties of the popup.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import mplcursors

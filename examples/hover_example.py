@@ -1,8 +1,6 @@
+"""Hovering and custom formatters.
 """
-Demonstrates the hover functionality of mpldatacursor as well as point labels
-and a custom formatting function. Notice that overlapping points have both
-labels displayed.
-"""
+
 import string
 import matplotlib.pyplot as plt
 import numpy as np

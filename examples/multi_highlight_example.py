@@ -1,8 +1,8 @@
+""""Linked" artists: when one is selected, its partner is also highlighted.
+
+An example of connecting to cursor events.
 """
-An example of highlighting "linked" artists. When one is selected, its partner
-will be highlighted in addition to the original artist.  Illustrates
-subclassing a DataCursor.
-"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import mplcursors

@@ -1,8 +1,8 @@
+"""Display a bar's height and name on top of it upon hovering.
+
+An example of using PickInfo transformers to change `ann_text` and `target`.
 """
-A bar plot where each bar's height and name will be displayed above the top of
-the bar when it is moused over.  This serves as an example of overriding the
-x,y position of the "popup" annotation using the `props_override` option.
-"""
+
 import string
 import matplotlib.pyplot as plt
 import mplcursors
