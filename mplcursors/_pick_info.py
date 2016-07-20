@@ -18,20 +18,25 @@ class AttrArray(np.ndarray):
         return np.asarray(array).view(cls)
 
 
-PickInfo = namedtuple("PickInfo", "artist target dist")
-PickInfo.artist.__doc__ = (
+Selection = namedtuple("Selection", "artist target dist annotation extras")
+Selection.artist.__doc__ = (
     "The selected artist.")
-PickInfo.target.__doc__ = (
+Selection.target.__doc__ = (
     "The point picked within the artist, in data coordinates.")
-PickInfo.dist.__doc__ = (
+Selection.dist.__doc__ = (
     "The distance from the click to the target, in pixels.")
+Selection.annotation.__doc__ = (
+    "The instantiated `matplotlib.text.Annotation`.")
+Selection.extras.__doc__ = (
+    "An additional list of artists (e.g., highlighters) that will be cleared "
+    "at the same time as the annotation.")
 
 
 @singledispatch
 def compute_pick(artist, event):
     """Find whether ``artist`` has been picked by ``event``.
 
-    If it has, return the appropriate `PickInfo`; otherwise return ``None``.
+    If it has, return the appropriate `Selection`; otherwise return ``None``.
 
     This is a single-dispatch function; implementations for various artist
     classes follow.
@@ -68,7 +73,7 @@ def _(artist, event):
     vs_target = AttrArray(
         px_to_data((artist_xs[vs_argmin], artist_ys[vs_argmin])))
     vs_target.index = vs_argmin
-    vs_info = PickInfo(artist, vs_target, vs_min)
+    vs_info = Selection(artist, vs_target, vs_min, None, None)
 
     if artist.get_linestyle() in ["None", "none", " ", "", None]:
         return vs_info
@@ -100,7 +105,7 @@ def _(artist, event):
         ps_target = AttrArray(px_to_data((p_x, p_y)))
         if artist.drawStyles[artist.get_drawstyle()] == "_draw_lines":
             ps_target.index = ps_argmin + dot[ps_argmin] / ds[ps_argmin]
-        ps_info = PickInfo(artist, ps_target, ps_min)
+        ps_info = Selection(artist, ps_target, ps_min, None, None)
         return ps_info
 
 
@@ -118,7 +123,7 @@ def _(artist, event):
     argmin = d2.argmin()
     target = AttrArray(offsets[argmin])
     target.index = idxs[argmin]
-    return PickInfo(artist, target, np.sqrt(d2[argmin]))
+    return Selection(artist, target, np.sqrt(d2[argmin]), None, None)
 
 
 @compute_pick.register(AxesImage)
@@ -127,7 +132,7 @@ def _(artist, event):
     contains, _ = artist.contains(event)
     if not contains:
         return
-    return PickInfo(artist, (event.xdata, event.ydata), 0)
+    return Selection(artist, (event.xdata, event.ydata), 0, None, None)
 
 
 @compute_pick.register(Text)
@@ -136,8 +141,8 @@ def _(artist, event):
 
 
 @singledispatch
-def get_ann_text(artist, target, dist):
-    """Compute an annotating text for a `PickInfo`.
+def get_ann_text(*args):
+    """Compute an annotating text for a `Selection` (unpacked as ``*args``).
 
     This is a single-dispatch function; implementations for various artist
     classes follow.
@@ -148,22 +153,25 @@ def get_ann_text(artist, target, dist):
 @get_ann_text.register(Line2D)
 @get_ann_text.register(PathCollection)
 @get_ann_text.register(Patch)
-def _(artist, target, dist):
-    ax = artist.axes
-    x, y = target
-    label = artist.get_label()
+def _(*args):
+    sel = Selection(*args)
+    ax = sel.artist.axes
+    x, y = sel.target
+    label = sel.artist.get_label()
     if label.startswith("_"):
-        return "x: {}\ny: {}".format(ax.format_xdata(x), ax.format_ydata(y))
+        return "x: {}\ny: {}".format(
+            ax.format_xdata(x), ax.format_ydata(y))
     else:
         return "{}\nx: {}\ny: {}".format(
             label, ax.format_xdata(x), ax.format_ydata(y))
 
 
 @get_ann_text.register(AxesImage)
-def _(artist, target, dist):
-    artist = artist
+def _(*args):
+    sel = Selection(*args)
+    artist = sel.artist
     ax = artist.axes
-    x, y = target
+    x, y = sel.target
     event = namedtuple("event", "xdata ydata")(x, y)
     return "x: {}\ny: {}\nz: {}".format(ax.format_xdata(x),
                                         ax.format_ydata(y),
@@ -171,8 +179,8 @@ def _(artist, target, dist):
 
 
 @singledispatch
-def move(artist, target, dist, by):
-    """"Move" a `PickInfo` by an appropriate "distance".
+def move(*args, by):
+    """"Move" a `Selection` by an appropriate "distance".
 
     This function is used to implement annotation displacement through the
     keyboard.
@@ -180,18 +188,19 @@ def move(artist, target, dist, by):
     This is a single-dispatch function; implementations for various artist
     classes follow.
     """
-    return PickInfo(artist, target, dist)
+    return Selection(*args)
 
 
 @move.register(Line2D)
-def _(artist, target, dist, by):
-    if not hasattr(target, "index"):
-        return PickInfo(artist, target, dist)
+def _(*args, by):
+    sel = Selection(*args)
+    if not hasattr(sel.target, "index"):
+        return sel
     if by < 0:
-        new_idx = int(np.ceil(target.index) + by)
+        new_idx = int(np.ceil(sel.target.index) + by)
     elif by > 0:
-        new_idx = int(np.floor(target.index) + by)
-    artist_xys = artist.get_xydata()
+        new_idx = int(np.floor(sel.target.index) + by)
+    artist_xys = sel.artist.get_xydata()
     target = AttrArray(artist_xys[new_idx % len(artist_xys)])
     target.index = new_idx
-    return PickInfo(artist, target, 0)
+    return sel._replace(target=target, dist=0)

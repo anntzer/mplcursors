@@ -131,7 +131,10 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    "github_user": "anntzer",
+    "github_repo": "mplcursors",
+    "github_banner": True}
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []

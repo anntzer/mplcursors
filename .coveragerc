@@ -1,2 +1,3 @@
 [run]
+branch = true
 omit = mplcursors/_version.py

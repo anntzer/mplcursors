@@ -1,3 +1,3 @@
-- No support for point labels (write your own event handler).
-- No support for contour plots (they're not real `Artists`).
+- Support moving around step plots.
+- Support contour plots (they're not real `Artists`).
 - Nothing gets garbage collected so we leak a ton of memory.

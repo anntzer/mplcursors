@@ -11,7 +11,7 @@ from matplotlib.axes import Axes
 from matplotlib.cbook import CallbackRegistry
 
 from . import _pick_info
-from ._pick_info import PickInfo
+from ._pick_info import Selection
 
 
 default_annotation_kwargs = MappingProxyType(dict(
@@ -48,21 +48,6 @@ def _reassigned_axes_event(event, ax):
     event.xdata, event.ydata = (
         ax.transData.inverted().transform_point((event.x, event.y)))
     return event
-
-
-Selection = namedtuple(
-    "Selection", PickInfo._fields + ("annotation", "extras"))
-for _field in PickInfo._fields:
-    getattr(Selection, _field).__doc__ = getattr(PickInfo, _field).__doc__
-del _field
-Selection.annotation.__doc__ = "The instantiated `matplotlib.text.Annotation`."
-Selection.extras.__doc__ = (
-    "An additional list of artists (e.g., highlighters) that will be cleared "
-    "at the same time as the annotation.")
-
-
-def _selection_to_pick_info(sel):
-    return PickInfo(sel[:len(PickInfo._fields)])
 
 
 class Cursor:
@@ -172,28 +157,32 @@ class Cursor:
         """
         return tuple(self._selections)
 
-    def add_annotation(self, pick_info):
-        """Add an annotation from a `PickInfo`.
+    def add_selection(self, pi):
+        """Create an annotation for a `Selection` and register it.
 
-        Returns a `Selection` wrapping the `PickInfo` and the added artists;
-        emits the ``"add"`` event with the `Selection` as argument.
+        Returns a new `Selection`, that has been registered by the `Cursor`,
+        with the added annotation set in the :attr:`annotation` field and, if
+        applicable, the highlighting artist in the :attr:`extras` field.
+
+        Emits the ``"add"`` event with the new `Selection` as argument.
         """
-        ann = pick_info.artist.axes.annotate(
-            _pick_info.get_ann_text(*pick_info),
-            xy=pick_info.target,
+        # pi: "pick_info", i.e. an incomplete selection.
+        ann = pi.artist.axes.annotate(
+            _pick_info.get_ann_text(*pi),
+            xy=pi.target,
             **default_annotation_kwargs)
         ann.draggable(use_blit=True)
         extras = []
         if self._highlight:
-            extras.append(self.add_highlight(pick_info.artist))
+            extras.append(self.add_highlight(pi.artist))
         if not self._multiple:
             while self._selections:
                 self._remove_selection(self._selections[-1])
-        sel = Selection(*pick_info, ann, extras)
+        sel = pi._replace(annotation=ann, extras=extras)
         self._selections.append(sel)
         self._callbacks.process("add", sel)
-        pick_info.artist.figure.canvas.draw_idle()
-        return ann
+        sel.artist.figure.canvas.draw_idle()
+        return sel
 
     def add_highlight(self, artist):
         """Create, add and return a highlighting artist.
@@ -267,11 +256,12 @@ class Cursor:
                     artist, per_axes_event[artist.axes])
             except NotImplementedError as e:
                 warnings.warn(str(e))
+                continue
             if pi:
                 pis.append(pi)
         if not pis:
             return
-        self.add_annotation(min(pis, key=lambda pi: pi.dist))
+        self.add_selection(min(pis, key=lambda pi: pi.dist))
 
     def _on_deselect_button_press(self, event):
         if event.canvas.widgetlock.locked() or not self.enabled:
@@ -297,32 +287,31 @@ class Cursor:
             return
         if event.key == self._bindings["previous"]:
             self._remove_selection(sel)
-            self.add_annotation(
-                _pick_info.move(*_selection_to_pick_info(sel), -1))
+            self.add_selection(_pick_info.move(*sel, by=-1))
         elif event.key == self._bindings["next"]:
             self._remove_selection(sel)
-            self.add_annotation(
-                _pick_info.move(*_selection_to_pick_info(sel), 1))
+            self.add_selection(_pick_info.move(*sel, by=1))
 
     def _remove_selection(self, sel):
         self._selections.remove(sel)
-        sel.annotation.figure.canvas.draw_idle()
         # Work around matplotlib/matplotlib#6785.
         draggable = sel.annotation._draggable
         if draggable:
             draggable.disconnect()
             try:
-                c = draggable._c1
+                sel.annotation.figure.canvas.mpl_disconnect(
+                    sel.annotation._draggable._c1)
             except AttributeError:
                 pass
-            else:
-                draggable.canvas.mpl_disconnect(draggable._c1)
         # (end of workaround).
+        # <artist>.figure will be unset so we save them first.
+        figures = {artist.figure for artist in [sel.annotation, *sel.extras]}
         sel.annotation.remove()
         for artist in sel.extras:
-            artist.figure.canvas.draw_idle()
             artist.remove()
         self._callbacks.process("remove", sel)
+        for figure in figures:
+            figure.canvas.draw_idle()
 
 
 def cursor(artists_or_axes=None, **kwargs):

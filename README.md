@@ -6,3 +6,5 @@ mplcursors -- Interactive, clickable annotations for matplotlib
 less (read: no) cruft to support old versions of Python or matplotlib.
 
 Full documentation on [RTD](https://mplcursors.readthedocs.org).
+
+Run tests with `py.test`.
