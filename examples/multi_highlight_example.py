@@ -28,7 +28,7 @@ def main():
 
     @cursor.connect("add")
     def on_add(sel):
-        sel.extras.append(cursor.add_highlight(pairs[sel.pick_info.artist]))
+        sel.extras.append(cursor.add_highlight(pairs[sel.artist]))
 
     plt.show()
 

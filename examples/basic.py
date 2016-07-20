@@ -3,14 +3,16 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-from mplcursors import Cursor
+import mplcursors
 
 data = np.outer(range(10), range(1, 5))
 
 fig, ax = plt.subplots()
 lines = ax.plot(data)
-ax.set_title('Click somewhere on a line')
+ax.set_title("Click somewhere on a line\nRight-click to deselect\n"
+             "Annotations can be dragged.")
+fig.tight_layout()
 
-Cursor(lines)
+mplcursors.cursor(lines)
 
 plt.show()

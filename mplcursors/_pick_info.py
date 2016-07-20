@@ -18,11 +18,24 @@ class AttrArray(np.ndarray):
         return np.asarray(array).view(cls)
 
 
-PickInfo = namedtuple("PickInfo", "artist dist target")
+PickInfo = namedtuple("PickInfo", "artist target dist")
+PickInfo.artist.__doc__ = (
+    "The selected artist.")
+PickInfo.target.__doc__ = (
+    "The point picked within the artist, in data coordinates.")
+PickInfo.dist.__doc__ = (
+    "The distance from the click to the target, in pixels.")
 
 
 @singledispatch
 def compute_pick(artist, event):
+    """Find whether ``artist`` has been picked by ``event``.
+
+    If it has, return the appropriate `PickInfo`; otherwise return ``None``.
+
+    This is a single-dispatch function; implementations for various artist
+    classes follow.
+    """
     raise NotImplementedError("Support for {} is missing".format(type(artist)))
 
 
@@ -55,7 +68,7 @@ def _(artist, event):
     vs_target = AttrArray(
         px_to_data((artist_xs[vs_argmin], artist_ys[vs_argmin])))
     vs_target.index = vs_argmin
-    vs_info = PickInfo(artist, vs_min, vs_target)
+    vs_info = PickInfo(artist, vs_target, vs_min)
 
     if artist.get_linestyle() in ["None", "none", " ", "", None]:
         return vs_info
@@ -87,7 +100,7 @@ def _(artist, event):
         ps_target = AttrArray(px_to_data((p_x, p_y)))
         if artist.drawStyles[artist.get_drawstyle()] == "_draw_lines":
             ps_target.index = ps_argmin + dot[ps_argmin] / ds[ps_argmin]
-        ps_info = PickInfo(artist, ps_min, ps_target)
+        ps_info = PickInfo(artist, ps_target, ps_min)
         return ps_info
 
 
@@ -105,7 +118,7 @@ def _(artist, event):
     argmin = d2.argmin()
     target = AttrArray(offsets[argmin])
     target.index = idxs[argmin]
-    return PickInfo(artist, np.sqrt(d2[argmin]), target)
+    return PickInfo(artist, target, np.sqrt(d2[argmin]))
 
 
 @compute_pick.register(AxesImage)
@@ -114,7 +127,7 @@ def _(artist, event):
     contains, _ = artist.contains(event)
     if not contains:
         return
-    return PickInfo(artist, 0, (event.xdata, event.ydata))
+    return PickInfo(artist, (event.xdata, event.ydata), 0)
 
 
 @compute_pick.register(Text)
@@ -123,14 +136,19 @@ def _(artist, event):
 
 
 @singledispatch
-def get_ann_text(artist, dist, target):
+def get_ann_text(artist, target, dist):
+    """Compute an annotating text for a `PickInfo`.
+
+    This is a single-dispatch function; implementations for various artist
+    classes follow.
+    """
     raise NotImplementedError("Support for {} is missing".format(type(artist)))
 
 
 @get_ann_text.register(Line2D)
 @get_ann_text.register(PathCollection)
 @get_ann_text.register(Patch)
-def _(artist, dist, target):
+def _(artist, target, dist):
     ax = artist.axes
     x, y = target
     label = artist.get_label()
@@ -142,7 +160,7 @@ def _(artist, dist, target):
 
 
 @get_ann_text.register(AxesImage)
-def _(artist, dist, target):
+def _(artist, target, dist):
     artist = artist
     ax = artist.axes
     x, y = target
@@ -153,14 +171,22 @@ def _(artist, dist, target):
 
 
 @singledispatch
-def move(artist, dist, target, by):
-    return PickInfo(artist, dist, target)
+def move(artist, target, dist, by):
+    """"Move" a `PickInfo` by an appropriate "distance".
+
+    This function is used to implement annotation displacement through the
+    keyboard.
+
+    This is a single-dispatch function; implementations for various artist
+    classes follow.
+    """
+    return PickInfo(artist, target, dist)
 
 
 @move.register(Line2D)
-def _(artist, dist, target, by):
+def _(artist, target, dist, by):
     if not hasattr(target, "index"):
-        return PickInfo(artist, dist, target)
+        return PickInfo(artist, target, dist)
     if by < 0:
         new_idx = int(np.ceil(target.index) + by)
     elif by > 0:
@@ -168,4 +194,4 @@ def _(artist, dist, target, by):
     artist_xys = artist.get_xydata()
     target = AttrArray(artist_xys[new_idx % len(artist_xys)])
     target.index = new_idx
-    return PickInfo(artist, 0, target)
+    return PickInfo(artist, target, 0)

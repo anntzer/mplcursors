@@ -15,8 +15,9 @@ ax.set(xticks=range(9), xticklabels=labels, title='Hover over a bar')
 cursor = mplcursors.cursor(hover=True)
 @cursor.connect("add")
 def on_add(sel):
-    x, y, width, height = sel.pick_info.artist.get_bbox().bounds
-    sel.annotation.set_text("{}: {}".format(x + width / 2, height))
+    x, y, width, height = sel.artist.get_bbox().bounds
+    sel.annotation.set(
+        text="{}: {}".format(x + width / 2, height), ha="center", va="bottom")
     sel.annotation.xy = (x + width / 2, y + height)
     sel.annotation.xyann = (0, 20)
 

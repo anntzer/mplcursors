@@ -13,8 +13,6 @@ line, = ax.plot(x, x, 'ro')
 ax.margins(0.1)
 
 mplcursors.cursor(ax).connect(
-    "add",
-    lambda sel: sel.annotation.set_text(labels[sel.pick_info.target.index]))
+    "add", lambda sel: sel.annotation.set_text(labels[sel.target.index]))
 
 plt.show()
-

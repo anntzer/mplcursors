@@ -18,7 +18,6 @@ for i in range(1, 20):
 
 # Use a Cursor to interactively display the label for a selected line.
 mplcursors.cursor().connect(
-    "add",
-    lambda sel: sel.annotation.set_text(sel.pick_info.artist.get_label()))
+    "add", lambda sel: sel.annotation.set_text(sel.artist.get_label()))
 
 plt.show()

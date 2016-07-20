@@ -15,7 +15,6 @@ ax.scatter(x, y, s=200)
 ax.set_title('Mouse over a point')
 
 mplcursors.cursor(hover=True).connect(
-    "add",
-    lambda sel: sel.annotation.set_text(labels[sel.pick_info.target.index]))
+    "add", lambda sel: sel.annotation.set_text(labels[sel.target.index]))
 
 plt.show()
