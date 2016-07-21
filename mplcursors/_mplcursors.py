@@ -1,9 +1,7 @@
-from collections import namedtuple
 from collections.abc import Iterable
 import copy
 from functools import partial
 from types import MappingProxyType
-import warnings
 from weakref import WeakKeyDictionary
 
 from matplotlib import pyplot as plt
@@ -11,7 +9,6 @@ from matplotlib.axes import Axes
 from matplotlib.cbook import CallbackRegistry
 
 from . import _pick_info
-from ._pick_info import Selection
 
 
 default_annotation_kwargs = MappingProxyType(dict(
@@ -251,12 +248,7 @@ class Cursor:
                 continue
             if event.canvas is not artist.figure.canvas:
                 continue
-            try:
-                pi = _pick_info.compute_pick(
-                    artist, per_axes_event[artist.axes])
-            except NotImplementedError as e:
-                warnings.warn(str(e))
-                continue
+            pi = _pick_info.compute_pick(artist, per_axes_event[artist.axes])
             if pi:
                 pis.append(pi)
         if not pis:

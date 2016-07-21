@@ -1,5 +1,6 @@
 from collections import namedtuple
 from functools import singledispatch
+import warnings
 
 from matplotlib import cbook
 from matplotlib.collections import PathCollection
@@ -41,7 +42,7 @@ def compute_pick(artist, event):
     This is a single-dispatch function; implementations for various artist
     classes follow.
     """
-    raise NotImplementedError("Support for {} is missing".format(type(artist)))
+    warnings.warn("Support for {} is missing".format(type(artist)))
 
 
 @compute_pick.register(Line2D)
@@ -147,7 +148,9 @@ def get_ann_text(*args):
     This is a single-dispatch function; implementations for various artist
     classes follow.
     """
-    raise NotImplementedError("Support for {} is missing".format(type(artist)))
+    sel = Selection(*args)
+    warnings.warn("Support for {} is missing".format(type(sel.artist)))
+    return ""
 
 
 @get_ann_text.register(Line2D)
