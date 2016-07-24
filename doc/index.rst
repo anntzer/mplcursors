@@ -15,7 +15,7 @@ There are no plans to support earlier versions; in fact, the minimum version
 of :mod:`matplotlib` will likely be raised to 2.1 once it is released (as it
 will fix some `bugs`_ related to event handling).
 
-.. _bugs: https://github.com/matplotlib/matplotlib/pull/6497
+.. _bugs: https://github.com/matplotlib/matplotlib/pull/6808
 
 Basic example
 -------------
@@ -59,7 +59,8 @@ Specifically, a `Selection` has the following fields:
     - :attr:`artist`: the selected artist,
     - :attr:`target`: the point picked within the artist; if a point is picked
       on a `matplotlib Line2D <matplotlib.lines.Line2D>`, the index of the
-      point is available as the :attr:`target.index` sub-attribute.
+      point is available as the :attr:`target.index` sub-attribute (for more
+      details, see :ref:`selection-indices`).
     - :attr:`dist`: the distance from the point clicked to the :attr:`target`
       (mostly used to decide which ).
     - :attr:`annotation`: a `matplotlib Annotation
@@ -97,6 +98,22 @@ also gets selected::
 
 Note that the paired artist will also get de-highlighted when the "first"
 artist is deselected.
+
+.. _selection-indices:
+
+Selection indices
+-----------------
+
+When picking a point on a "normal" line, the target index has an integer part
+equal to the index of segment it is on, and a fractional part that indicates
+where the point is within that segment.
+
+Such an approach does not make sense for step plots (i.e., created by
+``plt.step`` or ``plt.plot(..., drawstyle="steps-...")``.  In this case, we
+return a special `Index` object, with attributes :attr:`int` (the segment
+index), :attr:`x` (how far the point has advanced in the ``x`` direction) and
+:attr:`y` (how far the point has advanced in the ``y`` direction).  See
+:file:`examples/step.py` for an example.
 
 
 .. toctree::

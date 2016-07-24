@@ -288,13 +288,12 @@ class Cursor:
         self._selections.remove(sel)
         # Work around matplotlib/matplotlib#6785.
         draggable = sel.annotation._draggable
-        if draggable:
+        try:
             draggable.disconnect()
-            try:
-                sel.annotation.figure.canvas.mpl_disconnect(
-                    sel.annotation._draggable._c1)
-            except AttributeError:
-                pass
+            sel.annotation.figure.canvas.mpl_disconnect(
+                sel.annotation._draggable._c1)
+        except AttributeError:
+            pass
         # (end of workaround).
         # <artist>.figure will be unset so we save them first.
         figures = {artist.figure for artist in [sel.annotation, *sel.extras]}
@@ -332,8 +331,8 @@ def cursor(artists_or_axes=None, **kwargs):
         if isinstance(entry, Axes):
             ax = entry
             artists.extend(ax.lines + ax.patches + ax.collections + ax.images)
-            for container in ax.containers:
-                artists.extend(container)
+            # No need to extend with each container (ax.containers): the
+            # contained artists have already been added.
         else:
             artist = entry
             artists.append(artist)

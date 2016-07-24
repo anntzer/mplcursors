@@ -78,21 +78,55 @@ def test_scatter(ax, plotter):
     assert len(cursor.selections) == len(ax.texts) == 1
 
 
-def test_move(ax):
-    ax.plot([0, 1], [0, 1])
+def test_steps_index():
+    from mplcursors._pick_info import Index
+    index = Index(0, .5, .5)
+    assert np.floor(index) == 0 and np.ceil(index) == 1
+    assert str(index) == "0.(x=0.5, y=0.5)"
+
+
+def test_steps_pre(ax):
+    ax.plot([0, 1], [0, 1], drawstyle="steps-pre")
     cursor = mplcursors.cursor()
-    # Nothing happens with no cursor.
-    _process_event("key_press_event", ax, (.123, .456), "shift+left")
+    _process_event("__mouse_click__", ax, (1, 0), 1)
     assert len(cursor.selections) == 0
-    # Now we move the cursor left or right.
+    _process_event("__mouse_click__", ax, (0, .5), 1)
+    index = cursor.selections[0].target.index
+    assert np.allclose((index.int, index.x, index.y), (0, 0, .5))
+    _process_event("__mouse_click__", ax, (.5, 1), 1)
+    index = cursor.selections[0].target.index
+    assert np.allclose((index.int, index.x, index.y), (0, .5, 1))
+
+
+def test_steps_mid(ax):
+    ax.plot([0, 1], [0, 1], drawstyle="steps-mid")
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (0, 1), 1)
+    assert len(cursor.selections) == 0
+    _process_event("__mouse_click__", ax, (1, 0), 1)
+    assert len(cursor.selections) == 0
+    _process_event("__mouse_click__", ax, (.25, 0), 1)
+    index = cursor.selections[0].target.index
+    assert np.allclose((index.int, index.x, index.y), (0, .25, 0))
     _process_event("__mouse_click__", ax, (.5, .5), 1)
-    assert tuple(cursor.selections[0].target) == (.5, .5)
-    _process_event("key_press_event", ax, (.123, .456), "shift+left")
-    assert tuple(cursor.selections[0].target) == (0, 0)
-    assert cursor.selections[0].target.index == 0
-    _process_event("key_press_event", ax, (.123, .456), "shift+right")
-    assert tuple(cursor.selections[0].target) == (1, 1)
-    assert cursor.selections[0].target.index == 1
+    index = cursor.selections[0].target.index
+    assert np.allclose((index.int, index.x, index.y), (0, .5, .5))
+    _process_event("__mouse_click__", ax, (.75, 1), 1)
+    index = cursor.selections[0].target.index
+    assert np.allclose((index.int, index.x, index.y), (0, .75, 1))
+
+
+def test_steps_post(ax):
+    ax.plot([0, 1], [0, 1], drawstyle="steps-post")
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (0, 1), 1)
+    assert len(cursor.selections) == 0
+    _process_event("__mouse_click__", ax, (.5, 0), 1)
+    index = cursor.selections[0].target.index
+    assert np.allclose((index.int, index.x, index.y), (0, .5, 0))
+    _process_event("__mouse_click__", ax, (1, .5), 1)
+    index = cursor.selections[0].target.index
+    assert np.allclose((index.int, index.x, index.y), (0, 1, .5))
 
 
 def test_image(ax):
@@ -111,6 +145,11 @@ def test_image(ax):
             == "x:0.75\ny:0.75\nz:3")
 
 
+def test_container(ax):
+    ax.bar(range(3), [1] * 3)
+    assert len(mplcursors.cursor().artists) == 3
+
+
 def test_misc_artists(ax):
     text = ax.text(.5, .5, "foo")
     cursor = mplcursors.cursor(text)
@@ -121,6 +160,23 @@ def test_misc_artists(ax):
     cursor = mplcursors.cursor(coll)
     with pytest.warns(UserWarning):
         _process_event("__mouse_click__", ax, (.5, .5), 1)
+
+
+def test_move(ax):
+    ax.plot([0, 1], [0, 1])
+    cursor = mplcursors.cursor()
+    # Nothing happens with no cursor.
+    _process_event("key_press_event", ax, (.123, .456), "shift+left")
+    assert len(cursor.selections) == 0
+    # Now we move the cursor left or right.
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    assert tuple(cursor.selections[0].target) == (.5, .5)
+    _process_event("key_press_event", ax, (.123, .456), "shift+left")
+    assert tuple(cursor.selections[0].target) == (0, 0)
+    assert cursor.selections[0].target.index == 0
+    _process_event("key_press_event", ax, (.123, .456), "shift+right")
+    assert tuple(cursor.selections[0].target) == (1, 1)
+    assert cursor.selections[0].target.index == 1
 
 
 def test_hover(ax):

@@ -45,11 +45,57 @@ def compute_pick(artist, event):
     warnings.warn("Support for {} is missing".format(type(artist)))
 
 
+class Index:
+    def __init__(self, i, x, y):
+        self.int = i
+        self.x = x
+        self.y = y
+
+    def floor(self):
+        return self.int
+
+    def ceil(self):
+        return self.int if max(self.x, self.y) == 0 else self.int + 1
+
+    def __str__(self):
+        return "{0.int}.(x={0.x}, y={0.y})".format(self)
+
+    @classmethod
+    def pre_index(cls, n_pts, raw_index, frac):
+        i, odd = divmod(raw_index, 2)
+        x, y = (0, frac) if not odd else (frac, 1)
+        return cls(i, x, y)
+
+    @classmethod
+    def post_index(cls, n_pts, raw_index, frac):
+        i, odd = divmod(raw_index, 2)
+        x, y = (frac, 0) if not odd else (1, frac)
+        return cls(i, x, y)
+
+    @classmethod
+    def mid_index(cls, n_pts, raw_index, frac):
+        if raw_index == 0:
+            frac = .5 + frac / 2
+        elif raw_index == n_pts - 2:  # One less line than points.
+            frac = frac / 2
+        quot, odd = divmod(raw_index, 2)
+        if not odd:
+            if frac < .5:
+                i = quot - 1
+                x, y = frac + .5, 1
+            else:
+                i = quot
+                x, y = frac - .5, 0
+        else:
+            i = quot
+            x, y = .5, frac
+        return cls(i, x, y)
+
+
 @compute_pick.register(Line2D)
 def _(artist, event):
-    contains, _ = artist.contains(event)
-    if not contains:
-        return
+    # No need to call `line.contains` because we're going to redo the work
+    # anyways, and it's broken for step plots up to matplotlib/matplotlib#6645.
 
     # Always work in screen coordinates, as this is how we need to compute
     # distances.  Note that the artist transform may be different from the axes
@@ -57,12 +103,12 @@ def _(artist, event):
     x, y = event.x, event.y
     artist_xs, artist_ys = (
         artist.get_transform().transform(artist.get_xydata()).T)
+    drawstyle = artist.drawStyles[artist.get_drawstyle()]
     drawstyle_conv = {
         "_draw_lines": lambda xs, ys: (xs, ys),
         "_draw_steps_pre": cbook.pts_to_prestep,
         "_draw_steps_mid": cbook.pts_to_midstep,
-        "_draw_steps_post": cbook.pts_to_poststep}[
-            artist.drawStyles[artist.get_drawstyle()]]
+        "_draw_steps_post": cbook.pts_to_poststep}[drawstyle]
     artist_xs, artist_ys = drawstyle_conv(artist_xs, artist_ys)
     ax = artist.axes
     px_to_data = ax.transData.inverted().transform_point
@@ -77,35 +123,41 @@ def _(artist, event):
     vs_info = Selection(artist, vs_target, vs_min, None, None)
 
     if artist.get_linestyle() in ["None", "none", " ", "", None]:
-        return vs_info
+        ps_min = np.inf
+    else:
+        # Find the closest projection.
+        # Unit vectors for each segment.
+        uxs = artist_xs[1:] - artist_xs[:-1]
+        uys = artist_ys[1:] - artist_ys[:-1]
+        ds = np.sqrt(uxs ** 2 + uys ** 2)
+        uxs /= ds
+        uys /= ds
+        # Vectors from each vertex to the event.
+        dxs = x - artist_xs[:-1]
+        dys = y - artist_ys[:-1]
+        # Cross-products.
+        d_ps = np.abs(dxs * uys - dys * uxs)
+        # Dot products.
+        dot = dxs * uxs + dys * uys
+        # Set distance to infinity if the projection is not in the segment.
+        d_ps[~((0 < dot) & (dot < ds))] = np.inf
+        ps_argmin = np.argmin(d_ps)
+        ps_min = d_ps[ps_argmin]
 
-    # Find the closest projection.
-    # Unit vectors for each segment.
-    uxs = artist_xs[1:] - artist_xs[:-1]
-    uys = artist_ys[1:] - artist_ys[:-1]
-    ds = np.sqrt(uxs ** 2 + uys ** 2)
-    uxs /= ds
-    uys /= ds
-    # Vectors from each vertex to the event.
-    dxs = x - artist_xs[:-1]
-    dys = y - artist_ys[:-1]
-    # Cross-products.
-    d_ps = np.abs(dxs * uys - dys * uxs)
-    # Dot products.
-    dot = dxs * uxs + dys * uys
-    # Set the distance to infinity if the projection is not in the segment.
-    d_ps[~((0 < dot) & (dot < ds))] = np.inf
-    ps_argmin = np.argmin(d_ps)
-    ps_min = d_ps[ps_argmin]
-
-    if vs_min < ps_min:
+    if artist.pickradius < min(vs_min, ps_min):
+        return
+    elif vs_min < ps_min:
         return vs_info
     else:
         p_x = artist_xs[ps_argmin] + dot[ps_argmin] * uxs[ps_argmin]
         p_y = artist_ys[ps_argmin] + dot[ps_argmin] * uys[ps_argmin]
         ps_target = AttrArray(px_to_data((p_x, p_y)))
-        if artist.drawStyles[artist.get_drawstyle()] == "_draw_lines":
-            ps_target.index = ps_argmin + dot[ps_argmin] / ds[ps_argmin]
+        ps_target.index = {
+            "_draw_lines": lambda _, x, y: x + y,
+            "_draw_steps_pre": Index.pre_index,
+            "_draw_steps_mid": Index.mid_index,
+            "_draw_steps_post": Index.post_index}[drawstyle](
+                len(artist_xs), ps_argmin, dot[ps_argmin] / ds[ps_argmin])
         ps_info = Selection(artist, ps_target, ps_min, None, None)
         return ps_info
 
@@ -197,8 +249,6 @@ def move(*args, by):
 @move.register(Line2D)
 def _(*args, by):
     sel = Selection(*args)
-    if not hasattr(sel.target, "index"):
-        return sel
     if by < 0:
         new_idx = int(np.ceil(sel.target.index) + by)
     elif by > 0:
