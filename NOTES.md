@@ -1,2 +1,3 @@
 - Support contour plots (they're not real `Artists`).
 - Nothing gets garbage collected so we leak a ton of memory.
+- Handle isolated points (due to nans) in line plots (return to the old code?).

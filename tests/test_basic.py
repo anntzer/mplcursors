@@ -5,6 +5,9 @@ import numpy as np
 import pytest
 
 
+_eps = .001
+
+
 @pytest.yield_fixture
 def ax():
     fig, ax = plt.subplots()
@@ -60,8 +63,7 @@ def test_basic(ax):
     _remove_selection(cursor.selections[0])
     assert len(cursor.selections) == len(ax.texts) == 0
     # Will project on the vertex at (.2, .8).
-    eps = .001
-    _process_event("__mouse_click__", ax, (.2 - eps, .8 + eps), 1)
+    _process_event("__mouse_click__", ax, (.2 - _eps, .8 + _eps), 1)
     assert len(cursor.selections) == len(ax.texts) == 1
 
 
@@ -123,10 +125,32 @@ def test_steps_post(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.5, 0), 1)
     index = cursor.selections[0].target.index
-    assert np.allclose((index.int, index.x, index.y), (0, .5, 0))
+    np.testing.assert_allclose((index.int, index.x, index.y), (0, .5, 0))
     _process_event("__mouse_click__", ax, (1, .5), 1)
     index = cursor.selections[0].target.index
-    assert np.allclose((index.int, index.x, index.y), (0, 1, .5))
+    np.testing.assert_allclose((index.int, index.x, index.y), (0, 1, .5))
+
+
+def test_line_edge_cases(ax):
+    for ls in ["-", "o"]:
+        ax.cla()
+        ax.plot(0, ls)
+        ax.set(xlim=(-1, 1), ylim=(-1, 1))
+        cursor = mplcursors.cursor()
+        _process_event("__mouse_click__", ax, (_eps, _eps), 1)
+        assert len(cursor.selections) == len(ax.texts) == 1
+        np.testing.assert_array_equal(
+            np.asarray(cursor.selections[0].target), (0, 0))
+        cursor.remove()
+
+
+def test_nan(ax):
+    ax.plot([0, 1, np.nan, 3, 4])
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    assert len(cursor.selections) == len(ax.texts) == 1
+    np.testing.assert_array_equal(
+        np.asarray(cursor.selections[0].target), (.5, .5))
 
 
 def test_image(ax):
@@ -220,12 +244,12 @@ def test_removed_artist(ax):
     assert len(cursor.selections) == len(ax.texts) == 0
 
 
-def test_clear(ax):
+def test_remove(ax):
     ax.plot([0, 1])
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert len(cursor.selections) == len(ax.texts) == 1
-    cursor.clear()
+    cursor.remove()
     assert len(cursor.selections) == len(ax.texts) == 0
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert len(cursor.selections) == len(ax.texts) == 0

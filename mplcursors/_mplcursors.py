@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from contextlib import suppress
 import copy
 from functools import partial
 from types import MappingProxyType
@@ -221,7 +222,7 @@ class Cursor:
         """
         self._callbacks.disconnect(cid)
 
-    def clear(self):
+    def remove(self):
         """Remove all `Selection`\\s and disconnect all callbacks.
         """
         for disconnect_cid in self._disconnect_cids:
@@ -297,9 +298,12 @@ class Cursor:
         # (end of workaround).
         # <artist>.figure will be unset so we save them first.
         figures = {artist.figure for artist in [sel.annotation, *sel.extras]}
-        sel.annotation.remove()
+        # ValueError is raised if the artist has already been removed.
+        with suppress(ValueError):
+            sel.annotation.remove()
         for artist in sel.extras:
-            artist.remove()
+            with suppress(ValueError):
+                artist.remove()
         self._callbacks.process("remove", sel)
         for figure in figures:
             figure.canvas.draw_idle()

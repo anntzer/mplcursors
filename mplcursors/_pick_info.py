@@ -115,12 +115,14 @@ def _(artist, event):
     ax = artist.axes
     px_to_data = ax.transData.inverted().transform_point
 
-    if artist.get_linestyle() in ["None", "none", " ", "", None]:
+    if (artist.get_linestyle() in ["None", "none", " ", "", None]
+            or len(artist_xys) == 1):
         # Find the closest vertex.
         d2s = ((xy - artist_xys) ** 2).sum(-1)
-        argmin = np.argmin(d2s)
+        argmin = np.nanargmin(d2s)
         dmin = np.sqrt(d2s[argmin])
-        target = AttrArray(px_to_data(artist_xys[argmin]))
+        # More precise than transforming back.
+        target = AttrArray(artist.get_xydata()[argmin])
         target.index = argmin
     else:
         # Find the closest projection or vertex.
@@ -135,7 +137,7 @@ def _(artist, event):
         # Projections, restricted to each segment.
         projs = artist_xys[:-1] + dot[:, None] * us
         d2s = ((xy - projs) ** 2).sum(-1)
-        argmin = np.argmin(d2s)
+        argmin = np.nanargmin(d2s)
         dmin = np.sqrt(d2s[argmin])
         target = AttrArray(px_to_data(projs[argmin]))
         target.index = {
