@@ -57,8 +57,11 @@ class Index:
     def ceil(self):
         return self.int if max(self.x, self.y) == 0 else self.int + 1
 
+    def __format__(self, fmt):
+        return "{0.int}.(x={0.x:{1}}, y={0.y:{1}})".format(self, fmt)
+
     def __str__(self):
-        return "{0.int}.(x={0.x}, y={0.y})".format(self)
+        return format(self, "")
 
     @classmethod
     def pre_index(cls, n_pts, raw_index, frac):
@@ -100,66 +103,50 @@ def _(artist, event):
     # Always work in screen coordinates, as this is how we need to compute
     # distances.  Note that the artist transform may be different from the axes
     # transform (e.g., for axvline).
-    x, y = event.x, event.y
-    artist_xs, artist_ys = (
-        artist.get_transform().transform(artist.get_xydata()).T)
+    xy = event.x, event.y
     drawstyle = artist.drawStyles[artist.get_drawstyle()]
     drawstyle_conv = {
         "_draw_lines": lambda xs, ys: (xs, ys),
         "_draw_steps_pre": cbook.pts_to_prestep,
         "_draw_steps_mid": cbook.pts_to_midstep,
         "_draw_steps_post": cbook.pts_to_poststep}[drawstyle]
-    artist_xs, artist_ys = drawstyle_conv(artist_xs, artist_ys)
+    artist_raw_xys = artist.get_transform().transform(artist.get_xydata())
+    artist_xys = np.asarray(drawstyle_conv(*artist_raw_xys.T)).T
     ax = artist.axes
     px_to_data = ax.transData.inverted().transform_point
 
-    # Find the closest vertex.
-    d2_vs = (artist_xs - x) ** 2 + (artist_ys - y) ** 2
-    vs_argmin = np.argmin(d2_vs)
-    vs_min = np.sqrt(d2_vs[vs_argmin])
-    vs_target = AttrArray(
-        px_to_data((artist_xs[vs_argmin], artist_ys[vs_argmin])))
-    vs_target.index = vs_argmin
-    vs_info = Selection(artist, vs_target, vs_min, None, None)
-
     if artist.get_linestyle() in ["None", "none", " ", "", None]:
-        ps_min = np.inf
+        # Find the closest vertex.
+        d2s = ((xy - artist_xys) ** 2).sum(-1)
+        argmin = np.argmin(d2s)
+        dmin = np.sqrt(d2s[argmin])
+        target = AttrArray(px_to_data(artist_xys[argmin]))
+        target.index = argmin
     else:
-        # Find the closest projection.
+        # Find the closest projection or vertex.
         # Unit vectors for each segment.
-        uxs = artist_xs[1:] - artist_xs[:-1]
-        uys = artist_ys[1:] - artist_ys[:-1]
-        ds = np.sqrt(uxs ** 2 + uys ** 2)
-        uxs /= ds
-        uys /= ds
+        us = artist_xys[1:] - artist_xys[:-1]
+        ds = np.sqrt((us ** 2).sum(-1))
+        us /= ds[:, None]
         # Vectors from each vertex to the event.
-        dxs = x - artist_xs[:-1]
-        dys = y - artist_ys[:-1]
-        # Cross-products.
-        d_ps = np.abs(dxs * uys - dys * uxs)
-        # Dot products.
-        dot = dxs * uxs + dys * uys
-        # Set distance to infinity if the projection is not in the segment.
-        d_ps[~((0 < dot) & (dot < ds))] = np.inf
-        ps_argmin = np.argmin(d_ps)
-        ps_min = d_ps[ps_argmin]
-
-    if artist.pickradius < min(vs_min, ps_min):
-        return
-    elif vs_min < ps_min:
-        return vs_info
-    else:
-        p_x = artist_xs[ps_argmin] + dot[ps_argmin] * uxs[ps_argmin]
-        p_y = artist_ys[ps_argmin] + dot[ps_argmin] * uys[ps_argmin]
-        ps_target = AttrArray(px_to_data((p_x, p_y)))
-        ps_target.index = {
+        vs = xy - artist_xys[:-1]
+        # Clipped dot products.
+        dot = np.clip((vs * us).sum(-1), 0, ds)
+        # Projections, restricted to each segment.
+        projs = artist_xys[:-1] + dot[:, None] * us
+        d2s = ((xy - projs) ** 2).sum(-1)
+        argmin = np.argmin(d2s)
+        dmin = np.sqrt(d2s[argmin])
+        target = AttrArray(px_to_data(projs[argmin]))
+        target.index = {
             "_draw_lines": lambda _, x, y: x + y,
             "_draw_steps_pre": Index.pre_index,
             "_draw_steps_mid": Index.mid_index,
             "_draw_steps_post": Index.post_index}[drawstyle](
-                len(artist_xs), ps_argmin, dot[ps_argmin] / ds[ps_argmin])
-        ps_info = Selection(artist, ps_target, ps_min, None, None)
-        return ps_info
+                len(artist_xys), argmin, dot[argmin] / ds[argmin])
+
+    return (Selection(artist, target, dmin, None, None)
+            if dmin < artist.pickradius else None)
 
 
 @compute_pick.register(PathCollection)
@@ -249,10 +236,9 @@ def move(*args, by):
 @move.register(Line2D)
 def _(*args, by):
     sel = Selection(*args)
-    if by < 0:
-        new_idx = int(np.ceil(sel.target.index) + by)
-    elif by > 0:
-        new_idx = int(np.floor(sel.target.index) + by)
+    new_idx = (int(np.ceil(sel.target.index) + by) if by < 0
+               else int(np.floor(sel.target.index) + by) if by > 0
+               else sel.target.index)
     artist_xys = sel.artist.get_xydata()
     target = AttrArray(artist_xys[new_idx % len(artist_xys)])
     target.index = new_idx

@@ -16,5 +16,6 @@ for ax in axs:
     ax.label_outer()
 
 mplcursors.cursor().connect(
-    "add", lambda sel: print(sel.target.index))
+    "add",
+    lambda sel: sel.annotation.set_text(format(sel.target.index, ".2f")))
 plt.show()
