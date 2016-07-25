@@ -204,10 +204,10 @@ def _(*args):
     label = sel.artist.get_label()
     if label.startswith("_"):
         return "x: {}\ny: {}".format(
-            ax.format_xdata(x), ax.format_ydata(y))
+            ax.format_xdata(x).rstrip(), ax.format_ydata(y).rstrip())
     else:
         return "{}\nx: {}\ny: {}".format(
-            label, ax.format_xdata(x), ax.format_ydata(y))
+            label, ax.format_xdata(x).rstrip(), ax.format_ydata(y).rstrip())
 
 
 @get_ann_text.register(AxesImage)
@@ -217,8 +217,8 @@ def _(*args):
     ax = artist.axes
     x, y = sel.target
     event = namedtuple("event", "xdata ydata")(x, y)
-    return "x: {}\ny: {}\nz: {}".format(ax.format_xdata(x),
-                                        ax.format_ydata(y),
+    return "x: {}\ny: {}\nz: {}".format(ax.format_xdata(x).rstrip(),
+                                        ax.format_ydata(y).rstrip(),
                                         artist.get_cursor_data(event))
 
 

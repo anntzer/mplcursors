@@ -44,7 +44,7 @@ def _remove_selection(sel):
     _process_event("__mouse_click__", ax, center, 3)
 
 
-def test_basic(ax):
+def test_line(ax):
     ax.plot([0, .2, 1], [0, .8, 1], label="foo")
     cursor = mplcursors.cursor(multiple=True)
     # Far, far away.
@@ -54,8 +54,7 @@ def test_basic(ax):
     _process_event("__mouse_click__", ax, (.1, .4), 1)
     assert len(cursor.selections) == len(ax.texts) == 1
     # `format_{x,y}data` space-pads its output.
-    assert (cursor.selections[0].annotation.get_text().replace(" ", "")
-            == "foo\nx:0.1\ny:0.4")
+    assert cursor.selections[0].annotation.get_text() == "foo\nx: 0.1\ny: 0.4"
     # Not removing it.
     _process_event("__mouse_click__", ax, (0, 1), 3)
     assert len(cursor.selections) == len(ax.texts) == 1
@@ -161,12 +160,12 @@ def test_image(ax):
     assert len(cursor.selections) == 0
     # Annotation text includes image value.
     _process_event("__mouse_click__", ax, (.75, .75), 1)
-    assert (cursor.selections[0].annotation.get_text().replace(" ", "")
-            == "x:0.75\ny:0.75\nz:3")
+    assert (cursor.selections[0].annotation.get_text()
+            == "x: 0.75\ny: 0.75\nz: 3")
     # Moving has no effect.
     _process_event("key_press_event", ax, (.123, .456), "shift+left")
-    assert (cursor.selections[0].annotation.get_text().replace(" ", "")
-            == "x:0.75\ny:0.75\nz:3")
+    assert (cursor.selections[0].annotation.get_text()
+            == "x: 0.75\ny: 0.75\nz: 3")
 
 
 def test_container(ax):

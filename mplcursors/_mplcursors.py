@@ -13,7 +13,7 @@ from . import _pick_info
 
 
 default_annotation_kwargs = MappingProxyType(dict(
-    xytext=(-15, 15),
+    xytext=(-15, 15), ha="right", va="bottom",
     textcoords="offset points",
     bbox=dict(
         boxstyle="round,pad=.5",
