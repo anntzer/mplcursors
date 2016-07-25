@@ -1,3 +1,6 @@
+"""Support for various step plots.
+"""
+
 from matplotlib import pyplot as plt
 import mplcursors
 import numpy as np

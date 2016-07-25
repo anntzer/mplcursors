@@ -44,13 +44,13 @@ Specifically, its first argument can either be a list of artists or axes (in
 which case all artists in each of the axes become selectable); or one can just
 pass no argument, in which case all artists in all figures become selectable.
 Other :class:`arguments <mplcursors.Cursor>` (which are all keyword-only)
-allow for basic customization of the `Cursor`'s behavior; please refer to the
+allow for basic customization of the `Cursor`’s behavior; please refer to the
 constructor's documentation.
 
 Customization
 -------------
 
-Instead of providing a host of keyword arguments in `Cursor`'s constructor,
+Instead of providing a host of keyword arguments in `Cursor`’s constructor,
 :mod:`mplcursors` represents selections as `Selection` namedtuples and lets you
 hook into their addition and removal.
 
@@ -79,16 +79,17 @@ Thus, in order to customize, e.g., the annotation text, one can call::
 Whenever a point is selected (resp. deselected), the ``"add"`` (resp.
 ``"remove"``) event is triggered and the registered callbacks are executed,
 with the `Selection` as only argument.  Here, the only callback updates the
-text of the annotation to a per-point label. (``cursor.connect("add")`` can
-also be used as a decorator to register a callback, see below for an example.)
+text of the annotation to a per-point label. (``cursor.connect("add")``
+can also be used as a decorator to register a callback, see below for an
+example.)  For an example using :mod:`pandas`’ :class:`DataFrame`\s, see
+:file:`examples/dataframe.py`.
 
 For additional customizations of the position and appearance of the annotation,
-see :file:`bar_example.py` and :file:`change_popup_color.py` in the
-:file:`examples` folder of the source tree.
+see :file:`examples/bar_example.py` and :file:`examples/change_popup_color.py`.
 
 Callbacks can also be used to make additional changes to the figure when
 a selection occurs.  For example, the following snippet (extracted from
-:file:`multi_highlight_example.py`) ensures that whenever an artist is
+:file:`examples/multi_highlight_example.py`) ensures that whenever an artist is
 selected, another artist that has been "paired" with it (via the ``pairs`` map)
 also gets selected::
 
