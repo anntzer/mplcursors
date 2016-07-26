@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 from matplotlib.backend_bases import KeyEvent, MouseEvent
 import mplcursors
 import numpy as np
+from numpy.testing import assert_allclose, assert_array_equal
 import pytest
 
 
@@ -93,10 +94,10 @@ def test_steps_pre(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, .5), 1)
     index = cursor.selections[0].target.index
-    assert np.allclose((index.int, index.x, index.y), (0, 0, .5))
+    assert_allclose((index.int, index.x, index.y), (0, 0, .5))
     _process_event("__mouse_click__", ax, (.5, 1), 1)
     index = cursor.selections[0].target.index
-    assert np.allclose((index.int, index.x, index.y), (0, .5, 1))
+    assert_allclose((index.int, index.x, index.y), (0, .5, 1))
 
 
 def test_steps_mid(ax):
@@ -108,13 +109,13 @@ def test_steps_mid(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.25, 0), 1)
     index = cursor.selections[0].target.index
-    assert np.allclose((index.int, index.x, index.y), (0, .25, 0))
+    assert_allclose((index.int, index.x, index.y), (0, .25, 0))
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     index = cursor.selections[0].target.index
-    assert np.allclose((index.int, index.x, index.y), (0, .5, .5))
+    assert_allclose((index.int, index.x, index.y), (0, .5, .5))
     _process_event("__mouse_click__", ax, (.75, 1), 1)
     index = cursor.selections[0].target.index
-    assert np.allclose((index.int, index.x, index.y), (0, .75, 1))
+    assert_allclose((index.int, index.x, index.y), (0, .75, 1))
 
 
 def test_steps_post(ax):
@@ -124,10 +125,10 @@ def test_steps_post(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.5, 0), 1)
     index = cursor.selections[0].target.index
-    np.testing.assert_allclose((index.int, index.x, index.y), (0, .5, 0))
+    assert_allclose((index.int, index.x, index.y), (0, .5, 0))
     _process_event("__mouse_click__", ax, (1, .5), 1)
     index = cursor.selections[0].target.index
-    np.testing.assert_allclose((index.int, index.x, index.y), (0, 1, .5))
+    assert_allclose((index.int, index.x, index.y), (0, 1, .5))
 
 
 def test_line_edge_cases(ax):
@@ -138,8 +139,7 @@ def test_line_edge_cases(ax):
         cursor = mplcursors.cursor()
         _process_event("__mouse_click__", ax, (_eps, _eps), 1)
         assert len(cursor.selections) == len(ax.texts) == 1
-        np.testing.assert_array_equal(
-            np.asarray(cursor.selections[0].target), (0, 0))
+        assert_array_equal(np.asarray(cursor.selections[0].target), (0, 0))
         cursor.remove()
 
 
@@ -148,8 +148,7 @@ def test_nan(ax):
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert len(cursor.selections) == len(ax.texts) == 1
-    np.testing.assert_array_equal(
-        np.asarray(cursor.selections[0].target), (.5, .5))
+    assert_allclose(np.asarray(cursor.selections[0].target), (.5, .5))
 
 
 def test_image(ax):
