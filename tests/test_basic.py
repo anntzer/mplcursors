@@ -59,7 +59,12 @@ def test_line(ax):
     # Not removing it.
     _process_event("__mouse_click__", ax, (0, 1), 3)
     assert len(cursor.selections) == len(ax.texts) == 1
-    # Remove it.
+    # Add another one.
+    _process_event("__mouse_click__", ax, (.6, .9), 1)
+    assert len(cursor.selections) == len(ax.texts) == 2
+    # Remove both of them.
+    _remove_selection(cursor.selections[0])
+    assert len(cursor.selections) == len(ax.texts) == 1
     _remove_selection(cursor.selections[0])
     assert len(cursor.selections) == len(ax.texts) == 0
     # Will project on the vertex at (.2, .8).

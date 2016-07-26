@@ -8,7 +8,7 @@ import mplcursors
 data = np.outer(range(10), range(1, 5))
 
 fig, ax = plt.subplots()
-ax.set_title("The annotation boxes are not draggable here.")
+ax.set_title("Multiple non-draggable annotations")
 ax.plot(data)
 
 mplcursors.cursor(multiple=True).connect(

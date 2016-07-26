@@ -20,6 +20,12 @@ class AttrArray(np.ndarray):
 
 
 Selection = namedtuple("Selection", "artist target dist annotation extras")
+# Override equality to identity: Selections should be considered immutable
+# (with mutable fields though) and we don't want to trigger casts of array
+# equality checks to booleans.  We don't need to override comparisons because
+# artists are already non-comparable.
+Selection.__eq__ = lambda self, other: self is other
+Selection.__ne__ = lambda self, other: self is not other
 Selection.artist.__doc__ = (
     "The selected artist.")
 Selection.target.__doc__ = (

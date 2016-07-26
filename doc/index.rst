@@ -51,8 +51,8 @@ Customization
 -------------
 
 Instead of providing a host of keyword arguments in `Cursor`’s constructor,
-:mod:`mplcursors` represents selections as `Selection` namedtuples and lets you
-hook into their addition and removal.
+:mod:`mplcursors` represents selections as `Selection` objects (essentially,
+namedtuples) and lets you hook into their addition and removal.
 
 Specifically, a `Selection` has the following fields:
 
