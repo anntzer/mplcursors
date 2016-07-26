@@ -236,8 +236,17 @@ class Cursor:
         if event.button == self._bindings["deselect"]:
             self._on_deselect_button_press(event)
 
+    def _filter_mouse_event(self, event):
+        # Accept the event iff we are enabled, and either
+        #   - no other widget is active, and this is not the second click of a
+        #     double click (to prevent double selection), or
+        #   - another widget is active, and this is a double click (to bypass
+        #     the widget lock).
+        return (self.enabled
+                and event.canvas.widgetlock.locked() == event.dblclick)
+
     def _on_select_button_press(self, event):
-        if event.canvas.widgetlock.locked() or not self.enabled:
+        if not self._filter_mouse_event(event):
             return
         # Work around lack of support for twinned axes.
         per_axes_event = {ax: _reassigned_axes_event(event, ax)
@@ -257,7 +266,7 @@ class Cursor:
         self.add_selection(min(pis, key=lambda pi: pi.dist))
 
     def _on_deselect_button_press(self, event):
-        if event.canvas.widgetlock.locked() or not self.enabled:
+        if not self._filter_mouse_event(event):
             return
         for sel in self._selections:
             ann = sel.annotation

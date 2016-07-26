@@ -47,6 +47,25 @@ Other :class:`arguments <mplcursors.Cursor>` (which are all keyword-only)
 allow for basic customization of the `Cursor`’s behavior; please refer to the
 constructor's documentation.
 
+Default UI
+----------
+
+- A left click on a line (a point, for plots where the data points are not
+  connected) creates a draggable annotation there.  Only one annotation is
+  displayed (per `Cursor` instance), except if the ``multiple`` keyword
+  argument was set.
+- A right click on an existing annotation will remove it.
+- Clicks do not trigger annotations if the zoom or pan tool are active.  It is
+  possible to bypass this by *double*-clicking instead.
+- For annotations pointing to lines, :kbd:`Shift-Left` and :kbd:`Shift-Right`
+  move the cursor backward or forward by one data point.
+- :kbd:`d` toggles the visibility of the existing annotation(s).
+- :kbd:`t` toggles whether the `Cursor` is active at all (if not, no event
+  other than re-activation) is propagated.
+
+These bindings are all customizable via `Cursor`’s ``bindings`` keyword
+argument.
+
 Customization
 -------------
 
