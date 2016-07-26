@@ -136,15 +136,16 @@ def test_steps_post(ax):
     assert_allclose((index.int, index.x, index.y), (0, 1, .5))
 
 
-def test_line_edge_cases(ax):
+def test_line_single_point(ax):
     for ls in ["-", "o"]:
         ax.cla()
         ax.plot(0, ls)
         ax.set(xlim=(-1, 1), ylim=(-1, 1))
         cursor = mplcursors.cursor()
         _process_event("__mouse_click__", ax, (_eps, _eps), 1)
-        assert len(cursor.selections) == len(ax.texts) == 1
-        assert_array_equal(np.asarray(cursor.selections[0].target), (0, 0))
+        assert len(cursor.selections) == len(ax.texts) == (ls == "o")
+        if cursor.selections:
+            assert_array_equal(np.asarray(cursor.selections[0].target), (0, 0))
         cursor.remove()
 
 

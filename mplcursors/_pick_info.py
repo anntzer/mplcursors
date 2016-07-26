@@ -103,8 +103,9 @@ class Index:
 
 @compute_pick.register(Line2D)
 def _(artist, event):
-    # No need to call `line.contains` because we're going to redo the work
-    # anyways, and it's broken for step plots up to matplotlib/matplotlib#6645.
+    # No need to call `line.contains` because we're going to redo
+    # the work anyways, and it was broken for step plots up to
+    # matplotlib/matplotlib#6645.
 
     # Always work in screen coordinates, as this is how we need to compute
     # distances.  Note that the artist transform may be different from the axes
@@ -121,17 +122,19 @@ def _(artist, event):
     ax = artist.axes
     px_to_data = ax.transData.inverted().transform_point
 
-    if (artist.get_linestyle() in ["None", "none", " ", "", None]
-            or len(artist_xys) == 1):
-        # Find the closest vertex.
+    sels = []
+    # If markers are visible, find the closest vertex.
+    if artist.get_marker() not in ["None", "none", " ", "", None]:
         d2s = ((xy - artist_xys) ** 2).sum(-1)
         argmin = np.nanargmin(d2s)
         dmin = np.sqrt(d2s[argmin])
         # More precise than transforming back.
         target = AttrArray(artist.get_xydata()[argmin])
         target.index = argmin
-    else:
-        # Find the closest projection or vertex.
+        sels.append(Selection(artist, target, dmin, None, None))
+    # If lines are visible, find the closest projection.
+    if (artist.get_linestyle() not in ["None", "none", " ", "", None]
+            and len(artist_xys) > 1):
         # Unit vectors for each segment.
         us = artist_xys[1:] - artist_xys[:-1]
         ds = np.sqrt((us ** 2).sum(-1))
@@ -140,7 +143,7 @@ def _(artist, event):
         vs = xy - artist_xys[:-1]
         # Clipped dot products.
         dot = np.clip((vs * us).sum(-1), 0, ds)
-        # Projections, restricted to each segment.
+        # Projections.
         projs = artist_xys[:-1] + dot[:, None] * us
         d2s = ((xy - projs) ** 2).sum(-1)
         argmin = np.nanargmin(d2s)
@@ -152,9 +155,10 @@ def _(artist, event):
             "_draw_steps_mid": Index.mid_index,
             "_draw_steps_post": Index.post_index}[drawstyle](
                 len(artist_xys), argmin, dot[argmin] / ds[argmin])
+        sels.append(Selection(artist, target, dmin, None, None))
 
-    return (Selection(artist, target, dmin, None, None)
-            if dmin < artist.pickradius else None)
+    sel = min(sels, key=lambda sel: sel.dist, default=None)
+    return sel if sel and sel.dist < artist.pickradius else None
 
 
 @compute_pick.register(PathCollection)
