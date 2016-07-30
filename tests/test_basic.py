@@ -179,10 +179,19 @@ def test_image(ax):
     _process_event("__mouse_click__", ax, (.75, .75), 1)
     assert (cursor.selections[0].annotation.get_text()
             == "x: 0.75\ny: 0.75\nz: 3")
-    # Moving has no effect.
+    # Moving around.
     _process_event("key_press_event", ax, (.123, .456), "shift+left")
     assert (cursor.selections[0].annotation.get_text()
-            == "x: 0.75\ny: 0.75\nz: 3")
+            == "x: 0\ny: 1\nz: 2")
+    _process_event("key_press_event", ax, (.123, .456), "shift+right")
+    assert (cursor.selections[0].annotation.get_text()
+            == "x: 1\ny: 1\nz: 3")
+    _process_event("key_press_event", ax, (.123, .456), "shift+up")
+    assert (cursor.selections[0].annotation.get_text()
+            == "x: 1\ny: 0\nz: 1")
+    _process_event("key_press_event", ax, (.123, .456), "shift+down")
+    assert (cursor.selections[0].annotation.get_text()
+            == "x: 1\ny: 1\nz: 3")
 
 
 def test_container(ax):
@@ -191,11 +200,12 @@ def test_container(ax):
 
 
 def test_misc_artists(ax):
+    # Texts should not trigger a warning.
     text = ax.text(.5, .5, "foo")
     cursor = mplcursors.cursor(text)
-    # Should not trigger a warning.
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     ax.cla()
+    # Other unsupported artists should.
     coll = ax.fill_between([0, 1], 0, 1)
     cursor = mplcursors.cursor(coll)
     with pytest.warns(UserWarning):

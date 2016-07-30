@@ -233,8 +233,8 @@ def _(*args):
 
 
 @singledispatch
-def move(*args, by):
-    """"Move" a `Selection` by an appropriate "distance".
+def move(*args, key):
+    """"Move" a `Selection` following a keypress.
 
     This function is used to implement annotation displacement through the
     keyboard.
@@ -246,12 +246,28 @@ def move(*args, by):
 
 
 @move.register(Line2D)
-def _(*args, by):
+def _(*args, key):
     sel = Selection(*args)
-    new_idx = (int(np.ceil(sel.target.index) + by) if by < 0
-               else int(np.floor(sel.target.index) + by) if by > 0
+    new_idx = (int(np.ceil(sel.target.index) - 1) if key == "left"
+               else int(np.floor(sel.target.index) + 1) if key == "right"
                else sel.target.index)
     artist_xys = sel.artist.get_xydata()
     target = AttrArray(artist_xys[new_idx % len(artist_xys)])
     target.index = new_idx
     return sel._replace(target=target, dist=0)
+
+
+@move.register(AxesImage)
+def _(*args, key):
+    sel = Selection(*args)
+    if type(sel.artist) != AxesImage:
+        # All bets are off with subclasses such as NonUniformImage.
+        return move.dispatch(object)(*args, key)
+    low, high = np.reshape(sel.artist.get_extent(), (2, 2)).T
+    ns = np.asarray(sel.artist.get_array().shape)[::-1]  # (y, x) -> (x, y)
+    idxs = ((sel.target - low) / (high - low) * ns).astype(int)
+    idxs += {
+        "left": [-1, 0], "right": [1, 0], "up": [0, 1], "down": [0, -1]}[key]
+    idxs %= ns
+    target = (idxs + .5) / ns * (high - low) + low
+    return sel._replace(target=target)

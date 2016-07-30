@@ -34,8 +34,10 @@ default_highlight_kwargs = MappingProxyType(dict(
 default_bindings = MappingProxyType(dict(
     select=1,
     deselect=3,
-    previous="shift+left",
-    next="shift+right",
+    left="shift+left",
+    right="shift+right",
+    up="shift+up",
+    down="shift+down",
     toggle_visibility="d",
     toggle_enabled="t"))
 
@@ -85,10 +87,16 @@ class Cursor:
             =================== ===============================================
             'select'            mouse button to select an artist (default: 1)
             'deselect'          mouse button to deselect an artist (default: 3)
-            'previous'          move to the previous point in the selected path
+            'left'              move to the previous point in the selected
+                                path, or to the left in the selected image
                                 (default: shift+left)
-            'next'              move to the next point in the selected path
+            'right'             move to the next point in the selected path, or
+                                to the right in the selected image
                                 (default: shift+right)
+            'up'                move up in the selected image
+                                (default: shift+up)
+            'down'              move down in the selected image
+                                (default: shift+down)
             'toggle_visibility' toggle visibility of all cursors (default: d)
             'toggle_enabled'    toggle whether the cursor is active
                                 (default: t)
@@ -288,12 +296,11 @@ class Cursor:
             sel = self._selections[-1]
         else:
             return
-        if event.key == self._bindings["previous"]:
-            self._remove_selection(sel)
-            self.add_selection(_pick_info.move(*sel, by=-1))
-        elif event.key == self._bindings["next"]:
-            self._remove_selection(sel)
-            self.add_selection(_pick_info.move(*sel, by=1))
+        for key in ["left", "right", "up", "down"]:
+            if event.key == self._bindings[key]:
+                self._remove_selection(sel)
+                self.add_selection(_pick_info.move(*sel, key=key))
+                break
 
     def _remove_selection(self, sel):
         self._selections.remove(sel)

@@ -57,8 +57,10 @@ Default UI
 - A right click on an existing annotation will remove it.
 - Clicks do not trigger annotations if the zoom or pan tool are active.  It is
   possible to bypass this by *double*-clicking instead.
-- For annotations pointing to lines, :kbd:`Shift-Left` and :kbd:`Shift-Right`
-  move the cursor backward or forward by one data point.
+- For annotations pointing to lines or images, :kbd:`Shift-Left` and
+  :kbd:`Shift-Right` move the cursor "left" or "right" by one data point.  For
+  annotations pointing to images, :kbd:`Shift-Up` and :kbd:`Shift-Down` are
+  likewise available.
 - :kbd:`d` toggles the visibility of the existing annotation(s).
 - :kbd:`t` toggles whether the `Cursor` is active at all (if not, no event
   other than re-activation) is propagated.
