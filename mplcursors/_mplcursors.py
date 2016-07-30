@@ -3,6 +3,7 @@ from contextlib import suppress
 import copy
 from functools import partial
 from types import MappingProxyType
+import weakref
 from weakref import WeakKeyDictionary
 
 from matplotlib import pyplot as plt
@@ -97,8 +98,9 @@ class Cursor:
             Whether to select artists upon hovering instead of by clicking.
         """
 
-        # Copy `artists` to maintain it constant.
-        self._artists = artists = list(artists)
+        artists = list(artists)
+        # Be careful with GC.
+        self._artists = [weakref.ref(artist) for artist in artists]
 
         for artist in artists:
             type(self)._keep_alive.setdefault(artist, []).append(self)
@@ -147,7 +149,7 @@ class Cursor:
     def artists(self):
         """The tuple of selectable artists.
         """
-        return tuple(self._artists)
+        return tuple(filter(None, (ref() for ref in self._artists)))
 
     @property
     def selections(self):
@@ -252,11 +254,10 @@ class Cursor:
         per_axes_event = {ax: _reassigned_axes_event(event, ax)
                           for ax in self._axes}
         pis = []
-        for artist in self._artists:
-            # e.g., removed artist.
-            if artist.axes is None:
-                continue
-            if event.canvas is not artist.figure.canvas:
+        for artist in self.artists:
+            if (artist.axes is None  # Removed or figure-level artist.
+                    or event.canvas is not artist.figure.canvas
+                    or not artist.axes.contains(event)[0]):  # Cropped by axes.
                 continue
             pi = _pick_info.compute_pick(artist, per_axes_event[artist.axes])
             if pi:

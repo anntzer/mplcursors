@@ -111,20 +111,11 @@ def _(artist, event):
     # distances.  Note that the artist transform may be different from the axes
     # transform (e.g., for axvline).
     xy = event.x, event.y
-    drawstyle = artist.drawStyles[artist.get_drawstyle()]
-    drawstyle_conv = {
-        "_draw_lines": lambda xs, ys: (xs, ys),
-        "_draw_steps_pre": cbook.pts_to_prestep,
-        "_draw_steps_mid": cbook.pts_to_midstep,
-        "_draw_steps_post": cbook.pts_to_poststep}[drawstyle]
-    artist_raw_xys = artist.get_transform().transform(artist.get_xydata())
-    artist_xys = np.asarray(drawstyle_conv(*artist_raw_xys.T)).T
-    ax = artist.axes
-    px_to_data = ax.transData.inverted().transform_point
-
     sels = []
     # If markers are visible, find the closest vertex.
     if artist.get_marker() not in ["None", "none", " ", "", None]:
+        artist_data_xys = artist.get_xydata()
+        artist_xys = artist.get_transform().transform(artist_data_xys)
         d2s = ((xy - artist_xys) ** 2).sum(-1)
         argmin = np.nanargmin(d2s)
         dmin = np.sqrt(d2s[argmin])
@@ -134,7 +125,15 @@ def _(artist, event):
         sels.append(Selection(artist, target, dmin, None, None))
     # If lines are visible, find the closest projection.
     if (artist.get_linestyle() not in ["None", "none", " ", "", None]
-            and len(artist_xys) > 1):
+            and len(artist.get_xydata()) > 1):
+        drawstyle = artist.drawStyles[artist.get_drawstyle()]
+        drawstyle_conv = {
+            "_draw_lines": lambda xs, ys: (xs, ys),
+            "_draw_steps_pre": cbook.pts_to_prestep,
+            "_draw_steps_mid": cbook.pts_to_midstep,
+            "_draw_steps_post": cbook.pts_to_poststep}[drawstyle]
+        artist_data_xys = np.asarray(drawstyle_conv(*artist.get_xydata().T)).T
+        artist_xys = artist.get_transform().transform(artist_data_xys)
         # Unit vectors for each segment.
         us = artist_xys[1:] - artist_xys[:-1]
         ds = np.sqrt((us ** 2).sum(-1))
@@ -148,7 +147,8 @@ def _(artist, event):
         d2s = ((xy - projs) ** 2).sum(-1)
         argmin = np.nanargmin(d2s)
         dmin = np.sqrt(d2s[argmin])
-        target = AttrArray(px_to_data(projs[argmin]))
+        target = AttrArray(
+            artist.axes.transData.inverted().transform_point(projs[argmin]))
         target.index = {
             "_draw_lines": lambda _, x, y: x + y,
             "_draw_steps_pre": Index.pre_index,
@@ -156,7 +156,6 @@ def _(artist, event):
             "_draw_steps_post": Index.post_index}[drawstyle](
                 len(artist_xys), argmin, dot[argmin] / ds[argmin])
         sels.append(Selection(artist, target, dmin, None, None))
-
     sel = min(sels, key=lambda sel: sel.dist, default=None)
     return sel if sel and sel.dist < artist.pickradius else None
 

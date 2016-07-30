@@ -1,3 +1,6 @@
+import gc
+import weakref
+
 from matplotlib import pyplot as plt
 from matplotlib.backend_bases import KeyEvent, MouseEvent
 import mplcursors
@@ -11,7 +14,9 @@ _eps = .001
 
 @pytest.yield_fixture
 def ax():
-    fig, ax = plt.subplots()
+    fig = plt.figure(1)
+    fig.clf()
+    ax = fig.add_subplot(111)
     try:
         yield ax
     finally:
@@ -94,6 +99,7 @@ def test_steps_index():
 
 def test_steps_pre(ax):
     ax.plot([0, 1], [0, 1], drawstyle="steps-pre")
+    ax.set(xlim=(-1, 2), ylim=(-1, 2))
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (1, 0), 1)
     assert len(cursor.selections) == 0
@@ -107,6 +113,7 @@ def test_steps_pre(ax):
 
 def test_steps_mid(ax):
     ax.plot([0, 1], [0, 1], drawstyle="steps-mid")
+    ax.set(xlim=(-1, 2), ylim=(-1, 2))
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (0, 1), 1)
     assert len(cursor.selections) == 0
@@ -125,6 +132,7 @@ def test_steps_mid(ax):
 
 def test_steps_post(ax):
     ax.plot([0, 1], [0, 1], drawstyle="steps-post")
+    ax.set(xlim=(-1, 2), ylim=(-1, 2))
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (0, 1), 1)
     assert len(cursor.selections) == 0
@@ -188,6 +196,17 @@ def test_misc_artists(ax):
     cursor = mplcursors.cursor(coll)
     with pytest.warns(UserWarning):
         _process_event("__mouse_click__", ax, (.5, .5), 1)
+
+
+def test_cropped_by_axes():
+    fig, axs = plt.subplots(2)
+    axs[0].plot([0, 0], [0, 1])
+    # Pan to hide the line behind the second axes.
+    axs[0].set(xlim=(-1, 1), ylim=(1, 2))
+    axs[1].set(xlim=(-1, 1), ylim=(-1, 1))
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", axs[1], (0, 0), 1)
+    assert len(cursor.selections) == 0
 
 
 def test_move(ax):
@@ -325,3 +344,17 @@ def test_multiple_figures(ax):
     assert len(cursor.selections) == 1
     assert len(ax1.texts) == 0
     assert len(ax2.texts) == 1
+
+
+def test_gc(ax):
+    def inner():
+        img = ax.imshow([[0, 1], [2, 3]])
+        cursor = mplcursors.cursor(img)
+        f_img = weakref.finalize(img, lambda: None)
+        f_cursor = weakref.finalize(cursor, lambda: None)
+        img.remove()
+        return f_img, f_cursor
+    f_img, f_cursor = inner()
+    gc.collect()
+    assert not f_img.alive
+    assert not f_cursor.alive
