@@ -40,14 +40,14 @@ def _process_event(name, ax, coords, *args):
     ax.figure.canvas.callbacks.process(name, event)
 
 
-def _remove_selection(sel):
+def _get_remove_args(sel):
     ax = sel.artist.axes
     # Text bounds are found only upon drawing.
     ax.figure.canvas.draw()
     bbox = sel.annotation.get_window_extent()
     center = ax.transData.inverted().transform_point(
         ((bbox.x0 + bbox.x1) / 2, (bbox.y0 + bbox.y1) / 2))
-    _process_event("__mouse_click__", ax, center, 3)
+    return "__mouse_click__", ax, center, 3
 
 
 def test_line(ax):
@@ -59,7 +59,6 @@ def test_line(ax):
     # On the line.
     _process_event("__mouse_click__", ax, (.1, .4), 1)
     assert len(cursor.selections) == len(ax.texts) == 1
-    # `format_{x,y}data` space-pads its output.
     assert cursor.selections[0].annotation.get_text() == "foo\nx: 0.1\ny: 0.4"
     # Not removing it.
     _process_event("__mouse_click__", ax, (0, 1), 3)
@@ -67,10 +66,12 @@ def test_line(ax):
     # Add another one.
     _process_event("__mouse_click__", ax, (.6, .9), 1)
     assert len(cursor.selections) == len(ax.texts) == 2
-    # Remove both of them.
-    _remove_selection(cursor.selections[0])
+    # Remove both of them (first removing the second one, to test
+    # `Selection.__eq__` -- otherwise it is bypassed as `list.remove`
+    # checks identity first).
+    _process_event(*_get_remove_args(cursor.selections[1]))
     assert len(cursor.selections) == len(ax.texts) == 1
-    _remove_selection(cursor.selections[0])
+    _process_event(*_get_remove_args(cursor.selections[0]))
     assert len(cursor.selections) == len(ax.texts) == 0
     # Will project on the vertex at (.2, .8).
     _process_event("__mouse_click__", ax, (.2 - _eps, .8 + _eps), 1)
@@ -168,8 +169,11 @@ def test_nan(ax):
 def test_image(ax):
     ax.imshow(np.arange(4).reshape((2, 2)))
     cursor = mplcursors.cursor()
-    # Not picking out-of-axes.
+    # Not picking out-of-axes or of image.
     _process_event("__mouse_click__", ax, (-1, -1), 1)
+    assert len(cursor.selections) == 0
+    ax.set(xlim=(-.5, 2.5), ylim=(-.5, 2.5))
+    _process_event("__mouse_click__", ax, (2, 2), 1)
     assert len(cursor.selections) == 0
     # Annotation text includes image value.
     _process_event("__mouse_click__", ax, (.75, .75), 1)
@@ -241,7 +245,7 @@ def test_highlight(ax):
     cursor = mplcursors.cursor(highlight=True)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert ax.artists == cursor.selections[0].extras != []
-    _remove_selection(cursor.selections[0])
+    _process_event(*_get_remove_args(cursor.selections[0]))
     assert len(ax.artists) == 0
 
 
@@ -295,12 +299,12 @@ def test_keys(ax):
     assert len(cursor.selections) == 1
     # (Removing becomes inactive.)
     ax.figure.canvas.draw()
-    _remove_selection(cursor.selections[0])
+    _process_event(*_get_remove_args(cursor.selections[0]))
     assert len(cursor.selections) == 1
     # Reenable it.
     _process_event("key_press_event", ax, (.123, .456), "t")
     assert cursor.enabled
-    _remove_selection(cursor.selections[0])
+    _process_event(*_get_remove_args(cursor.selections[0]))
     assert len(cursor.selections) == 0
 
 
@@ -338,8 +342,15 @@ def test_multiple_figures(ax):
     assert len(cursor.selections) == 1
     assert len(ax1.texts) == 1
     assert len(ax2.texts) == 0
+    # Right-clicking on the second axis doesn't remove it.
+    remove_args = list(_get_remove_args(cursor.selections[0]))
+    remove_args[remove_args.index(ax1)] = ax2
+    _process_event(*remove_args)
+    assert len(cursor.selections) == 1
+    assert len(ax1.texts) == 1
+    assert len(ax2.texts) == 0
     # Remove it, add something on the second.
-    _remove_selection(cursor.selections[0])
+    _process_event(*_get_remove_args(cursor.selections[0]))
     _process_event("__mouse_click__", ax2, (.5, .5), 1)
     assert len(cursor.selections) == 1
     assert len(ax1.texts) == 0

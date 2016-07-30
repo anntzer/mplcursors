@@ -211,6 +211,7 @@ def _(*args):
     ax = sel.artist.axes
     x, y = sel.target
     label = sel.artist.get_label()
+    # Un-space-pad the output of `format_{x,y}data`.
     if label.startswith("_"):
         return "x: {}\ny: {}".format(
             ax.format_xdata(x).rstrip(), ax.format_ydata(y).rstrip())
