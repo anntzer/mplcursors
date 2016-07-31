@@ -50,7 +50,7 @@ def compute_pick(artist, event):
     This is a single-dispatch function; implementations for various artist
     classes follow.
     """
-    warnings.warn("Support for {} is missing".format(type(artist)))
+    warnings.warn("Support for {} is missing.".format(type(artist)))
 
 
 class Index:
@@ -172,7 +172,12 @@ def _(artist, event):
     contains, info = artist.contains(event)
     if not contains:
         return
-    # Snapping, really only works for scatter plots.
+    # Snapping, really only works for scatter plots (for example,
+    # `PathCollection`s created through `matplotlib.tri` are unsupported).
+    if len(artist.get_paths()) != 1:
+        warnings.warn("Only PathCollections created through `plt.scatter` are "
+                      "supported.")
+        return
     ax = artist.axes
     idxs = info["ind"]
     offsets = artist.get_offsets()[idxs]
