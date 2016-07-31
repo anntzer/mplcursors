@@ -222,10 +222,10 @@ def _(*args):
     sel = Selection(*args)
     ax = sel.artist.axes
     x, y = sel.target
-    label = sel.artist.get_label()
+    label = sel.artist.get_label() or ""
     # Un-space-pad the output of `format_{x,y}data`.
     text = re.sub("[ ,] +", "\n", ax.format_coord(x, y)).strip()
-    if not label.startswith("_"):
+    if re.match("[^_]", label):
         text = "{}\n{}".format(label, text)
     return text
 

@@ -59,7 +59,7 @@ def _get_remove_args(sel):
 
 
 def test_line(ax):
-    ax.plot([0, .2, 1], [0, .8, 1], label="foo")
+    l, = ax.plot([0, .2, 1], [0, .8, 1], label="foo")
     cursor = mplcursors.cursor(multiple=True)
     # Far, far away.
     _process_event("__mouse_click__", ax, (0, 1), 1)
@@ -71,9 +71,11 @@ def test_line(ax):
     # Not removing it.
     _process_event("__mouse_click__", ax, (0, 1), 3)
     assert len(cursor.selections) == len(ax.texts) == 1
-    # Add another one.
+    # Remove the text label; add another annotation.
+    l.set_label(None)
     _process_event("__mouse_click__", ax, (.6, .9), 1)
     assert len(cursor.selections) == len(ax.texts) == 2
+    assert cursor.selections[1].annotation.get_text() == "x=0.6\ny=0.9"
     # Remove both of them (first removing the second one, to test
     # `Selection.__eq__` -- otherwise it is bypassed as `list.remove`
     # checks identity first).
