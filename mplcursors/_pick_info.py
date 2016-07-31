@@ -260,6 +260,8 @@ def move(*args, key):
 @move.register(Line2D)
 def _(*args, key):
     sel = Selection(*args)
+    if not hasattr(sel.target, "index"):
+        return sel
     new_idx = (int(np.ceil(sel.target.index) - 1) if key == "left"
                else int(np.floor(sel.target.index) + 1) if key == "right"
                else sel.target.index)
@@ -274,7 +276,7 @@ def _(*args, key):
     sel = Selection(*args)
     if type(sel.artist) != AxesImage:
         # All bets are off with subclasses such as NonUniformImage.
-        return move.dispatch(object)(*args, key)
+        return sel
     low, high = np.reshape(sel.artist.get_extent(), (2, 2)).T
     ns = np.asarray(sel.artist.get_array().shape)[::-1]  # (y, x) -> (x, y)
     idxs = ((sel.target - low) / (high - low) * ns).astype(int)

@@ -13,14 +13,22 @@ _eps = .001
 
 
 @pytest.yield_fixture
-def ax():
+def fig():
     fig = plt.figure(1)
     fig.clf()
+    yield fig
+
+
+@pytest.yield_fixture
+def ax(fig):
     ax = fig.add_subplot(111)
-    try:
-        yield ax
-    finally:
-        plt.close(fig)
+    yield ax
+
+
+@pytest.fixture(autouse=True)
+def cleanup():
+    for fig in map(plt.figure, plt.get_fignums()):
+        fig.clf()
 
 
 def _process_event(name, ax, coords, *args):
@@ -212,8 +220,17 @@ def test_misc_artists(ax):
         _process_event("__mouse_click__", ax, (.5, .5), 1)
 
 
+def test_indexless_projections():
+    _, ax = plt.subplots(subplot_kw={"projection": "polar"})
+    ax.plot([1, 2], [3, 4])
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (1, 3), 1)
+    assert len(cursor.selections) == 1
+    _process_event("key_press_event", ax, (.123, .456), "shift+left")
+
+
 def test_cropped_by_axes():
-    fig, axs = plt.subplots(2)
+    _, axs = plt.subplots(2)
     axs[0].plot([0, 0], [0, 1])
     # Pan to hide the line behind the second axes.
     axs[0].set(xlim=(-1, 1), ylim=(1, 2))
@@ -343,7 +360,7 @@ def test_invalid_args():
 
 def test_multiple_figures(ax):
     ax1 = ax
-    fig, ax2 = plt.subplots()
+    _, ax2 = plt.subplots()
     ax1.plot([0, 1])
     ax2.plot([0, 1])
     cursor = mplcursors.cursor([ax1, ax2], multiple=True)
