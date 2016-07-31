@@ -204,6 +204,13 @@ def test_image(ax):
             == "x=1\ny=1\n[3]")
 
 
+def test_linecollection(ax):
+    ax.eventplot([0, 1])
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (0, 1), 1)
+    assert_allclose(cursor.selections[0].target.index, (0, .5))
+
+
 def test_container(ax):
     ax.bar(range(3), [1] * 3)
     assert len(mplcursors.cursor().artists) == 3

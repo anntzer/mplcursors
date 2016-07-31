@@ -101,6 +101,16 @@ Specifically, a `Selection` has the following fields:
     - :attr:`extras`: an additional list of artists, that will be removed
       whenever the main :attr:`annotation` is deselected.
 
+For certain classes of artists, additional information about the picked point
+is available in the :attr:`target.index` sub-attribute:
+
+    - For `Line2D <matplotlib.lines.Line2D>`\s, it contains the index of the
+      selected point (see :ref:`selection-indices` for more details, especially
+      regarding step plots).
+    - For `LineCollection <matplotlib.collections.LineCollection>`\s, it
+      contains a pair: the index of the selected line, and the index within the
+      line, as defined above.
+
 Thus, in order to customize, e.g., the annotation text, one can call::
 
     lines = ax.plot(range(3), range(3), "o")
@@ -112,10 +122,10 @@ Thus, in order to customize, e.g., the annotation text, one can call::
 Whenever a point is selected (resp. deselected), the ``"add"`` (resp.
 ``"remove"``) event is triggered and the registered callbacks are executed,
 with the `Selection` as only argument.  Here, the only callback updates the
-text of the annotation to a per-point label. (``cursor.connect("add")``
-can also be used as a decorator to register a callback, see below for an
-example.)  For an example using :mod:`pandas`’ :class:`DataFrame`\s, see
-:file:`examples/dataframe.py`.
+text of the annotation to a per-point label. (``cursor.connect("add")`` can
+also be used as a decorator to register a callback, see below for an example.)
+For an example using :mod:`pandas`’ :class:`DataFrame <pandas.DataFrame>`\s,
+see :file:`examples/dataframe.py`.
 
 For additional customizations of the position and appearance of the annotation,
 see :file:`examples/bar_example.py` and :file:`examples/change_popup_color.py`.

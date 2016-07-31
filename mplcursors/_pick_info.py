@@ -1,10 +1,14 @@
+# Some missing Artist classes:
+# PolyCollection, QuadMesh, Barbs, subclasses of AxesImage.
+
 from collections import namedtuple
 from functools import singledispatch
 import re
+from unittest.mock import NonCallableMock
 import warnings
 
 from matplotlib import cbook
-from matplotlib.collections import PathCollection
+from matplotlib.collections import LineCollection, PathCollection
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
@@ -128,7 +132,7 @@ def _(artist, event):
     # If lines are visible, find the closest projection.
     if (artist.get_linestyle() not in ["None", "none", " ", "", None]
             and len(artist.get_xydata()) > 1):
-        drawstyle = artist.drawStyles[artist.get_drawstyle()]
+        drawstyle = Line2D.drawStyles[artist.get_drawstyle()]
         drawstyle_conv = {
             "_draw_lines": lambda xs, ys: (xs, ys),
             "_draw_steps_pre": cbook.pts_to_prestep,
@@ -164,7 +168,28 @@ def _(artist, event):
                     len(artist_xys), argmin, dot[argmin] / ds[argmin])
         sels.append(Selection(artist, target, dmin, None, None))
     sel = min(sels, key=lambda sel: sel.dist, default=None)
-    return sel if sel and sel.dist < artist.pickradius else None
+    return sel if sel and sel.dist < artist.get_pickradius() else None
+
+
+@compute_pick.register(LineCollection)
+def _(artist, event):
+    # (Faster that iterating over all segments ourselves.)
+    contains, info = artist.contains(event)
+    mock = NonCallableMock(wraps=artist)
+    mock.get_xydata = lambda: segment
+    mock.get_drawstyle = lambda: "default"
+    mock.get_marker = lambda: "none"
+    segments = artist.get_segments()
+    sels = []
+    for index in info["ind"]:
+        segment = segments[index]
+        sels.append(compute_pick.dispatch(Line2D)(mock, event))
+    sel, index = min(((sel, idx) for idx, sel in enumerate(sels) if sel),
+                     key=lambda sel_idx: sel_idx[0].dist, default=(None, None))
+    if sel:
+        sel = sel._replace(artist=artist)
+        sel.target.index = (index, getattr(sel.target, "index", None))
+    return sel
 
 
 @compute_pick.register(PathCollection)
@@ -216,6 +241,7 @@ def get_ann_text(*args):
 
 
 @get_ann_text.register(Line2D)
+@get_ann_text.register(LineCollection)
 @get_ann_text.register(PathCollection)
 @get_ann_text.register(Patch)
 def _(*args):
