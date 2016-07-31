@@ -59,7 +59,7 @@ def test_line(ax):
     # On the line.
     _process_event("__mouse_click__", ax, (.1, .4), 1)
     assert len(cursor.selections) == len(ax.texts) == 1
-    assert cursor.selections[0].annotation.get_text() == "foo\nx: 0.1\ny: 0.4"
+    assert cursor.selections[0].annotation.get_text() == "foo\nx=0.1\ny=0.4"
     # Not removing it.
     _process_event("__mouse_click__", ax, (0, 1), 3)
     assert len(cursor.selections) == len(ax.texts) == 1
@@ -178,20 +178,20 @@ def test_image(ax):
     # Annotation text includes image value.
     _process_event("__mouse_click__", ax, (.75, .75), 1)
     assert (cursor.selections[0].annotation.get_text()
-            == "x: 0.75\ny: 0.75\nz: 3")
+            == "x=0.75\ny=0.75\n[3]")
     # Moving around.
     _process_event("key_press_event", ax, (.123, .456), "shift+left")
     assert (cursor.selections[0].annotation.get_text()
-            == "x: 0\ny: 1\nz: 2")
+            == "x=0\ny=1\n[2]")
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     assert (cursor.selections[0].annotation.get_text()
-            == "x: 1\ny: 1\nz: 3")
+            == "x=1\ny=1\n[3]")
     _process_event("key_press_event", ax, (.123, .456), "shift+up")
     assert (cursor.selections[0].annotation.get_text()
-            == "x: 1\ny: 0\nz: 1")
+            == "x=1\ny=0\n[1]")
     _process_event("key_press_event", ax, (.123, .456), "shift+down")
     assert (cursor.selections[0].annotation.get_text()
-            == "x: 1\ny: 1\nz: 3")
+            == "x=1\ny=1\n[3]")
 
 
 def test_container(ax):

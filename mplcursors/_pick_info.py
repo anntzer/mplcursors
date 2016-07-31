@@ -1,5 +1,6 @@
 from collections import namedtuple
 from functools import singledispatch
+import re
 import warnings
 
 from matplotlib import cbook
@@ -212,12 +213,10 @@ def _(*args):
     x, y = sel.target
     label = sel.artist.get_label()
     # Un-space-pad the output of `format_{x,y}data`.
-    if label.startswith("_"):
-        return "x: {}\ny: {}".format(
-            ax.format_xdata(x).rstrip(), ax.format_ydata(y).rstrip())
-    else:
-        return "{}\nx: {}\ny: {}".format(
-            label, ax.format_xdata(x).rstrip(), ax.format_ydata(y).rstrip())
+    text = re.sub("[ ,] +", "\n", ax.format_coord(x, y)).strip()
+    if not label.startswith("_"):
+        text = "{}\n{}".format(label, text)
+    return text
 
 
 @get_ann_text.register(AxesImage)
@@ -226,10 +225,12 @@ def _(*args):
     artist = sel.artist
     ax = artist.axes
     x, y = sel.target
+    # Un-space-pad the output of `format_{x,y}data`.
+    text = re.sub("[ ,] +", "\n", ax.format_coord(x, y)).strip()
     event = namedtuple("event", "xdata ydata")(x, y)
-    return "x: {}\ny: {}\nz: {}".format(ax.format_xdata(x).rstrip(),
-                                        ax.format_ydata(y).rstrip(),
-                                        artist.get_cursor_data(event))
+    text += "\n[{}]".format(
+        artist.format_cursor_data(artist.get_cursor_data(event)))
+    return text
 
 
 @singledispatch
