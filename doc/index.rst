@@ -47,6 +47,18 @@ Other :class:`arguments <mplcursors.Cursor>` (which are all keyword-only)
 allow for basic customization of the `Cursor`’s behavior; please refer to the
 constructor's documentation.
 
+Activation by environment variable
+----------------------------------
+
+It is possible to use :mod:`mplcursors` without modifying *any* source
+code: setting the :envvar:`MPLCURSORS` environment variable to ``1`` or a
+JSON-encoded dict will patch :func:`plt.show <matplotlib.pyplot.show>` to
+automatically call `cursor` before displaying the figure (with the passed
+keyword arguments, if any).
+
+Note that this will only work if :mod:`mplcursors` has been installed, not if
+it is simply added to the :envvar:`PYTHONPATH`.
+
 Default UI
 ----------
 
