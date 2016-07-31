@@ -8,6 +8,7 @@ from matplotlib.collections import PathCollection
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
+from matplotlib.path import Path as MPath
 from matplotlib.text import Text
 import numpy as np
 
@@ -134,7 +135,11 @@ def _(artist, event):
             "_draw_steps_mid": cbook.pts_to_midstep,
             "_draw_steps_post": cbook.pts_to_poststep}[drawstyle]
         artist_data_xys = np.asarray(drawstyle_conv(*artist.get_xydata().T)).T
-        artist_xys = artist.get_transform().transform(artist_data_xys)
+        transform = artist.get_transform()
+        artist_xys = (
+            transform.transform(artist_data_xys) if transform.is_affine
+            # Only construct Paths if we need to follow a curved projection.
+            else transform.transform_path(MPath(artist_data_xys)).vertices)
         # Unit vectors for each segment.
         us = artist_xys[1:] - artist_xys[:-1]
         ds = np.sqrt((us ** 2).sum(-1))
@@ -150,12 +155,13 @@ def _(artist, event):
         dmin = np.sqrt(d2s[argmin])
         target = AttrArray(
             artist.axes.transData.inverted().transform_point(projs[argmin]))
-        target.index = {
-            "_draw_lines": lambda _, x, y: x + y,
-            "_draw_steps_pre": Index.pre_index,
-            "_draw_steps_mid": Index.mid_index,
-            "_draw_steps_post": Index.post_index}[drawstyle](
-                len(artist_xys), argmin, dot[argmin] / ds[argmin])
+        if transform.is_affine:  # Otherwise, all bets are off.
+            target.index = {
+                "_draw_lines": lambda _, x, y: x + y,
+                "_draw_steps_pre": Index.pre_index,
+                "_draw_steps_mid": Index.mid_index,
+                "_draw_steps_post": Index.post_index}[drawstyle](
+                    len(artist_xys), argmin, dot[argmin] / ds[argmin])
         sels.append(Selection(artist, target, dmin, None, None))
     sel = min(sels, key=lambda sel: sel.dist, default=None)
     return sel if sel and sel.dist < artist.pickradius else None
