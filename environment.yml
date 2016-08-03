@@ -1,0 +1,6 @@
+name: py35
+dependencies:
+    - python=3.5.2
+    - matplotlib=1.5.1
+    - pip:
+        - sphinx==1.4.5
