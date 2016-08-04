@@ -1,2 +1,0 @@
-- Allow moving image cursors (beware of extents...).
-- Support contour plots (they're not real `Artists`).

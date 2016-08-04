@@ -17,6 +17,8 @@ will fix some `bugs`_ related to event handling).
 
 .. _bugs: https://github.com/matplotlib/matplotlib/pull/6808
 
+.. _basic-example:
+
 Basic example
 -------------
 
@@ -33,7 +35,7 @@ Basic examples work similarly to :mod:`mpldatacursor`::
     ax.set_title("Click somewhere on a line\nRight-click to deselect\n"
                  "Annotations can be dragged.")
 
-    mplcursors.cursor(lines)
+    mplcursors.cursor(lines) # or just mplcursors.cursor()
 
     plt.show()
 
@@ -47,17 +49,27 @@ Other :class:`arguments <mplcursors.Cursor>` (which are all keyword-only)
 allow for basic customization of the `Cursor`’s behavior; please refer to the
 constructor's documentation.
 
+.. _activation-by-environment-variable:
+
 Activation by environment variable
 ----------------------------------
 
 It is possible to use :mod:`mplcursors` without modifying *any* source
-code: setting the :envvar:`MPLCURSORS` environment variable to ``1`` or a
+code: setting the :envvar:`MPLCURSORS` environment variable to a
 JSON-encoded dict will patch :func:`plt.show <matplotlib.pyplot.show>` to
 automatically call `cursor` before displaying the figure (with the passed
-keyword arguments, if any).
+keyword arguments, if any).  Typical settings include::
+
+    $ MPLCURSORS={} python foo.py
+
+and::
+
+    $ MPLCURSORS='{"hover": 1}' python foo.py
 
 Note that this will only work if :mod:`mplcursors` has been installed, not if
 it is simply added to the :envvar:`PYTHONPATH`.
+
+.. _default-ui:
 
 Default UI
 ----------
@@ -80,6 +92,8 @@ Default UI
 These bindings are all customizable via `Cursor`’s ``bindings`` keyword
 argument.
 
+.. _customization:
+
 Customization
 -------------
 
@@ -91,9 +105,9 @@ Specifically, a `Selection` has the following fields:
 
     - :attr:`artist`: the selected artist,
     - :attr:`target`: the point picked within the artist; if a point is picked
-      on a `matplotlib Line2D <matplotlib.lines.Line2D>`, the index of the
-      point is available as the :attr:`target.index` sub-attribute (for more
-      details, see :ref:`selection-indices`).
+      on a `Line2D <matplotlib.lines.Line2D>`, the index of the point is
+      available as the :attr:`target.index` sub-attribute (for more details,
+      see :ref:`selection-indices`).
     - :attr:`dist`: the distance from the point clicked to the :attr:`target`
       (mostly used to decide which ).
     - :attr:`annotation`: a `matplotlib Annotation
@@ -158,6 +172,20 @@ return a special `Index` object, with attributes :attr:`int` (the segment
 index), :attr:`x` (how far the point has advanced in the ``x`` direction) and
 :attr:`y` (how far the point has advanced in the ``y`` direction).  See
 :file:`examples/step.py` for an example.
+
+.. _complex-plots:
+
+Complex plots
+-------------
+
+Some complex plots, such as contour plots, may be partially supported,
+or not at all.  Typically, it is because they do not subclass `Artist
+<matplotlib.artist.Artist>`, and thus appear to `cursor` as a collection of
+independent artists (each contour level, in the case of coutour plots).
+
+It is usually possible, again, to hook the ``"add"`` signal to provide
+additional information in the annotation text.  See :file:`examples/coutour.py`
+for an example.
 
 
 .. toctree::

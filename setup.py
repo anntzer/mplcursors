@@ -32,14 +32,11 @@ if os.environ.get("MPLCURSORS"):
                     plt = module
                     import functools, json, mplcursors
                     options = json.loads(os.environ["MPLCURSORS"])
-                    if options:
-                        cursor_kws = (
-                            options if isinstance(options, dict) else {})
-                        @functools.wraps(plt.show)
-                        def wrapper(*args, **kwargs):
-                            mplcursors.cursor(**cursor_kws)
-                            return wrapper.__wrapped__(*args, **kwargs)
-                        plt.show = wrapper
+                    @functools.wraps(plt.show)
+                    def wrapper(*args, **kwargs):
+                        mplcursors.cursor(**options)
+                        return wrapper.__wrapped__(*args, **kwargs)
+                    plt.show = wrapper
                 spec.loader.exec_module = exec_module
                 sys.meta_path.remove(self)
             return spec
