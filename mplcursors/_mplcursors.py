@@ -3,12 +3,14 @@ from contextlib import suppress
 import copy
 from functools import partial
 from types import MappingProxyType
+import warnings
 import weakref
 from weakref import WeakKeyDictionary
 
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.cbook import CallbackRegistry
+from matplotlib.lines import Line2D
 
 from . import _pick_info
 
@@ -175,6 +177,9 @@ class Cursor:
         Emits the ``"add"`` event with the new `Selection` as argument.
         """
         # pi: "pick_info", i.e. an incomplete selection.
+        if not self._multiple:
+            while self._selections:
+                self._remove_selection(self._selections[-1])
         ann = pi.artist.axes.annotate(
             _pick_info.get_ann_text(*pi),
             xy=pi.target,
@@ -182,10 +187,9 @@ class Cursor:
         ann.draggable(use_blit=True)
         extras = []
         if self._highlight:
-            extras.append(self.add_highlight(pi.artist))
-        if not self._multiple:
-            while self._selections:
-                self._remove_selection(self._selections[-1])
+            hl = self.add_highlight(pi.artist)
+            if hl:
+                extras.append(hl)
         sel = pi._replace(annotation=ann, extras=extras)
         self._selections.append(sel)
         self._callbacks.process("add", sel)
@@ -198,10 +202,13 @@ class Cursor:
         It is up to the caller to register the artist with the proper
         `Selection` in order to ensure cleanup upon deselection.
         """
-        hl = copy.copy(artist)
-        hl.set(**default_highlight_kwargs)
-        artist.axes.add_artist(hl)
-        return hl
+        if isinstance(artist, Line2D):
+            hl = copy.copy(artist)
+            hl.set(**default_highlight_kwargs)
+            artist.axes.add_artist(hl)
+            return hl
+        else:
+            warnings.warn("Currently, only Line2Ds can be highlighted.")
 
     def connect(self, event, func=None):
         """Connect a callback to a `Cursor` event; return the callback id.

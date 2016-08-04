@@ -90,10 +90,10 @@ def test_line(ax):
 
 @pytest.mark.parametrize(
     "plotter",
-    [lambda ax, data: ax.plot(*data, "o"),
-     lambda ax, data: ax.scatter(*data)])
+    [lambda ax, *args: ax.plot(*args, "o"),
+     lambda ax, *args: ax.scatter(*args)])
 def test_scatter(ax, plotter):
-    plotter(ax, [[0, .5, 1], [0, .5, 1]])
+    plotter(ax, [0, .5, 1], [0, .5, 1])
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (.2, .2), 1)
     assert len(cursor.selections) == len(ax.texts) == 0
@@ -155,17 +155,15 @@ def test_steps_post(ax):
     assert_allclose((index.int, index.x, index.y), (0, 1, .5))
 
 
-def test_line_single_point(ax):
-    for ls in ["-", "o"]:
-        ax.cla()
-        ax.plot(0, ls)
-        ax.set(xlim=(-1, 1), ylim=(-1, 1))
-        cursor = mplcursors.cursor()
-        _process_event("__mouse_click__", ax, (_eps, _eps), 1)
-        assert len(cursor.selections) == len(ax.texts) == (ls == "o")
-        if cursor.selections:
-            assert_array_equal(np.asarray(cursor.selections[0].target), (0, 0))
-        cursor.remove()
+@pytest.mark.parametrize("ls", ["-", "o"])
+def test_line_single_point(ax, ls):
+    ax.plot(0, ls)
+    ax.set(xlim=(-1, 1), ylim=(-1, 1))
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (_eps, _eps), 1)
+    assert len(cursor.selections) == len(ax.texts) == (ls == "o")
+    if cursor.selections:
+        assert_array_equal(np.asarray(cursor.selections[0].target), (0, 0))
 
 
 def test_nan(ax):
@@ -278,11 +276,20 @@ def test_hover(ax):
 
 def test_highlight(ax):
     ax.plot([0, 1])
+    ax.set(xlim=(-1, 2), ylim=(-1, 2))
     cursor = mplcursors.cursor(highlight=True)
-    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    _process_event("__mouse_click__", ax, (0, 0), 1)
     assert ax.artists == cursor.selections[0].extras != []
     _process_event(*_get_remove_args(cursor.selections[0]))
     assert len(ax.artists) == 0
+
+
+def test_highlight_scatter(ax):
+    ax.scatter([0, 1], [2, 3])
+    ax.set(xlim=(-1, 2), ylim=(-1, 2))
+    cursor = mplcursors.cursor(highlight=True)
+    with pytest.warns(UserWarning):
+        _process_event("__mouse_click__", ax, (0, 0), 1)
 
 
 def test_callback(ax):
