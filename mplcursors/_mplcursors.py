@@ -3,14 +3,12 @@ from contextlib import suppress
 import copy
 from functools import partial
 from types import MappingProxyType
-import warnings
 import weakref
 from weakref import WeakKeyDictionary
 
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.cbook import CallbackRegistry
-from matplotlib.lines import Line2D
 
 from . import _pick_info
 
@@ -29,10 +27,15 @@ default_annotation_kwargs = MappingProxyType(dict(
         shrinkB=0,
         ec="k")))
 default_highlight_kwargs = MappingProxyType(dict(
-    c="yellow",
-    mec="yellow",
-    lw=3,
-    mew=3))
+    # Only the kwargs corresponding to properties of the artist will be passed.
+    # Line2D.
+    color="yellow",
+    markeredgecolor="yellow",
+    linewidth=3,
+    markeredgewidth=3,
+    # PathCollection.
+    facecolor="yellow",
+    edgecolor="yellow"))
 default_bindings = MappingProxyType(dict(
     select=1,
     deselect=3,
@@ -187,7 +190,7 @@ class Cursor:
         ann.draggable(use_blit=True)
         extras = []
         if self._highlight:
-            hl = self.add_highlight(pi.artist)
+            hl = self.add_highlight(*pi)
             if hl:
                 extras.append(hl)
         sel = pi._replace(annotation=ann, extras=extras)
@@ -196,19 +199,21 @@ class Cursor:
         sel.artist.figure.canvas.draw_idle()
         return sel
 
-    def add_highlight(self, artist):
+    def add_highlight(self, artist, *args, **kwargs):
         """Create, add and return a highlighting artist.
+
+        This method is should be called with an "unpacked" `Selection`,
+        possibly with some fields set to None.
 
         It is up to the caller to register the artist with the proper
         `Selection` in order to ensure cleanup upon deselection.
         """
-        if isinstance(artist, Line2D):
-            hl = copy.copy(artist)
-            hl.set(**default_highlight_kwargs)
+        hl = _pick_info.make_highlight(
+            artist, *args,
+            **{"highlight_kwargs": default_highlight_kwargs, **kwargs})
+        if hl:
             artist.axes.add_artist(hl)
             return hl
-        else:
-            warnings.warn("Currently, only Line2Ds can be highlighted.")
 
     def connect(self, event, func=None):
         """Connect a callback to a `Cursor` event; return the callback id.

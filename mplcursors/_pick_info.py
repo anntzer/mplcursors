@@ -2,7 +2,10 @@
 # PolyCollection, QuadMesh, Barbs, subclasses of AxesImage.
 
 from collections import namedtuple
-from functools import singledispatch
+import copy
+import functools
+import inspect
+from inspect import Signature, Parameter
 import re
 from unittest.mock import NonCallableMock
 import warnings
@@ -45,7 +48,7 @@ Selection.extras.__doc__ = (
     "at the same time as the annotation.")
 
 
-@singledispatch
+@functools.singledispatch
 def compute_pick(artist, event):
     """Find whether ``artist`` has been picked by ``event``.
 
@@ -54,7 +57,7 @@ def compute_pick(artist, event):
     This is a single-dispatch function; implementations for various artist
     classes follow.
     """
-    warnings.warn("Support for {} is missing.".format(type(artist)))
+    warnings.warn("Pick support for {} is missing.".format(type(artist)))
 
 
 class Index:
@@ -228,15 +231,44 @@ def _(artist, event):
     return
 
 
-@singledispatch
-def get_ann_text(*args):
-    """Compute an annotating text for a `Selection` (unpacked as ``*args``).
+def _call_with_selection(func):
+    """Decorator that passes a `Selection` built from the non-kwonly args.
+    """
+    wrapped_kwonly_params = [
+        param for param in inspect.signature(func).parameters.values()
+        if param.kind == param.KEYWORD_ONLY]
+    sel_sig = inspect.signature(Selection)
+    default_sel_sig = sel_sig.replace(
+        parameters=[param.replace(default=None) if param.default is param.empty
+                    else param
+                    for param in sel_sig.parameters.values()])
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        extra_kw = {param.name: kwargs.pop(param.name)
+                    for param in wrapped_kwonly_params if param.name in kwargs}
+        ba = default_sel_sig.bind(*args, **kwargs)
+        ba.apply_defaults()
+        sel = Selection(*ba.args, **ba.kwargs)
+        return func(sel, **extra_kw)
+    wrapper.__signature__ = Signature(
+        [Parameter("args", Parameter.VAR_POSITIONAL),
+         *wrapped_kwonly_params,
+         Parameter("kwargs", Parameter.VAR_KEYWORD)])
+    return wrapper
+
+
+@functools.singledispatch
+@_call_with_selection
+def get_ann_text(sel):
+    """Compute an annotating text for a `Selection`.
+
+    The `Selection` is built from ``*args, **kwargs``.
 
     This is a single-dispatch function; implementations for various artist
     classes follow.
     """
-    sel = Selection(*args)
-    warnings.warn("Support for {} is missing".format(type(sel.artist)))
+    warnings.warn(
+        "Annotation support for {} is missing".format(type(sel.artist)))
     return ""
 
 
@@ -244,8 +276,8 @@ def get_ann_text(*args):
 @get_ann_text.register(LineCollection)
 @get_ann_text.register(PathCollection)
 @get_ann_text.register(Patch)
-def _(*args):
-    sel = Selection(*args)
+@_call_with_selection
+def _(sel):
     ax = sel.artist.axes
     x, y = sel.target
     label = sel.artist.get_label() or ""
@@ -257,8 +289,8 @@ def _(*args):
 
 
 @get_ann_text.register(AxesImage)
-def _(*args):
-    sel = Selection(*args)
+@_call_with_selection
+def _(sel):
     artist = sel.artist
     ax = artist.axes
     x, y = sel.target
@@ -270,9 +302,12 @@ def _(*args):
     return text
 
 
-@singledispatch
-def move(*args, key):
-    """"Move" a `Selection` following a keypress.
+@functools.singledispatch
+@_call_with_selection
+def move(sel, *, key):
+    """Move a `Selection` following a keypress.
+
+    The `Selection` is built from ``*args, **kwargs``.
 
     This function is used to implement annotation displacement through the
     keyboard.
@@ -280,12 +315,12 @@ def move(*args, key):
     This is a single-dispatch function; implementations for various artist
     classes follow.
     """
-    return Selection(*args)
+    return sel
 
 
 @move.register(Line2D)
-def _(*args, key):
-    sel = Selection(*args)
+@_call_with_selection
+def _(sel, *, key):
     if not hasattr(sel.target, "index"):
         return sel
     new_idx = (int(np.ceil(sel.target.index) - 1) if key == "left"
@@ -298,8 +333,8 @@ def _(*args, key):
 
 
 @move.register(AxesImage)
-def _(*args, key):
-    sel = Selection(*args)
+@_call_with_selection
+def _(sel, *, key):
     if type(sel.artist) != AxesImage:
         # All bets are off with subclasses such as NonUniformImage.
         return sel
@@ -311,3 +346,41 @@ def _(*args, key):
     idxs %= ns
     target = (idxs + .5) / ns * (high - low) + low
     return sel._replace(target=target)
+
+
+@functools.singledispatch
+@_call_with_selection
+def make_highlight(sel, *, highlight_kwargs):
+    """Create a highlight for a `Selection`.
+
+    The `Selection` is built from ``*args, **kwargs``.
+
+    This is a single-dispatch function; implementations for various artist
+    classes follow.
+    """
+    warnings.warn(
+        "Highlight support for {} is missing".format(type(sel.artist)))
+
+
+def _set_valid_props(artist, kwargs):
+    """Set valid properties for the artist, dropping the others.
+    """
+    artist.set(**{k: kwargs[k] for k in kwargs if hasattr(artist, "set_" + k)})
+    return artist
+
+
+@make_highlight.register(Line2D)
+@_call_with_selection
+def _(sel, *, highlight_kwargs):
+    hl = copy.copy(sel.artist)
+    _set_valid_props(hl, highlight_kwargs)
+    return hl
+
+
+@make_highlight.register(PathCollection)
+@_call_with_selection
+def _(sel, *, highlight_kwargs):
+    hl = copy.copy(sel.artist)
+    hl.set_offsets(hl.get_offsets()[sel.target.index])
+    _set_valid_props(hl, highlight_kwargs)
+    return hl

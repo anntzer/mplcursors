@@ -175,7 +175,7 @@ def test_nan(ax):
 
 
 def test_image(ax):
-    ax.imshow(np.arange(4).reshape((2, 2)))
+    ax.imshow([[0, 1], [2, 3]])
     cursor = mplcursors.cursor()
     # Not picking out-of-axes or of image.
     _process_event("__mouse_click__", ax, (-1, -1), 1)
@@ -274,8 +274,12 @@ def test_hover(ax):
     assert cursor.selections[0].artist == l2
 
 
-def test_highlight(ax):
-    ax.plot([0, 1])
+@pytest.mark.parametrize(
+    "plotter",
+    [lambda ax, *args: ax.plot(*args),
+     lambda ax, *args: ax.scatter(*args)])
+def test_highlight(ax, plotter):
+    plotter(ax, [0, 1], [0, 1])
     ax.set(xlim=(-1, 2), ylim=(-1, 2))
     cursor = mplcursors.cursor(highlight=True)
     _process_event("__mouse_click__", ax, (0, 0), 1)
@@ -284,12 +288,11 @@ def test_highlight(ax):
     assert len(ax.artists) == 0
 
 
-def test_highlight_scatter(ax):
-    ax.scatter([0, 1], [2, 3])
-    ax.set(xlim=(-1, 2), ylim=(-1, 2))
+def test_misc_artists_highlight(ax):
+    ax.imshow([[0, 1], [2, 3]])
     cursor = mplcursors.cursor(highlight=True)
     with pytest.warns(UserWarning):
-        _process_event("__mouse_click__", ax, (0, 0), 1)
+        _process_event("__mouse_click__", ax, (.5, .5), 1)
 
 
 def test_callback(ax):
