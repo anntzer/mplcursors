@@ -1,5 +1,5 @@
 # Some missing Artist classes:
-# PolyCollection, QuadMesh, Barbs, subclasses of AxesImage.
+# subclasses of AxesImage, Barbs, PolyCollection, QuadMesh, Quiver
 
 from collections import namedtuple
 import copy
@@ -150,7 +150,9 @@ def _(artist, event):
         # Unit vectors for each segment.
         us = artist_xys[1:] - artist_xys[:-1]
         ds = np.sqrt((us ** 2).sum(-1))
-        us /= ds[:, None]
+        with np.errstate(invalid="ignore"):
+            # Results in 0/0 for repeated consecutive points.
+            us /= ds[:, None]
         # Vectors from each vertex to the event.
         vs = xy - artist_xys[:-1]
         # Clipped dot products.

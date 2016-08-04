@@ -174,6 +174,15 @@ def test_nan(ax):
     assert_allclose(np.asarray(cursor.selections[0].target), (.5, .5))
 
 
+@pytest.mark.skip(reason="Extra warnings due to matplotlib/matplotlib#6491.")
+def test_repeated_point(ax):
+    ax.plot([0, 1, 1, 2], [0, 1, 1, 2])
+    cursor = mplcursors.cursor()
+    with pytest.warns(None) as record:
+        _process_event("__mouse_click__", ax, (.5, .5), 1)
+    assert not record
+
+
 def test_image(ax):
     ax.imshow([[0, 1], [2, 3]])
     cursor = mplcursors.cursor()
@@ -289,6 +298,7 @@ def test_highlight(ax, plotter):
 
 
 def test_misc_artists_highlight(ax):
+    # Unsupported artists trigger a warning upon a highlighting attempt.
     ax.imshow([[0, 1], [2, 3]])
     cursor = mplcursors.cursor(highlight=True)
     with pytest.warns(UserWarning):
