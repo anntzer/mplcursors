@@ -1,4 +1,5 @@
 import gc
+from pathlib import Path
 import weakref
 
 from matplotlib import pyplot as plt
@@ -12,23 +13,36 @@ import pytest
 _eps = .001
 
 
-@pytest.yield_fixture
+@pytest.fixture(autouse=True)
+def cleanup_warnings(request):
+    @request.addfinalizer
+    def reset_warning_registry():
+        mplcursors.__warningregistry__ = {}
+
+
+@pytest.fixture
 def fig():
     fig = plt.figure(1)
     fig.clf()
-    yield fig
+    return fig
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def ax(fig):
     ax = fig.add_subplot(111)
-    yield ax
+    return ax
 
 
 @pytest.fixture(autouse=True)
 def cleanup():
     for fig in map(plt.figure, plt.get_fignums()):
         fig.clf()
+
+
+def _internal_warnings(record):
+    return [
+        warning for warning in record
+        if Path(mplcursors.__file__).parent in Path(warning.filename).parents]
 
 
 def _process_event(name, ax, coords, *args):
@@ -174,13 +188,12 @@ def test_nan(ax):
     assert_allclose(np.asarray(cursor.selections[0].target), (.5, .5))
 
 
-@pytest.mark.skip(reason="Extra warnings due to matplotlib/matplotlib#6491.")
 def test_repeated_point(ax):
     ax.plot([0, 1, 1, 2], [0, 1, 1, 2])
     cursor = mplcursors.cursor()
     with pytest.warns(None) as record:
         _process_event("__mouse_click__", ax, (.5, .5), 1)
-    assert not record
+    assert not _internal_warnings(record)
 
 
 def test_image(ax):
@@ -223,17 +236,16 @@ def test_container(ax):
     assert len(mplcursors.cursor().artists) == 3
 
 
-def test_misc_artists(ax):
-    # Texts should not trigger a warning.
-    text = ax.text(.5, .5, "foo")
-    cursor = mplcursors.cursor(text)
-    _process_event("__mouse_click__", ax, (.5, .5), 1)
-    ax.cla()
-    # Other unsupported artists should.
-    coll = ax.fill_between([0, 1], 0, 1)
-    cursor = mplcursors.cursor(coll)
-    with pytest.warns(UserWarning):
+@pytest.mark.parametrize(
+    "plotter,warns",
+    [(lambda ax: ax.text(.5, .5, "foo"), False),
+     (lambda ax: ax.fill_between([0, 1], 0, 1), True)])
+def test_misc_artists(ax, plotter, warns):
+    plotter(ax)
+    cursor = mplcursors.cursor()
+    with pytest.warns(None) as record:
         _process_event("__mouse_click__", ax, (.5, .5), 1)
+    assert len(_internal_warnings(record)) == warns
 
 
 def test_indexless_projections():

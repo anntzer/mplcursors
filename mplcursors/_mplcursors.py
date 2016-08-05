@@ -380,7 +380,8 @@ def cursor(artists_or_axes=None, **kwargs):
     for entry in artists_or_axes:
         if isinstance(entry, Axes):
             ax = entry
-            artists.extend(ax.lines + ax.patches + ax.collections + ax.images)
+            artists.extend(
+                ax.collections + ax.images + ax.lines + ax.patches + ax.texts)
             # No need to extend with each container (ax.containers): the
             # contained artists have already been added.
         else:
