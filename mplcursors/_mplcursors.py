@@ -180,9 +180,6 @@ class Cursor:
         Emits the ``"add"`` event with the new `Selection` as argument.
         """
         # pi: "pick_info", i.e. an incomplete selection.
-        if not self._multiple:
-            while self._selections:
-                self._remove_selection(self._selections[-1])
         ann = pi.artist.axes.annotate(
             _pick_info.get_ann_text(*pi),
             xy=pi.target,
@@ -196,7 +193,27 @@ class Cursor:
         sel = pi._replace(annotation=ann, extras=extras)
         self._selections.append(sel)
         self._callbacks.process("add", sel)
-        sel.artist.figure.canvas.draw_idle()
+        if (extras
+                or len(self._selections) > 1 and not self._multiple
+                or not ann.figure.canvas.supports_blit):
+            # Either:
+            #  - there may be more things to draw, or
+            #  - annotation removal will make a full redraw necessary, or
+            #  - blitting is not (yet) supported.
+            ann.figure.canvas.draw_idle()
+        else:
+            # Fast path.
+            try:
+                ann.figure.draw_artist(ann)
+                ann.figure.canvas.blit()
+            except AttributeError:  # No cached renderer yet.
+                ann.figure.canvas.draw_idle()
+        # Removal comes after addition so that the fast blitting path works.
+        # (This probably also allows weird tricks such as swapping the added
+        # selection from a callback.)
+        if not self._multiple:
+            for sel in self._selections[:-1]:
+                self._remove_selection(sel)
         return sel
 
     def add_highlight(self, artist, *args, **kwargs):
@@ -249,8 +266,8 @@ class Cursor:
         """
         for disconnect_cid in self._disconnect_cids:
             disconnect_cid()
-        while self._selections:
-            self._remove_selection(self._selections[-1])
+        for sel in self._selections[:]:
+            self._remove_selection(sel)
 
     def _on_button_press(self, event):
         if event.button == self._bindings["select"]:
