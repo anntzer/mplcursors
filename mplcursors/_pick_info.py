@@ -1,5 +1,6 @@
-# Some missing Artist classes:
-# subclasses of AxesImage, Barbs, PolyCollection, QuadMesh, Quiver
+# TODO
+# Unsupported Artist classes: subclasses of AxesImage, Barbs, PolyCollection,
+# QuadMesh, Quiver
 
 from collections import namedtuple
 import copy
@@ -383,6 +384,8 @@ def _(sel, *, highlight_kwargs):
 @_call_with_selection
 def _(sel, *, highlight_kwargs):
     hl = copy.copy(sel.artist)
-    hl.set_offsets(hl.get_offsets()[sel.target.index])
+    offsets = np.full_like(hl.get_offsets(), np.nan)
+    offsets[sel.target.index] = hl.get_offsets()[sel.target.index]
+    hl.set_offsets(offsets)
     _set_valid_props(hl, highlight_kwargs)
     return hl
