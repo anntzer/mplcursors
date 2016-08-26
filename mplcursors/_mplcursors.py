@@ -121,7 +121,6 @@ class Cursor:
         self._multiple = multiple
         self._highlight = highlight
 
-        self._axes = {artist.axes for artist in artists}
         self._enabled = True
         self._selections = []
         self._callbacks = CallbackRegistry()
@@ -162,7 +161,10 @@ class Cursor:
     def artists(self):
         """The tuple of selectable artists.
         """
-        return tuple(filter(None, (ref() for ref in self._artists)))
+        # Unfortunately, see matplotlib/matplotlib#6982: `cla()` does not clear
+        # `.axes`.
+        return tuple(artist for artist in (ref() for ref in self._artists)
+                     if artist and artist.axes)
 
     @property
     def selections(self):
@@ -289,7 +291,7 @@ class Cursor:
             return
         # Work around lack of support for twinned axes.
         per_axes_event = {ax: _reassigned_axes_event(event, ax)
-                          for ax in self._axes}
+                          for ax in {artist.axes for artist in self.artists}}
         pis = []
         for artist in self.artists:
             if (artist.axes is None  # Removed or figure-level artist.

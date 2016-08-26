@@ -127,12 +127,13 @@ def _(artist, event):
         artist_data_xys = artist.get_xydata()
         artist_xys = artist.get_transform().transform(artist_data_xys)
         d2s = ((xy - artist_xys) ** 2).sum(-1)
-        argmin = np.nanargmin(d2s)
-        dmin = np.sqrt(d2s[argmin])
-        # More precise than transforming back.
-        target = AttrArray(artist.get_xydata()[argmin])
-        target.index = argmin
-        sels.append(Selection(artist, target, dmin, None, None))
+        if not np.all(np.isnan(d2s)):
+            argmin = np.nanargmin(d2s)
+            dmin = np.sqrt(d2s[argmin])
+            # More precise than transforming back.
+            target = AttrArray(artist.get_xydata()[argmin])
+            target.index = argmin
+            sels.append(Selection(artist, target, dmin, None, None))
     # If lines are visible, find the closest projection.
     if (artist.get_linestyle() not in ["None", "none", " ", "", None]
             and len(artist.get_xydata()) > 1):
@@ -161,18 +162,19 @@ def _(artist, event):
         # Projections.
         projs = artist_xys[:-1] + dot[:, None] * us
         d2s = ((xy - projs) ** 2).sum(-1)
-        argmin = np.nanargmin(d2s)
-        dmin = np.sqrt(d2s[argmin])
-        target = AttrArray(
-            artist.axes.transData.inverted().transform_point(projs[argmin]))
-        if transform.is_affine:  # Otherwise, all bets are off.
-            target.index = {
-                "_draw_lines": lambda _, x, y: x + y,
-                "_draw_steps_pre": Index.pre_index,
-                "_draw_steps_mid": Index.mid_index,
-                "_draw_steps_post": Index.post_index}[drawstyle](
-                    len(artist_xys), argmin, dot[argmin] / ds[argmin])
-        sels.append(Selection(artist, target, dmin, None, None))
+        if not np.all(np.isnan(d2s)):
+            argmin = np.nanargmin(d2s)
+            dmin = np.sqrt(d2s[argmin])
+            target = AttrArray(artist.axes.transData.inverted()
+                               .transform_point(projs[argmin]))
+            if transform.is_affine:  # Otherwise, all bets are off.
+                target.index = {
+                    "_draw_lines": lambda _, x, y: x + y,
+                    "_draw_steps_pre": Index.pre_index,
+                    "_draw_steps_mid": Index.mid_index,
+                    "_draw_steps_post": Index.post_index}[drawstyle](
+                        len(artist_xys), argmin, dot[argmin] / ds[argmin])
+            sels.append(Selection(artist, target, dmin, None, None))
     sel = min(sels, key=lambda sel: sel.dist, default=None)
     return sel if sel and sel.dist < artist.get_pickradius() else None
 
@@ -339,7 +341,9 @@ def _(sel, *, key):
 @_call_with_selection
 def _(sel, *, key):
     if type(sel.artist) != AxesImage:
-        # All bets are off with subclasses such as NonUniformImage.
+        # All bets are off with subclasses such as NonUniformImage even if they
+        # implement `get_cursor_data` because we do not know where a given
+        # index maps back physically.
         return sel
     low, high = np.reshape(sel.artist.get_extent(), (2, 2)).T
     ns = np.asarray(sel.artist.get_array().shape)[::-1]  # (y, x) -> (x, y)

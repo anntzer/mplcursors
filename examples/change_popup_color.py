@@ -8,9 +8,9 @@ import mplcursors
 fig, axes = plt.subplots(ncols=2)
 
 left_artist = axes[0].plot(range(11))
-axes[0].set(title='No box, different position', aspect=1.0)
+axes[0].set(title='No box, different position', aspect=1)
 
-right_artist = axes[1].imshow(np.arange(100).reshape(10,10))
+right_artist = axes[1].imshow(np.arange(100).reshape(10, 10))
 axes[1].set(title='Fancy white background')
 
 # Make the text pop up "underneath" the line and remove the box...

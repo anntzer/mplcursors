@@ -13,30 +13,27 @@ import pytest
 _eps = .001
 
 
-@pytest.fixture(autouse=True)
-def cleanup_warnings(request):
-    @request.addfinalizer
-    def reset_warning_registry():
-        mplcursors.__warningregistry__ = {}
-
-
 @pytest.fixture
 def fig():
-    fig = plt.figure(1)
-    fig.clf()
-    return fig
+    return plt.figure(1)
 
 
 @pytest.fixture
 def ax(fig):
-    ax = fig.add_subplot(111)
-    return ax
+    return fig.add_subplot(111)
 
 
 @pytest.fixture(autouse=True)
 def cleanup():
     for fig in map(plt.figure, plt.get_fignums()):
         fig.clf()
+
+
+@pytest.fixture(autouse=True)
+def cleanup_warnings(request):
+    @request.addfinalizer
+    def reset_warning_registry():
+        mplcursors.__warningregistry__ = {}
 
 
 def _internal_warnings(record):
@@ -180,12 +177,17 @@ def test_line_single_point(ax, ls):
         assert_array_equal(np.asarray(cursor.selections[0].target), (0, 0))
 
 
-def test_nan(ax):
-    ax.plot([0, 1, np.nan, 3, 4])
+@pytest.mark.parametrize("plot_args,click,targets",
+                         [(([0, 1, np.nan, 3, 4],), (.5, .5), [(.5, .5)]),
+                          (([np.nan, np.nan],), (0, 0), []),
+                          (([np.nan, np.nan], "."), (0, 0), [])])
+def test_nan(ax, plot_args, click, targets):
+    ax.plot(*plot_args)
     cursor = mplcursors.cursor()
-    _process_event("__mouse_click__", ax, (.5, .5), 1)
-    assert len(cursor.selections) == len(ax.texts) == 1
-    assert_allclose(np.asarray(cursor.selections[0].target), (.5, .5))
+    _process_event("__mouse_click__", ax, click, 1)
+    assert len(cursor.selections) == len(ax.texts) == len(targets)
+    for sel, target in zip(cursor.selections, targets):
+        assert_allclose(np.asarray(sel.target), target)
 
 
 def test_repeated_point(ax):

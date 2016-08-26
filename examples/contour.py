@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import mplcursors
 
 fig, ax = plt.subplots()
-cf = ax.contour(np.random.random((10,10)))
+cf = ax.contour(np.random.random((10, 10)))
 cursor = mplcursors.cursor()
 
 @cursor.connect("add")
