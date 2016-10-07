@@ -68,4 +68,4 @@ if __name__ == "__main__":
                        "License :: OSI Approved :: BSD License",
                        "Programming Language :: Python :: 3.5"],
           packages=find_packages(include=["mplcursors", "mplcursors.*"]),
-          install_requires=["matplotlib>=1.5.0"])
+          install_requires=["numpy>=1.8", "matplotlib>=1.5"])

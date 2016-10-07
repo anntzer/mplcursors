@@ -1,5 +1,16 @@
+git:
+    depth: 1
 language: python
+cache:
+    pip: true
 python: ["3.5"]
-install: pip install . codecov pytest-cov
+env:
+    - NUMPY_VERSION='>=0' MATPLOTLIB_VERSION='>=0' # latest.
+    - NUMPY_VERSION='==1.8' MATPlOTLIB_VERSION='==1.5.0'
+install: # force installation order.
+    - |
+        for req in codecov pytest-cov numpy$NUMPY_VERSION matplotlib$MATPLOTLIB_VERSION .; do
+            pip install $req
+        done
 script: py.test --cov
 after_success: codecov
