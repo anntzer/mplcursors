@@ -12,6 +12,16 @@ Welcome to mplcursors' documentation!
 
 :mod:`mplcursors` requires Python>=3.5 and :mod:`matplotlib`\>=1.5.0.
 
+.. _installation:
+
+Installation
+------------
+
+Pick one among::
+
+    $ pip install mplcursors # from PyPI
+    $ pip install git+https://github.com/anntzer/mplcursors # from Github
+
 .. _basic-example:
 
 Basic example
@@ -27,7 +37,7 @@ Basic examples work similarly to :mod:`mpldatacursor`::
 
     fig, ax = plt.subplots()
     lines = ax.plot(data)
-    ax.set_title("Click somewhere on a line\nRight-click to deselect\n"
+    ax.set_title("Click somewhere on a line.\nRight-click to deselect.\n"
                  "Annotations can be dragged.")
 
     mplcursors.cursor(lines) # or just mplcursors.cursor()

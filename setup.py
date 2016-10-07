@@ -7,6 +7,10 @@ from setuptools.command.install_lib import install_lib
 import versioneer
 
 
+if not sys.version_info >= (3, 5):
+    raise ImportError("mplcursors require Python>=3.5")
+
+
 # Environment variable-based activation.
 #
 # Technique inspired from http://github.com/ionelmc/python-hunter.
@@ -54,18 +58,17 @@ class install_lib_with_pth(install_lib):
                 file.name, str(Path(self.install_dir, "mplcursors.pth")))
 
 
-if __name__ == "__main__":
-    if not sys.version_info >= (3, 5):
-        raise ImportError("mplcursors require Python>=3.5")
-
-    setup(name="mplcursors",
-          version=versioneer.get_version(),
-          cmdclass={**versioneer.get_cmdclass(),
-                    "install_lib": install_lib_with_pth},
-          author="Antony Lee",
-          license="BSD",
-          classifiers=["Development Status :: 4 - Beta",
-                       "License :: OSI Approved :: BSD License",
-                       "Programming Language :: Python :: 3.5"],
-          packages=find_packages(include=["mplcursors", "mplcursors.*"]),
-          install_requires=["numpy>=1.8", "matplotlib>=1.5"])
+setup(name="mplcursors",
+      description="Interactive, clickable annotations for matplotlib",
+      long_description=Path("README.rst").read_text(),
+      version=versioneer.get_version(),
+      cmdclass={**versioneer.get_cmdclass(),
+                "install_lib": install_lib_with_pth},
+      author="Antony Lee",
+      url="https://github.com/anntzer/mplcursors",
+      license="BSD",
+      classifiers=["Development Status :: 4 - Beta",
+                   "License :: OSI Approved :: BSD License",
+                   "Programming Language :: Python :: 3.5"],
+      packages=find_packages(include=["mplcursors", "mplcursors.*"]),
+      install_requires=["numpy>=1.8", "matplotlib>=1.5"])

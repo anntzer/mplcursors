@@ -1,6 +1,7 @@
 name: py35
 dependencies:
     - python=3.5.2
+    - qt=4.8.7 # conda's dependencies seem messed up.
     - matplotlib=1.5.1
     - pip:
         - sphinx==1.4.5

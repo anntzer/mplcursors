@@ -9,7 +9,7 @@ data = np.outer(range(10), range(1, 5))
 
 fig, ax = plt.subplots()
 lines = ax.plot(data)
-ax.set_title("Click somewhere on a line\nRight-click to deselect\n"
+ax.set_title("Click somewhere on a line.\nRight-click to deselect.\n"
              "Annotations can be dragged.")
 fig.tight_layout()
 
