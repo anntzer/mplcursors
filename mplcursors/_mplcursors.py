@@ -2,11 +2,11 @@ from collections.abc import Iterable
 from contextlib import suppress
 import copy
 from functools import partial
+import sys
 from types import MappingProxyType
 import weakref
 from weakref import WeakKeyDictionary
 
-from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.cbook import CallbackRegistry
 
@@ -373,9 +373,11 @@ def cursor(artists_or_axes=None, **kwargs):
     """
 
     if artists_or_axes is None:
+        # Do not import pyplot ourselves to avoid forcing the backend.
+        plt = sys.modules.get("matplotlib.pyplot")
         artists_or_axes = [ax
                            for fig in map(plt.figure, plt.get_fignums())
-                           for ax in fig.axes]
+                           for ax in fig.axes] if plt else []
     elif not isinstance(artists_or_axes, Iterable):
         artists_or_axes = [artists_or_axes]
     artists = []
