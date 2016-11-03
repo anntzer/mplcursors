@@ -71,4 +71,6 @@ setup(name="mplcursors",
                    "License :: OSI Approved :: BSD License",
                    "Programming Language :: Python :: 3.5"],
       packages=find_packages(include=["mplcursors", "mplcursors.*"]),
+      python_requires=">=3.5",
+      # numpy>=1.8 e.g. for `full_like`.
       install_requires=["numpy>=1.8", "matplotlib>=1.5"])
