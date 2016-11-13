@@ -126,10 +126,13 @@ def _(artist, event):
     if artist.get_marker() not in ["None", "none", " ", "", None]:
         artist_data_xys = artist.get_xydata()
         artist_xys = artist.get_transform().transform(artist_data_xys)
-        d2s = ((xy - artist_xys) ** 2).sum(-1)
-        if not np.all(np.isnan(d2s)):
-            argmin = np.nanargmin(d2s)
-            dmin = np.sqrt(d2s[argmin])
+        ds = np.hypot(*(xy - artist_xys).T)
+        try:
+            argmin = np.nanargmin(ds)
+        except ValueError:
+            pass
+        else:
+            dmin = ds[argmin]
             # More precise than transforming back.
             target = AttrArray(artist.get_xydata()[argmin])
             target.index = argmin
@@ -151,20 +154,23 @@ def _(artist, event):
             else transform.transform_path(MPath(artist_data_xys)).vertices)
         # Unit vectors for each segment.
         us = artist_xys[1:] - artist_xys[:-1]
-        ds = np.sqrt((us ** 2).sum(-1))
+        ls = np.hypot(*us.T)
         with np.errstate(invalid="ignore"):
             # Results in 0/0 for repeated consecutive points.
-            us /= ds[:, None]
-        # Vectors from each vertex to the event.
+            us /= ls[:, None]
+        # Vectors from each vertex to the event (overwritten below).
         vs = xy - artist_xys[:-1]
-        # Clipped dot products.
-        dot = np.clip((vs * us).sum(-1), 0, ds)
+        # Clipped dot products -- `einsum` cannot be done in place, `clip` can.
+        dot = np.clip(np.einsum("ij,ij->i", vs, us), 0, ls, out=vs[:, 0])
         # Projections.
         projs = artist_xys[:-1] + dot[:, None] * us
-        d2s = ((xy - projs) ** 2).sum(-1)
-        if not np.all(np.isnan(d2s)):
-            argmin = np.nanargmin(d2s)
-            dmin = np.sqrt(d2s[argmin])
+        ds = np.hypot(*(xy - projs).T, out=vs[:, 1])
+        try:
+            argmin = np.nanargmin(ds)
+        except ValueError:
+            pass
+        else:
+            dmin = ds[argmin]
             target = AttrArray(artist.axes.transData.inverted()
                                .transform_point(projs[argmin]))
             if transform.is_affine:  # Otherwise, all bets are off.
@@ -173,7 +179,7 @@ def _(artist, event):
                     "_draw_steps_pre": Index.pre_index,
                     "_draw_steps_mid": Index.mid_index,
                     "_draw_steps_post": Index.post_index}[drawstyle](
-                        len(artist_xys), argmin, dot[argmin] / ds[argmin])
+                        len(artist_xys), argmin, dot[argmin] / ls[argmin])
             sels.append(Selection(artist, target, dmin, None, None))
     sel = min(sels, key=lambda sel: sel.dist, default=None)
     return sel if sel and sel.dist < artist.get_pickradius() else None
@@ -214,12 +220,11 @@ def _(artist, event):
     ax = artist.axes
     idxs = info["ind"]
     offsets = artist.get_offsets()[idxs]
-    d2 = ((ax.transData.transform(offsets) -
-           [event.x, event.y]) ** 2).sum(axis=1)
-    argmin = d2.argmin()
+    ds = np.hypot(*(ax.transData.transform(offsets) - [event.x, event.y]).T)
+    argmin = ds.argmin()
     target = AttrArray(offsets[argmin])
     target.index = idxs[argmin]
-    return Selection(artist, target, np.sqrt(d2[argmin]), None, None)
+    return Selection(artist, target, ds[argmin], None, None)
 
 
 @compute_pick.register(AxesImage)
