@@ -173,10 +173,10 @@ where the point is within that segment.
 
 Such an approach does not make sense for step plots (i.e., created by
 ``plt.step`` or ``plt.plot(..., drawstyle="steps-...")``.  In this case, we
-return a special `Index` object, with attributes :attr:`int` (the segment
-index), :attr:`x` (how far the point has advanced in the ``x`` direction) and
-:attr:`y` (how far the point has advanced in the ``y`` direction).  See
-:file:`examples/step.py` for an example.
+return a special :class:`Index` object, with attributes :attr:`int` (the
+segment index), :attr:`x` (how far the point has advanced in the ``x``
+direction) and :attr:`y` (how far the point has advanced in the ``y``
+direction).  See :file:`examples/step.py` for an example.
 
 .. _complex-plots:
 
