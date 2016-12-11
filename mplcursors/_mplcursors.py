@@ -251,6 +251,16 @@ class Cursor:
             @cursor.connect("add")
             def on_add(sel):
                 ...
+
+        Examples of callbacks::
+
+            # Change the annotation text and alignment:
+            lambda sel: sel.annotation.set(
+                text=sel.artist.get_label(),  # or use e.g. sel.target.index
+                ha="center", va="bottom")
+
+            # Make label non-draggable:
+            lambda sel: sel.draggable(False)
         """
         if event not in ["add", "remove"]:
             raise ValueError("Invalid cursor event: {}".format(event))
