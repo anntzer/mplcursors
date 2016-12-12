@@ -114,8 +114,8 @@ class Index:
 @compute_pick.register(Line2D)
 def _(artist, event):
     # No need to call `line.contains` because we're going to redo
-    # the work anyways, and it was broken for step plots up to
-    # matplotlib/matplotlib#6645.
+    # the work anyways (and it was broken for step plots up to
+    # matplotlib/matplotlib#6645).
 
     # Always work in screen coordinates, as this is how we need to compute
     # distances.  Note that the artist transform may be different from the axes

@@ -9,12 +9,12 @@ from weakref import WeakKeyDictionary
 
 from matplotlib.axes import Axes
 from matplotlib.cbook import CallbackRegistry
+import numpy as np
 
 from . import _pick_info
 
 
 default_annotation_kwargs = MappingProxyType(dict(
-    xytext=(-15, 15), ha="right", va="bottom",
     textcoords="offset points",
     bbox=dict(
         boxstyle="round,pad=.5",
@@ -26,6 +26,12 @@ default_annotation_kwargs = MappingProxyType(dict(
         connectionstyle="arc3",
         shrinkB=0,
         ec="k")))
+default_annotation_positions = (
+    MappingProxyType(dict(position=(-15, 15), ha="right", va="bottom")),
+    MappingProxyType(dict(position=(15, 15), ha="left", va="bottom")),
+    MappingProxyType(dict(position=(15, -15), ha="left", va="top")),
+    MappingProxyType(dict(position=(-15, -15), ha="right", va="top")),
+)
 default_highlight_kwargs = MappingProxyType(dict(
     # Only the kwargs corresponding to properties of the artist will be passed.
     # Line2D.
@@ -45,6 +51,15 @@ default_bindings = MappingProxyType(dict(
     down="shift+down",
     toggle_visibility="d",
     toggle_enabled="t"))
+
+
+def _get_rounded_intersection_area(bbox_1, bbox_2):
+    """Compute the intersection area between two bboxes, rounded to 8 digits.
+    """
+    # The rounding allows sorting areas without floating point issues.
+    bbox = bbox_1.intersection(bbox_1, bbox_2)
+    return (round(bbox.width * bbox.height / 1e-8) * 1e-8
+            if bbox else 0)
 
 
 def _is_alive(artist):
@@ -168,7 +183,7 @@ class Cursor:
     def artists(self):
         """The tuple of selectable artists.
         """
-        # Unfortunately, see matplotlib/matplotlib#6982: `cla()` does not clear
+        # Work around matplotlib/matplotlib#6982: `cla()` does not clear
         # `.axes`.
         return tuple(filter(_is_alive, (ref() for ref in self._artists)))
 
@@ -185,12 +200,17 @@ class Cursor:
         with the added annotation set in the :attr:`annotation` field and, if
         applicable, the highlighting artist in the :attr:`extras` field.
 
-        Emits the ``"add"`` event with the new `Selection` as argument.
+        Emits the ``"add"`` event with the new `Selection` as argument.  When
+        the event is emitted, the position of the annotation is temporarily set
+        to ``(np.nan, np.nan)``; if this position is not explicitly set by a
+        callback, then a suitable position will be automatically computed.
         """
         # pi: "pick_info", i.e. an incomplete selection.
+        if pi.artist.axes.get_renderer_cache() is None:
+            pi.artist.figure.canvas.draw()
+        renderer = pi.artist.axes.get_renderer_cache()
         ann = pi.artist.axes.annotate(
-            _pick_info.get_ann_text(*pi),
-            xy=pi.target,
+            _pick_info.get_ann_text(*pi), xy=pi.target, xytext=(np.nan, np.nan),
             **default_annotation_kwargs)
         ann.draggable(use_blit=True)
         extras = []
@@ -201,6 +221,23 @@ class Cursor:
         sel = pi._replace(annotation=ann, extras=extras)
         self._selections.append(sel)
         self._callbacks.process("add", sel)
+
+        if ann.xyann == (np.nan, np.nan):
+            fig_bbox = pi.artist.figure.get_window_extent()
+            ax_bbox = pi.artist.axes.get_window_extent()
+            overlaps = []
+            for annotation_position in default_annotation_positions:
+                ann.set(**annotation_position)
+                # Work around matplotlib/matplotlib#7614: position update is
+                # missing.
+                ann.update_positions(renderer)
+                bbox = ann.get_window_extent(renderer)
+                overlaps.append(
+                    (_get_rounded_intersection_area(fig_bbox, bbox),
+                     _get_rounded_intersection_area(ax_bbox, bbox)))
+            ann.set(**default_annotation_positions[
+                max(range(len(overlaps)), key=overlaps.__getitem__)])
+
         if (extras
                 or len(self._selections) > 1 and not self._multiple
                 or not ann.figure.canvas.supports_blit):
@@ -211,11 +248,8 @@ class Cursor:
             ann.figure.canvas.draw_idle()
         else:
             # Fast path.
-            try:
-                ann.figure.draw_artist(ann)
-                ann.figure.canvas.blit()
-            except AttributeError:  # No cached renderer yet.
-                ann.figure.canvas.draw_idle()
+            ann.figure.draw_artist(ann)
+            ann.figure.canvas.blit()
         # Removal comes after addition so that the fast blitting path works.
         # (This probably also allows weird tricks such as swapping the added
         # selection from a callback.)
@@ -351,7 +385,8 @@ class Cursor:
 
     def _remove_selection(self, sel):
         self._selections.remove(sel)
-        # Work around matplotlib/matplotlib#6785.
+        # Work around matplotlib/matplotlib#6785: dragging callbacks are left
+        # connected.
         draggable = sel.annotation._draggable
         try:
             draggable.disconnect()

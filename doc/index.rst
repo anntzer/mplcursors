@@ -10,7 +10,8 @@ Welcome to mplcursors' documentation!
 :mod:`matplotlib`.  It is heavily inspired from :mod:`mpldatacursor`
 (https://github.com/joferkington/mpldatacursor), with a much simplified API.
 
-:mod:`mplcursors` requires Python>=3.5 and :mod:`matplotlib`\>=1.5.0.
+:mod:`mplcursors` requires Python>=3.5, :mod:`numpy`\>=1.8.0, and
+:mod:`matplotlib`\>=1.5.0.
 
 .. _installation:
 
@@ -162,6 +163,12 @@ also gets selected::
 Note that the paired artist will also get de-highlighted when the "first"
 artist is deselected.
 
+.. note::
+   When the callback is fired, the position of the annotating text is
+   temporarily set to ``(np.nan, np.nan)``.  This allows us to track whether
+   a callback explicitly sets this position, and, if none does, automatically
+   compute a suitable position.
+
 .. _selection-indices:
 
 Selection indices
@@ -186,7 +193,7 @@ Complex plots
 Some complex plots, such as contour plots, may be partially supported,
 or not at all.  Typically, it is because they do not subclass `Artist
 <matplotlib.artist.Artist>`, and thus appear to `cursor` as a collection of
-independent artists (each contour level, in the case of coutour plots).
+independent artists (each contour level, in the case of contour plots).
 
 It is usually possible, again, to hook the ``"add"`` signal to provide
 additional information in the annotation text.  See :file:`examples/coutour.py`
