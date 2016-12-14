@@ -17,7 +17,7 @@ cursor = mplcursors.cursor(hover=True)
 def on_add(sel):
     x, y, width, height = sel.artist.get_bbox().bounds
     sel.annotation.set(
-        text="{}: {}".format(x + width / 2, height), ha="center", va="bottom",
+        text="{}: {}".format(x + width / 2, height),
         position=(0, 20))
     sel.annotation.xy = (x + width / 2, y + height)
 

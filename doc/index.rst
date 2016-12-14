@@ -165,9 +165,12 @@ artist is deselected.
 
 .. note::
    When the callback is fired, the position of the annotating text is
-   temporarily set to ``(np.nan, np.nan)``.  This allows us to track whether
-   a callback explicitly sets this position, and, if none does, automatically
+   temporarily set to ``(nan, nan)``.  This allows us to track whether a
+   callback explicitly sets this position, and, if none does, automatically
    compute a suitable position.
+
+   Likewise, if the text alignment is not explicitly set but the position is,
+   then a suitable alignment will be automatically computed.
 
 .. _selection-indices:
 

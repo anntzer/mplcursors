@@ -1,7 +1,7 @@
 0.2
 ===
 
-- Automatic positioning of annotation text.
+- Automatic positioning and alignment of annotation text.
 
 
 0.1

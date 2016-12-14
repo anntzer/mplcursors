@@ -53,6 +53,11 @@ default_bindings = MappingProxyType(dict(
     toggle_enabled="t"))
 
 
+class _MarkedStr(str):
+    """A string subclass solely for marking purposes.
+    """
+
+
 def _get_rounded_intersection_area(bbox_1, bbox_2):
     """Compute the intersection area between two bboxes, rounded to 8 digits.
     """
@@ -201,16 +206,21 @@ class Cursor:
         applicable, the highlighting artist in the :attr:`extras` field.
 
         Emits the ``"add"`` event with the new `Selection` as argument.  When
-        the event is emitted, the position of the annotation is temporarily set
-        to ``(np.nan, np.nan)``; if this position is not explicitly set by a
+        the event is emitted, the position of the annotation is temporarily
+        set to ``(nan, nan)``; if this position is not explicitly set by a
         callback, then a suitable position will be automatically computed.
+
+        Likewise, if the text alignment is not explicitly set but the position
+        is, then a suitable alignment will be automatically computed.
         """
         # pi: "pick_info", i.e. an incomplete selection.
         if pi.artist.axes.get_renderer_cache() is None:
             pi.artist.figure.canvas.draw()
         renderer = pi.artist.axes.get_renderer_cache()
         ann = pi.artist.axes.annotate(
-            _pick_info.get_ann_text(*pi), xy=pi.target, xytext=(np.nan, np.nan),
+            _pick_info.get_ann_text(*pi), xy=pi.target,
+            xytext=(np.nan, np.nan),
+            ha=_MarkedStr("center"), va=_MarkedStr("center"),
             **default_annotation_kwargs)
         ann.draggable(use_blit=True)
         extras = []
@@ -237,6 +247,13 @@ class Cursor:
                      _get_rounded_intersection_area(ax_bbox, bbox)))
             ann.set(**default_annotation_positions[
                 max(range(len(overlaps)), key=overlaps.__getitem__)])
+        else:
+            if isinstance(ann.get_ha(), _MarkedStr):
+                ann.set_ha({-1: "right", 0: "center", 1: "left"}[
+                    np.sign(ann.xyann[0])])
+            if isinstance(ann.get_va(), _MarkedStr):
+                ann.set_va({-1: "top", 0: "center", 1: "bottom"}[
+                    np.sign(ann.xyann[1])])
 
         if (extras
                 or len(self._selections) > 1 and not self._multiple
