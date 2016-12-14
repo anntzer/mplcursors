@@ -271,7 +271,7 @@ def test_cropped_by_axes():
 
 
 def test_move(ax):
-    ax.plot([0, 1], [0, 1])
+    ax.plot([0, 1, 2], [0, 1, np.nan])
     cursor = mplcursors.cursor()
     # Nothing happens with no cursor.
     _process_event("key_press_event", ax, (.123, .456), "shift+left")
@@ -285,6 +285,10 @@ def test_move(ax):
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     assert tuple(cursor.selections[0].target) == (1, 1)
     assert cursor.selections[0].target.index == 1
+    # Skip through nan.
+    _process_event("key_press_event", ax, (.123, .456), "shift+right")
+    assert tuple(cursor.selections[0].target) == (0, 0)
+    assert cursor.selections[0].target.index == 0
 
 
 def test_hover(ax):

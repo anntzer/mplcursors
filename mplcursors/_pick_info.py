@@ -333,13 +333,16 @@ def move(sel, *, key):
 def _(sel, *, key):
     if not hasattr(sel.target, "index"):
         return sel
-    new_idx = (int(np.ceil(sel.target.index) - 1) if key == "left"
-               else int(np.floor(sel.target.index) + 1) if key == "right"
-               else sel.target.index)
-    artist_xys = sel.artist.get_xydata()
-    target = AttrArray(artist_xys[new_idx % len(artist_xys)])
-    target.index = new_idx
-    return sel._replace(target=target, dist=0)
+    while True:
+        artist_xys = sel.artist.get_xydata()
+        new_idx = (int(np.ceil(sel.target.index) - 1) if key == "left"
+                   else int(np.floor(sel.target.index) + 1) if key == "right"
+                   else sel.target.index) % len(artist_xys)
+        target = AttrArray(artist_xys[new_idx])
+        target.index = new_idx
+        sel = sel._replace(target=target, dist=0)
+        if np.isfinite(target).all():
+            return sel
 
 
 @move.register(AxesImage)
