@@ -47,6 +47,13 @@ default_bindings = MappingProxyType(dict(
     toggle_enabled="t"))
 
 
+def _is_alive(artist):
+    """Check whether an artist is still present on an axes.
+    """
+    return bool(artist and artist.axes
+                and artist.axes.findobj(lambda obj: obj is artist))
+
+
 def _reassigned_axes_event(event, ax):
     """Reassign `event` to `ax`.
     """
@@ -163,8 +170,7 @@ class Cursor:
         """
         # Unfortunately, see matplotlib/matplotlib#6982: `cla()` does not clear
         # `.axes`.
-        return tuple(artist for artist in (ref() for ref in self._artists)
-                     if artist and artist.axes)
+        return tuple(filter(_is_alive, (ref() for ref in self._artists)))
 
     @property
     def selections(self):
