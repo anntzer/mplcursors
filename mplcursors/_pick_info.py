@@ -1,6 +1,6 @@
-# TODO
-# Unsupported Artist classes: subclasses of AxesImage, Barbs, PolyCollection,
-# QuadMesh, Quiver
+# Unsupported Artist classes: subclasses of AxesImage, QuadMesh (upstream could
+# have a `format_coord`-like method); PolyCollection (picking is not well
+# defined).
 
 from collections import namedtuple
 import copy
@@ -17,6 +17,7 @@ from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from matplotlib.path import Path as MPath
+from matplotlib.quiver import Barbs, Quiver
 from matplotlib.text import Text
 import numpy as np
 
@@ -236,6 +237,21 @@ def _(artist, event):
     return Selection(artist, (event.xdata, event.ydata), 0, None, None)
 
 
+@compute_pick.register(Barbs)
+@compute_pick.register(Quiver)
+def _(artist, event):
+    offsets = artist.get_offsets()
+    ds = np.hypot(
+        *(artist.axes.transData.transform(offsets) - [event.x, event.y]).T)
+    argmin = np.nanargmin(ds)
+    if ds[argmin] < artist.get_pickradius():
+        target = AttrArray(offsets[argmin])
+        target.index = argmin
+        return Selection(artist, target, ds[argmin], None, None)
+    else:
+        return None
+
+
 @compute_pick.register(Text)
 def _(artist, event):
     return
@@ -267,6 +283,11 @@ def _call_with_selection(func):
     return wrapper
 
 
+def _format_coord_unspaced(ax, x, y):
+    # Un-space-pad the output of `format_{x,y}data`.
+    return re.sub("[ ,] +", "\n", ax.format_coord(x, y)).strip()
+
+
 @functools.singledispatch
 @_call_with_selection
 def get_ann_text(sel):
@@ -288,11 +309,9 @@ def get_ann_text(sel):
 @get_ann_text.register(Patch)
 @_call_with_selection
 def _(sel):
-    ax = sel.artist.axes
-    x, y = sel.target
-    label = sel.artist.get_label() or ""
-    # Un-space-pad the output of `format_{x,y}data`.
-    text = re.sub("[ ,] +", "\n", ax.format_coord(x, y)).strip()
+    artist = sel.artist
+    label = artist.get_label() or ""
+    text = _format_coord_unspaced(artist.axes, *sel.target)
     if re.match("[^_]", label):
         text = "{}\n{}".format(label, text)
     return text
@@ -302,13 +321,27 @@ def _(sel):
 @_call_with_selection
 def _(sel):
     artist = sel.artist
-    ax = artist.axes
-    x, y = sel.target
-    # Un-space-pad the output of `format_{x,y}data`.
-    text = re.sub("[ ,] +", "\n", ax.format_coord(x, y)).strip()
-    event = namedtuple("event", "xdata ydata")(x, y)
+    text = _format_coord_unspaced(artist.axes, *sel.target)
+    event = namedtuple("event", "xdata ydata")(*sel.target)
     text += "\n[{}]".format(
         artist.format_cursor_data(artist.get_cursor_data(event)))
+    return text
+
+
+@get_ann_text.register(Barbs)
+@get_ann_text.register(Quiver)
+@_call_with_selection
+def _(sel):
+    artist = sel.artist
+    if isinstance(artist, Barbs):
+        u, v = artist.u, artist.v
+    elif isinstance(artist, Quiver):
+        u, v = artist.U, artist.V
+    else:
+        raise TypeError("Unexpected type")
+    text = "{}\n{}".format(
+        _format_coord_unspaced(artist.axes, *sel.target),
+        (u[sel.target.index], v[sel.target.index]))
     return text
 
 
