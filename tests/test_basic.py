@@ -3,6 +3,7 @@ from pathlib import Path
 import weakref
 
 from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
 from matplotlib.backend_bases import KeyEvent, MouseEvent
 import mplcursors
 import numpy as np
@@ -99,10 +100,8 @@ def test_line(ax):
     assert len(cursor.selections) == len(ax.texts) == 1
 
 
-@pytest.mark.parametrize(
-    "plotter",
-    [lambda ax, *args: ax.plot(*args, "o"),
-     lambda ax, *args: ax.scatter(*args)])
+@pytest.mark.parametrize("plotter",
+                         [lambda ax, *args: ax.plot(*args, "o"), Axes.scatter])
 def test_scatter(ax, plotter):
     plotter(ax, [0, .5, 1], [0, .5, 1])
     cursor = mplcursors.cursor()
@@ -233,6 +232,15 @@ def test_linecollection(ax):
     assert_allclose(cursor.selections[0].target.index, (0, .5))
 
 
+@pytest.mark.parametrize("plotter",
+                         [Axes.quiver, Axes.barbs])
+def test_quiver_and_barbs(ax, plotter):
+    plotter(ax, range(3), range(3))
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (1, 0), 1)
+    assert cursor.selections[0].annotation.get_text() == "x=1\ny=0\n(1, 1)"
+
+
 def test_container(ax):
     ax.bar(range(3), [1] * 3)
     assert len(mplcursors.cursor().artists) == 3
@@ -301,10 +309,7 @@ def test_hover(ax):
     assert cursor.selections[0].artist == l2
 
 
-@pytest.mark.parametrize(
-    "plotter",
-    [lambda ax, *args: ax.plot(*args),
-     lambda ax, *args: ax.scatter(*args)])
+@pytest.mark.parametrize("plotter", [Axes.plot, Axes.scatter])
 def test_highlight(ax, plotter):
     plotter(ax, [0, 1], [0, 1])
     ax.set(xlim=(-1, 2), ylim=(-1, 2))
@@ -335,6 +340,25 @@ def test_callback(ax):
     cursor.disconnect(on_add)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert len(calls) == 1
+
+
+def test_autoalign(ax):
+    ax.plot([0, 1])
+    cursor = mplcursors.cursor()
+    @cursor.connect("add")
+    def on_add(sel):
+        sel.annotation.set(position=(-10, 0))
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    sel, = cursor.selections
+    assert (sel.annotation.get_ha() == "right"
+            and sel.annotation.get_va() == "center")
+    @cursor.connect("add")
+    def on_add(sel):
+        sel.annotation.set(ha="center", va="bottom")
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    sel, = cursor.selections
+    assert (sel.annotation.get_ha() == "center"
+            and sel.annotation.get_va() == "bottom")
 
 
 def test_removed_artist(ax):
