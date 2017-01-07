@@ -2,7 +2,7 @@
 # have a `format_coord`-like method); PolyCollection (picking is not well
 # defined).
 
-from collections import namedtuple
+from collections import ChainMap, namedtuple
 import copy
 import functools
 import inspect
@@ -37,17 +37,20 @@ Selection = namedtuple("Selection", "artist target dist annotation extras")
 # artists are already non-comparable.
 Selection.__eq__ = lambda self, other: self is other
 Selection.__ne__ = lambda self, other: self is not other
-Selection.artist.__doc__ = (
-    "The selected artist.")
-Selection.target.__doc__ = (
-    "The point picked within the artist, in data coordinates.")
-Selection.dist.__doc__ = (
-    "The distance from the click to the target, in pixels.")
-Selection.annotation.__doc__ = (
-    "The instantiated `matplotlib.text.Annotation`.")
-Selection.extras.__doc__ = (
-    "An additional list of artists (e.g., highlighters) that will be cleared "
-    "at the same time as the annotation.")
+try:
+    Selection.artist.__doc__ = (
+        "The selected artist.")
+    Selection.target.__doc__ = (
+        "The point picked within the artist, in data coordinates.")
+    Selection.dist.__doc__ = (
+        "The distance from the click to the target, in pixels.")
+    Selection.annotation.__doc__ = (
+        "The instantiated `matplotlib.text.Annotation`.")
+    Selection.extras.__doc__ = (
+        "An additional list of artists (e.g., highlighters) that will be "
+        "cleared at the same time as the annotation.")
+except AttributeError:  # Read-only in Py3.4.
+    pass
 
 
 @functools.singledispatch
@@ -130,10 +133,14 @@ def _(artist, event):
         ds = np.hypot(*(xy - artist_xys).T)
         try:
             argmin = np.nanargmin(ds)
-        except ValueError:
+            dmin = ds[argmin]
+        except (ValueError, IndexError):
+            # numpy 1.7.0's `nanargmin([nan])` returns nan, so
+            # `ds[argmin]` raises IndexError.  In later versions of numpy,
+            # `nanargmin([nan])` raises ValueError (the release notes for 1.8.0
+            # are incorrect on this topic).
             pass
         else:
-            dmin = ds[argmin]
             # More precise than transforming back.
             target = AttrArray(artist.get_xydata()[argmin])
             target.index = argmin
@@ -168,10 +175,10 @@ def _(artist, event):
         ds = np.hypot(*(xy - projs).T, out=vs[:, 1])
         try:
             argmin = np.nanargmin(ds)
-        except ValueError:
+            dmin = ds[argmin]
+        except (ValueError, IndexError):  # See above re: exceptions caught.
             pass
         else:
-            dmin = ds[argmin]
             target = AttrArray(artist.axes.transData.inverted()
                                .transform_point(projs[argmin]))
             if transform.is_affine:  # Otherwise, all bets are off.
@@ -273,13 +280,18 @@ def _call_with_selection(func):
         extra_kw = {param.name: kwargs.pop(param.name)
                     for param in wrapped_kwonly_params if param.name in kwargs}
         ba = default_sel_sig.bind(*args, **kwargs)
-        ba.apply_defaults()
+        # apply_defaults
+        ba.arguments = ChainMap(
+            ba.arguments,
+            {name: param.default
+             for name, param in default_sel_sig.parameters.items()
+             if param.default is not param.empty})
         sel = Selection(*ba.args, **ba.kwargs)
         return func(sel, **extra_kw)
     wrapper.__signature__ = Signature(
-        [Parameter("args", Parameter.VAR_POSITIONAL),
-         *wrapped_kwonly_params,
-         Parameter("kwargs", Parameter.VAR_KEYWORD)])
+        [Parameter("args", Parameter.VAR_POSITIONAL)]
+        + wrapped_kwonly_params
+        + [Parameter("kwargs", Parameter.VAR_KEYWORD)])
     return wrapper
 
 
@@ -429,8 +441,8 @@ def _(sel, *, highlight_kwargs):
 @_call_with_selection
 def _(sel, *, highlight_kwargs):
     hl = copy.copy(sel.artist)
-    offsets = np.full_like(hl.get_offsets(), np.nan)
-    offsets[sel.target.index] = hl.get_offsets()[sel.target.index]
-    hl.set_offsets(offsets)
+    offsets = hl.get_offsets()
+    hl.set_offsets(np.where(np.arange(len(offsets))[None] == sel.target.index,
+                            offsets, np.nan))
     _set_valid_props(hl, highlight_kwargs)
     return hl

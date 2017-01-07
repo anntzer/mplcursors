@@ -1,3 +1,4 @@
+from collections import ChainMap
 from pathlib import Path
 import sys
 from tempfile import NamedTemporaryFile
@@ -5,10 +6,6 @@ from tempfile import NamedTemporaryFile
 from setuptools import find_packages, setup
 from setuptools.command.install_lib import install_lib
 import versioneer
-
-
-if not sys.version_info >= (3, 5):
-    raise ImportError("mplcursors require Python>=3.5")
 
 
 # Environment variable-based activation.
@@ -60,17 +57,23 @@ class install_lib_with_pth(install_lib):
 
 setup(name="mplcursors",
       description="Interactive, clickable annotations for matplotlib",
-      long_description=Path("README.rst").read_text(),
+      long_description=open("README.rst").read(),
       version=versioneer.get_version(),
-      cmdclass={**versioneer.get_cmdclass(),
-                "install_lib": install_lib_with_pth},
+      cmdclass=ChainMap(versioneer.get_cmdclass(),
+                        {"install_lib": install_lib_with_pth}),
       author="Antony Lee",
       url="https://github.com/anntzer/mplcursors",
       license="BSD",
-      classifiers=["Development Status :: 4 - Beta",
-                   "License :: OSI Approved :: BSD License",
-                   "Programming Language :: Python :: 3.5"],
+      classifiers=[
+          "Development Status :: 4 - Beta",
+          "License :: OSI Approved :: BSD License",
+          "Programming Language :: Python :: 3.4",
+          "Programming Language :: Python :: 3.5",
+          "Programming Language :: Python :: 3.6"
+      ],
       packages=find_packages(include=["mplcursors", "mplcursors.*"]),
-      python_requires=">=3.5",
-      # numpy>=1.8 e.g. for `full_like`.
-      install_requires=["numpy>=1.8", "matplotlib>=1.5"])
+      python_requires=">=3.4",
+      install_requires=[
+          "matplotlib>=1.5"
+      ],
+      )

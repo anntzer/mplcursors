@@ -49,12 +49,12 @@ def _process_event(name, ax, coords, *args):
         _process_event("button_press_event", ax, coords, *args)
         _process_event("button_release_event", ax, coords, *args)
         return
-    display_coords = ax.transData.transform_point(coords)
+    display_coords = tuple(ax.transData.transform_point(coords))
     if name in ["button_press_event", "button_release_event",
                 "motion_notify_event", "scroll_event"]:
-        event = MouseEvent(name, ax.figure.canvas, *display_coords, *args)
+        event = MouseEvent(name, ax.figure.canvas, *(display_coords + args))
     elif name in ["key_press_event", "key_release_event"]:
-        event = KeyEvent(name, ax.figure.canvas, *args, *display_coords)
+        event = KeyEvent(name, ax.figure.canvas, *(args + display_coords))
     else:
         raise ValueError("Unknown event name {!r}".format(name))
     ax.figure.canvas.callbacks.process(name, event)
@@ -101,7 +101,8 @@ def test_line(ax):
 
 
 @pytest.mark.parametrize("plotter",
-                         [lambda ax, *args: ax.plot(*args, "o"), Axes.scatter])
+                         [lambda ax, *args: ax.plot(*args, ls="", marker="o"),
+                          Axes.scatter])
 def test_scatter(ax, plotter):
     plotter(ax, [0, .5, 1], [0, .5, 1])
     cursor = mplcursors.cursor()

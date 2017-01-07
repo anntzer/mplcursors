@@ -1,3 +1,4 @@
+from collections import ChainMap
 from collections.abc import Iterable
 from contextlib import suppress
 import copy
@@ -166,7 +167,7 @@ class Cursor:
             for pair in connect_pairs
             for canvas in {artist.figure.canvas for artist in artists}]
 
-        bindings = {**default_bindings, **bindings}
+        bindings = dict(ChainMap(bindings, default_bindings))
         if set(bindings) != set(default_bindings):
             raise ValueError("Unknown bindings")
         actually_bound = {k: v for k, v in bindings.items() if v is not None}
@@ -286,7 +287,7 @@ class Cursor:
         """
         hl = _pick_info.make_highlight(
             artist, *args,
-            **{"highlight_kwargs": default_highlight_kwargs, **kwargs})
+            **ChainMap({"highlight_kwargs": default_highlight_kwargs}, kwargs))
         if hl:
             artist.axes.add_artist(hl)
             return hl
@@ -413,7 +414,7 @@ class Cursor:
             pass
         # (end of workaround).
         # <artist>.figure will be unset so we save them first.
-        figures = {artist.figure for artist in [sel.annotation, *sel.extras]}
+        figures = {artist.figure for artist in [sel.annotation] + sel.extras}
         # ValueError is raised if the artist has already been removed.
         with suppress(ValueError):
             sel.annotation.remove()
