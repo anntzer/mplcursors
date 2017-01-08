@@ -201,11 +201,8 @@ It is usually possible, again, to hook the ``"add"`` signal to provide
 additional information in the annotation text.  See :file:`examples/coutour.py`
 for an example.
 
-
 .. toctree::
    :maxdepth: 2
-
-
 
 Indices and tables
 ==================
@@ -213,4 +210,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

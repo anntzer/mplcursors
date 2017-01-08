@@ -76,7 +76,7 @@ def _is_alive(artist):
 
 
 def _reassigned_axes_event(event, ax):
-    """Reassign `event` to `ax`.
+    """Reassign ``event`` to ``ax``.
     """
     event = copy.copy(event)
     event.xdata, event.ydata = (
@@ -156,7 +156,7 @@ class Cursor:
         connect_pairs = [("key_press_event", self._on_key_press)]
         if hover:
             if multiple:
-                raise ValueError("`hover` and `multiple` are incompatible")
+                raise ValueError("'hover' and 'multiple' are incompatible")
             connect_pairs += [
                 ("motion_notify_event", self._on_select_button_press)]
         else:
