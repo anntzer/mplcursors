@@ -6,7 +6,7 @@ from collections import ChainMap, namedtuple
 import copy
 import functools
 import inspect
-from inspect import Signature, Parameter
+from inspect import Signature
 from itertools import chain, repeat
 import re
 import warnings
@@ -328,9 +328,7 @@ def _call_with_selection(func):
         sel = Selection(*ba.args, **ba.kwargs)
         return func(sel, **extra_kw)
     wrapper.__signature__ = Signature(
-        [Parameter("args", Parameter.VAR_POSITIONAL)]
-        + wrapped_kwonly_params
-        + [Parameter("kwargs", Parameter.VAR_KEYWORD)])
+        list(sel_sig.parameters.values()) + wrapped_kwonly_params)
     return wrapper
 
 
@@ -348,9 +346,7 @@ def _format_coord_unspaced(ax, x, y):
 @functools.singledispatch
 @_call_with_selection
 def get_ann_text(sel):
-    """Compute an annotating text for a `Selection`.
-
-    The `Selection` is built from ``*args, **kwargs``.
+    """Compute an annotating text for a `Selection` (passed unpacked).
 
     This is a single-dispatch function; implementations for various artist
     classes follow.
@@ -405,9 +401,7 @@ def _(sel):
 @functools.singledispatch
 @_call_with_selection
 def move(sel, *, key):
-    """Move a `Selection` following a keypress.
-
-    The `Selection` is built from ``*args, **kwargs``.
+    """Move a `Selection` (passed unpacked) following a keypress.
 
     This function is used to implement annotation displacement through the
     keyboard.
@@ -457,8 +451,6 @@ def _(sel, *, key):
 @_call_with_selection
 def make_highlight(sel, *, highlight_kwargs):
     """Create a highlight for a `Selection`.
-
-    The `Selection` is built from ``*args, **kwargs``.
 
     This is a single-dispatch function; implementations for various artist
     classes follow.
