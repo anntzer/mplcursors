@@ -15,7 +15,7 @@ from matplotlib import cbook
 from matplotlib.collections import LineCollection, PathCollection
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
+from matplotlib.patches import Patch, PathPatch, Polygon, Rectangle
 from matplotlib.path import Path as MPath
 from matplotlib.quiver import Barbs, Quiver
 from matplotlib.text import Text
@@ -115,6 +115,42 @@ class Index:
         return cls(i, x, y)
 
 
+def _compute_projection_pick(xy, vertices):
+    """Find the closest projection of `xy` on the `vertices` broken line.
+
+    This function takes inputs in screen coordinates and returns a `Selection`
+    in screen coordinates as well.  The `Selection` `index` is returned as a
+    float.  This function returns None for degenerate inputs.
+
+    The caller is responsible for setting the `Selection` `artist`, converting
+    the target back to data coordinates, and converting the index to the proper
+    class, or removing it if the transform is not linear (as it is likely
+    invalid in that case).
+    """
+    # Unit vectors for each segment.
+    us = vertices[1:] - vertices[:-1]
+    ls = np.hypot(*us.T)
+    with np.errstate(invalid="ignore"):
+        # Results in 0/0 for repeated consecutive points.
+        us /= ls[:, None]
+    # Vectors from each vertex to the event (overwritten below).
+    vs = xy - vertices[:-1]
+    # Clipped dot products -- `einsum` cannot be done in place, `clip` can.
+    dot = np.clip(np.einsum("ij,ij->i", vs, us), 0, ls, out=vs[:, 0])
+    # Projections.
+    projs = vertices[:-1] + dot[:, None] * us
+    ds = np.hypot(*(xy - projs).T, out=vs[:, 1])
+    try:
+        argmin = np.nanargmin(ds)
+        dmin = ds[argmin]
+    except (ValueError, IndexError):  # See above re: exceptions caught.
+        return
+    else:
+        target = AttrArray(projs[argmin])
+        target.index = argmin + dot[argmin] / ls[argmin]
+        return Selection(None, target, dmin, None, None)
+
+
 @compute_pick.register(Line2D)
 def _(artist, event):
     # No need to call `line.contains` because we're going to redo
@@ -128,9 +164,8 @@ def _(artist, event):
     sels = []
     # If markers are visible, find the closest vertex.
     if artist.get_marker() not in ["None", "none", " ", "", None]:
-        artist_data_xys = artist.get_xydata()
-        artist_xys = artist.get_transform().transform(artist_data_xys)
-        ds = np.hypot(*(xy - artist_xys).T)
+        vertices = artist.get_transform().transform(artist.get_xydata())
+        ds = np.hypot(*(xy - vertices).T)
         try:
             argmin = np.nanargmin(ds)
             dmin = ds[argmin]
@@ -154,43 +189,56 @@ def _(artist, event):
             "_draw_steps_pre": cbook.pts_to_prestep,
             "_draw_steps_mid": cbook.pts_to_midstep,
             "_draw_steps_post": cbook.pts_to_poststep}[drawstyle]
-        artist_data_xys = np.asarray(drawstyle_conv(*artist.get_xydata().T)).T
+        data_xys = np.asarray(drawstyle_conv(*artist.get_xydata().T)).T
         transform = artist.get_transform()
-        artist_xys = (
-            transform.transform(artist_data_xys) if transform.is_affine
+        vertices = (
+            transform.transform(data_xys) if transform.is_affine
             # Only construct Paths if we need to follow a curved projection.
-            else transform.transform_path(MPath(artist_data_xys)).vertices)
-        # Unit vectors for each segment.
-        us = artist_xys[1:] - artist_xys[:-1]
-        ls = np.hypot(*us.T)
-        with np.errstate(invalid="ignore"):
-            # Results in 0/0 for repeated consecutive points.
-            us /= ls[:, None]
-        # Vectors from each vertex to the event (overwritten below).
-        vs = xy - artist_xys[:-1]
-        # Clipped dot products -- `einsum` cannot be done in place, `clip` can.
-        dot = np.clip(np.einsum("ij,ij->i", vs, us), 0, ls, out=vs[:, 0])
-        # Projections.
-        projs = artist_xys[:-1] + dot[:, None] * us
-        ds = np.hypot(*(xy - projs).T, out=vs[:, 1])
-        try:
-            argmin = np.nanargmin(ds)
-            dmin = ds[argmin]
-        except (ValueError, IndexError):  # See above re: exceptions caught.
-            pass
-        else:
-            target = AttrArray(artist.axes.transData.inverted()
-                               .transform_point(projs[argmin]))
-            if transform.is_affine:  # Otherwise, all bets are off.
-                target.index = {
+            else transform.transform_path(MPath(data_xys)).vertices)
+        sel = _compute_projection_pick(xy, vertices)
+        if sel is not None:
+            sel = sel._replace(artist=artist)
+            sel.target[:] = artist.axes.transData.inverted().transform_point(
+                sel.target)
+            if transform.is_affine:
+                sel.target.index = {
                     "_draw_lines": lambda _, x, y: x + y,
                     "_draw_steps_pre": Index.pre_index,
                     "_draw_steps_mid": Index.mid_index,
                     "_draw_steps_post": Index.post_index}[drawstyle](
-                        len(artist_xys), argmin, dot[argmin] / ls[argmin])
-            sels.append(Selection(artist, target, dmin, None, None))
+                        len(vertices), *divmod(sel.target.index, 1))
+            else:
+                del sel.target.index
+            sels.append(sel)
     sel = min(sels, key=lambda sel: sel.dist, default=None)
     return sel if sel and sel.dist < artist.get_pickradius() else None
+
+
+def _check_clean_path(path):
+    codes = path.codes
+    assert (codes[0], codes[-1]) == (path.MOVETO, path.STOP)
+    assert np.in1d(codes[1:-1], [path.LINETO, path.CLOSEPOLY]).all()
+
+
+@compute_pick.register(PathPatch)
+@compute_pick.register(Polygon)
+@compute_pick.register(Rectangle)
+def _(artist, event):
+    transform = artist.get_transform()
+    path = (artist.get_path().cleaned(transform) if transform.is_affine
+            # `cleaned` only handles affine transforms.
+            else transform.transform_path(artist.get_path()).cleaned())
+    # `cleaned` should return a path where the first element is `MOVETO`, the
+    # following are `LINETO` or `CLOSEPOLY`, and the last one is `STOP`.  In
+    # case of unexpected behavior, debug using `_check_clean_path(path)`.
+    vertices = path.vertices[:-1]
+    codes = path.codes[:-1]
+    vertices[codes == path.CLOSEPOLY] = vertices[0]
+    sel = _compute_projection_pick((event.x, event.y), vertices)
+    sel.target[:] = artist.axes.transData.inverted().transform_point(
+        sel.target)
+    if sel and sel.dist < 5:  # FIXME Patches do not provide `pickradius`.
+        return sel._replace(artist=artist)
 
 
 @compute_pick.register(LineCollection)
@@ -236,7 +284,6 @@ def _(artist, event):
 
 
 @compute_pick.register(AxesImage)
-@compute_pick.register(Patch)
 def _(artist, event):
     contains, _ = artist.contains(event)
     if not contains:

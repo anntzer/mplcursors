@@ -1,6 +1,9 @@
 """Display a bar's height and name on top of it upon hovering.
 
 An example of using event handlers to change the annotation text and position.
+
+Note that picking on `Patches` actually only picks their *borders*.  However,
+when hovering into a bar, the mouse will necessarily pass over such a border.
 """
 
 import string
