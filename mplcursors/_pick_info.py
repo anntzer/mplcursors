@@ -9,7 +9,6 @@ import inspect
 from inspect import Signature, Parameter
 from itertools import chain, repeat
 import re
-from unittest.mock import NonCallableMock
 import warnings
 
 from matplotlib import cbook
@@ -116,17 +115,15 @@ class Index:
         return cls(i, x, y)
 
 
-def _compute_projection_pick(xy, vertices):
-    """Find the closest projection of `xy` on the `vertices` broken line.
+def _compute_projection_pick(artist, xy, vertices):
+    """Compute `Selection` for `artist` by projecting `xy` on `vertices` line.
 
-    This function takes inputs in screen coordinates and returns a `Selection`
-    in screen coordinates as well.  The `Selection` `index` is returned as a
-    float.  This function returns None for degenerate inputs.
+    This function takes inputs in screen coordinates but returns a `Selection`
+    data screen coordinates.  The `Selection` `index` is returned as a float.
+    This function returns None for degenerate inputs.
 
-    The caller is responsible for setting the `Selection` `artist`, converting
-    the target back to data coordinates, and converting the index to the proper
-    class, or removing it if the transform is not linear (as it is likely
-    invalid in that case).
+    The caller is responsible for converting the index to the proper class if
+    needed.
     """
     # Unit vectors for each segment.
     us = vertices[1:] - vertices[:-1]
@@ -147,9 +144,11 @@ def _compute_projection_pick(xy, vertices):
     except (ValueError, IndexError):  # See above re: exceptions caught.
         return
     else:
-        target = AttrArray(projs[argmin])
-        target.index = argmin + dot[argmin] / ls[argmin]
-        return Selection(None, target, dmin, None, None)
+        target = AttrArray(
+            artist.axes.transData.inverted().transform_point(projs[argmin]))
+        if artist.get_transform().is_affine:
+            target.index = argmin + dot[argmin] / ls[argmin]
+        return Selection(artist, target, dmin, None, None)
 
 
 @compute_pick.register(Line2D)
@@ -196,20 +195,15 @@ def _(artist, event):
             transform.transform(data_xys) if transform.is_affine
             # Only construct Paths if we need to follow a curved projection.
             else transform.transform_path(MPath(data_xys)).vertices)
-        sel = _compute_projection_pick(xy, vertices)
+        sel = _compute_projection_pick(artist, xy, vertices)
         if sel is not None:
-            sel = sel._replace(artist=artist)
-            sel.target[:] = artist.axes.transData.inverted().transform_point(
-                sel.target)
-            if transform.is_affine:
+            if hasattr(sel.target, "index"):
                 sel.target.index = {
                     "_draw_lines": lambda _, x, y: x + y,
                     "_draw_steps_pre": Index.pre_index,
                     "_draw_steps_mid": Index.mid_index,
                     "_draw_steps_post": Index.post_index}[drawstyle](
                         len(vertices), *divmod(sel.target.index, 1))
-            else:
-                del sel.target.index
             sels.append(sel)
     sel = min(sels, key=lambda sel: sel.dist, default=None)
     return sel if sel and sel.dist < artist.get_pickradius() else None
@@ -235,26 +229,23 @@ def _(artist, event):
     vertices = path.vertices[:-1]
     codes = path.codes[:-1]
     vertices[codes == path.CLOSEPOLY] = vertices[0]
-    sel = _compute_projection_pick((event.x, event.y), vertices)
-    sel.target[:] = artist.axes.transData.inverted().transform_point(
-        sel.target)
+    sel = _compute_projection_pick(artist, (event.x, event.y), vertices)
     if sel and sel.dist < 5:  # FIXME Patches do not provide `pickradius`.
-        return sel._replace(artist=artist)
+        return sel
 
 
 @compute_pick.register(LineCollection)
 def _(artist, event):
-    # (Faster that iterating over all segments ourselves.)
+    # Use the C implementation to prune the list of segments.
     contains, info = artist.contains(event)
-    mock = NonCallableMock(wraps=artist)
-    mock.get_xydata = lambda: segment
-    mock.get_drawstyle = lambda: "default"
-    mock.get_marker = lambda: "none"
     segments = artist.get_segments()
     sels = []
     for index in info["ind"]:
         segment = segments[index]
-        sels.append(compute_pick.dispatch(Line2D)(mock, event))
+        sels.append(_compute_projection_pick(
+            artist,
+            (event.x, event.y),
+            artist.get_transform().transform(segment)))
     sel, index = min(((sel, idx) for idx, sel in enumerate(sels) if sel),
                      key=lambda sel_idx: sel_idx[0].dist, default=(None, None))
     if sel:
