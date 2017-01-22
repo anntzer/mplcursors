@@ -7,6 +7,7 @@ import copy
 import functools
 import inspect
 from inspect import Signature, Parameter
+from itertools import chain, repeat
 import re
 from unittest.mock import NonCallableMock
 import warnings
@@ -343,8 +344,14 @@ def _call_with_selection(func):
 
 
 def _format_coord_unspaced(ax, x, y):
-    # Un-space-pad the output of `format_{x,y}data`.
-    return re.sub("[ ,] +", "\n", ax.format_coord(x, y)).strip()
+    # Un-space-pad and remove empty coordinates from the output of
+    # `format_{x,y}data`.
+    lines = []
+    for line, exclude in zip(re.split("[ ,] +", ax.format_coord(x, y)),
+                             chain(["x=", "y=", "z="], repeat(None))):
+        if line != exclude:
+            lines.append(line)
+    return "\n".join(lines).rstrip()
 
 
 @functools.singledispatch
