@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import KeyEvent, MouseEvent
 import mplcursors
+from mplcursors import Selection
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 import pytest
@@ -68,6 +69,16 @@ def _get_remove_args(sel):
     center = ax.transData.inverted().transform_point(
         ((bbox.x0 + bbox.x1) / 2, (bbox.y0 + bbox.y1) / 2))
     return "__mouse_click__", ax, center, 3
+
+
+def test_selection_identity_comparison():
+    sel0, sel1 = [Selection(artist=None,
+                            target=np.array([0, 0]),
+                            dist=0,
+                            annotation=None,
+                            extras=[])
+                  for _ in range(2)]
+    assert sel0 != sel1
 
 
 def test_line(ax):
@@ -187,7 +198,7 @@ def test_nan(ax, plot_args, click, targets):
     _process_event("__mouse_click__", ax, click, 1)
     assert len(cursor.selections) == len(ax.texts) == len(targets)
     for sel, target in zip(cursor.selections, targets):
-        assert_allclose(np.asarray(sel.target), target)
+        assert_allclose(sel.target, target)
 
 
 def test_repeated_point(ax):
@@ -226,11 +237,31 @@ def test_image(ax):
             == "x=1\ny=1\n[3]")
 
 
+def test_image_subclass(ax):
+    # Cannot move around `PcolorImage`s.
+    ax.pcolorfast(np.arange(3) ** 2, np.arange(3) ** 2, np.zeros((2, 2)))
+    cursor = mplcursors.cursor()
+    with pytest.warns(UserWarning):
+        _process_event("__mouse_click__", ax, (1, 1), 1)
+    assert len(cursor.selections) == 0
+
+
 def test_linecollection(ax):
     ax.eventplot([0, 1])
     cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (0, .5), 1)
+    assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, 1), 1)
     assert_allclose(cursor.selections[0].target.index, (0, .5))
+
+
+def test_bar(ax):
+    ax.bar(0, 1)
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (0, .5), 1)
+    assert len(cursor.selections) == 0
+    _process_event("__mouse_click__", ax, (0, 1), 1)
+    assert_allclose(cursor.selections[0].target, (0, 1))
 
 
 @pytest.mark.parametrize("plotter",
@@ -238,6 +269,8 @@ def test_linecollection(ax):
 def test_quiver_and_barbs(ax, plotter):
     plotter(ax, range(3), range(3))
     cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (.5, 0), 1)
+    assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (1, 0), 1)
     assert cursor.selections[0].annotation.get_text() == "x=1\ny=0\n(1, 1)"
 

@@ -76,7 +76,7 @@ def _is_alive(artist):
 
 
 def _reassigned_axes_event(event, ax):
-    """Reassign ``event`` to ``ax``.
+    """Reassign *event* to *ax*.
     """
     event = copy.copy(event)
     event.xdata, event.ydata = (

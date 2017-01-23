@@ -19,6 +19,7 @@ from matplotlib.patches import Patch, PathPatch, Polygon, Rectangle
 from matplotlib.path import Path as MPath
 from matplotlib.quiver import Barbs, Quiver
 from matplotlib.text import Text
+from matplotlib.transforms import Affine2D
 import numpy as np
 
 
@@ -55,7 +56,7 @@ except AttributeError:  # Read-only in Py3.4.
 
 @functools.singledispatch
 def compute_pick(artist, event):
-    """Find whether ``artist`` has been picked by ``event``.
+    """Find whether *artist* has been picked by *event*.
 
     If it has, return the appropriate `Selection`; otherwise return ``None``.
 
@@ -84,24 +85,27 @@ class Index:
         return format(self, "")
 
     @classmethod
-    def pre_index(cls, n_pts, raw_index, frac):
-        i, odd = divmod(raw_index, 2)
+    def pre_index(cls, n_pts, index):
+        i, frac = divmod(index, 1)
+        i, odd = divmod(i, 2)
         x, y = (0, frac) if not odd else (frac, 1)
         return cls(i, x, y)
 
     @classmethod
-    def post_index(cls, n_pts, raw_index, frac):
-        i, odd = divmod(raw_index, 2)
+    def post_index(cls, n_pts, index):
+        i, frac = divmod(index, 1)
+        i, odd = divmod(i, 2)
         x, y = (frac, 0) if not odd else (1, frac)
         return cls(i, x, y)
 
     @classmethod
-    def mid_index(cls, n_pts, raw_index, frac):
-        if raw_index == 0:
+    def mid_index(cls, n_pts, index):
+        i, frac = divmod(index, 1)
+        if i == 0:
             frac = .5 + frac / 2
-        elif raw_index == n_pts - 2:  # One less line than points.
+        elif i == 2 * n_pts - 2:  # One less line than points.
             frac = frac / 2
-        quot, odd = divmod(raw_index, 2)
+        quot, odd = divmod(i, 2)
         if not odd:
             if frac < .5:
                 i = quot - 1
@@ -115,16 +119,44 @@ class Index:
         return cls(i, x, y)
 
 
-def _compute_projection_pick(artist, xy, vertices):
-    """Compute `Selection` for `artist` by projecting `xy` on `vertices` line.
+def _check_clean_path(path):
+    codes = path.codes
+    assert (codes[0], codes[-1]) == (path.MOVETO, path.STOP)
+    assert np.in1d(codes[1:-1], [path.LINETO, path.CLOSEPOLY]).all()
 
-    This function takes inputs in screen coordinates but returns a `Selection`
-    data screen coordinates.  The `Selection` `index` is returned as a float.
-    This function returns None for degenerate inputs.
+
+def _compute_projection_pick(artist, path_or_vertices, xy):
+    """Project *xy* on *path_or_vertices* to obtain a `Selection` for *artist*.
+
+    *path* is first transformed to screen coordinates using the artist
+    transform, and the target of the returned `Selection` is transformed
+    back to data coordinates using the artist *axes* inverse transform.
+    The `Selection` `index` is returned as a float.  This function returns
+    ``None`` for degenerate inputs.
 
     The caller is responsible for converting the index to the proper class if
     needed.
     """
+    transform = artist.get_transform().frozen()
+    if isinstance(path_or_vertices, np.ndarray):
+        vertices = path_or_vertices
+        vertices = (transform.transform(vertices) if transform.is_affine
+                    # Geo transforms perform interpolation.
+                    else transform.transform_path(MPath(vertices)).vertices)
+    elif isinstance(path_or_vertices, MPath):
+        path = path_or_vertices
+        path = (path.cleaned(transform) if transform.is_affine
+                # `cleaned` only handles affine transforms.
+                else transform.transform_path(path).cleaned())
+        # `cleaned` should return a path where the first element is
+        # `MOVETO`, the following are `LINETO` or `CLOSEPOLY`, and the
+        # last one is `STOP`.  In case of unexpected behavior, debug using
+        # `_check_clean_path(path)`.
+        vertices = path.vertices[:-1]
+        codes = path.codes[:-1]
+        vertices[codes == path.CLOSEPOLY] = vertices[0]
+    else:
+        raise TypeError("Unexpected input type")
     # Unit vectors for each segment.
     us = vertices[1:] - vertices[:-1]
     ls = np.hypot(*us.T)
@@ -146,7 +178,7 @@ def _compute_projection_pick(artist, xy, vertices):
     else:
         target = AttrArray(
             artist.axes.transData.inverted().transform_point(projs[argmin]))
-        if artist.get_transform().is_affine:
+        if transform.is_affine:
             target.index = argmin + dot[argmin] / ls[argmin]
         return Selection(artist, target, dmin, None, None)
 
@@ -161,11 +193,11 @@ def _(artist, event):
     # distances.  Note that the artist transform may be different from the axes
     # transform (e.g., for axvline).
     xy = event.x, event.y
+    data_xy = artist.get_xydata()
     sels = []
     # If markers are visible, find the closest vertex.
     if artist.get_marker() not in ["None", "none", " ", "", None]:
-        vertices = artist.get_transform().transform(artist.get_xydata())
-        ds = np.hypot(*(xy - vertices).T)
+        ds = np.hypot(*(xy - artist.get_transform().transform(data_xy)).T)
         try:
             argmin = np.nanargmin(ds)
             dmin = ds[argmin]
@@ -189,63 +221,37 @@ def _(artist, event):
             "_draw_steps_pre": cbook.pts_to_prestep,
             "_draw_steps_mid": cbook.pts_to_midstep,
             "_draw_steps_post": cbook.pts_to_poststep}[drawstyle]
-        data_xys = np.asarray(drawstyle_conv(*artist.get_xydata().T)).T
-        transform = artist.get_transform()
-        vertices = (
-            transform.transform(data_xys) if transform.is_affine
-            # Only construct Paths if we need to follow a curved projection.
-            else transform.transform_path(MPath(data_xys)).vertices)
-        sel = _compute_projection_pick(artist, xy, vertices)
+        sel = _compute_projection_pick(
+            artist, np.asarray(drawstyle_conv(*data_xy.T)).T, xy)
         if sel is not None:
             if hasattr(sel.target, "index"):
                 sel.target.index = {
-                    "_draw_lines": lambda _, x, y: x + y,
+                    "_draw_lines": lambda _, index: index,
                     "_draw_steps_pre": Index.pre_index,
                     "_draw_steps_mid": Index.mid_index,
                     "_draw_steps_post": Index.post_index}[drawstyle](
-                        len(vertices), *divmod(sel.target.index, 1))
+                        len(data_xy), sel.target.index)
             sels.append(sel)
     sel = min(sels, key=lambda sel: sel.dist, default=None)
     return sel if sel and sel.dist < artist.get_pickradius() else None
-
-
-def _check_clean_path(path):
-    codes = path.codes
-    assert (codes[0], codes[-1]) == (path.MOVETO, path.STOP)
-    assert np.in1d(codes[1:-1], [path.LINETO, path.CLOSEPOLY]).all()
 
 
 @compute_pick.register(PathPatch)
 @compute_pick.register(Polygon)
 @compute_pick.register(Rectangle)
 def _(artist, event):
-    transform = artist.get_transform()
-    path = (artist.get_path().cleaned(transform) if transform.is_affine
-            # `cleaned` only handles affine transforms.
-            else transform.transform_path(artist.get_path()).cleaned())
-    # `cleaned` should return a path where the first element is `MOVETO`, the
-    # following are `LINETO` or `CLOSEPOLY`, and the last one is `STOP`.  In
-    # case of unexpected behavior, debug using `_check_clean_path(path)`.
-    vertices = path.vertices[:-1]
-    codes = path.codes[:-1]
-    vertices[codes == path.CLOSEPOLY] = vertices[0]
-    sel = _compute_projection_pick(artist, (event.x, event.y), vertices)
+    sel = _compute_projection_pick(
+        artist, artist.get_path(), (event.x, event.y))
     if sel and sel.dist < 5:  # FIXME Patches do not provide `pickradius`.
         return sel
 
 
 @compute_pick.register(LineCollection)
 def _(artist, event):
-    # Use the C implementation to prune the list of segments.
     contains, info = artist.contains(event)
-    segments = artist.get_segments()
-    sels = []
-    for index in info["ind"]:
-        segment = segments[index]
-        sels.append(_compute_projection_pick(
-            artist,
-            (event.x, event.y),
-            artist.get_transform().transform(segment)))
+    paths = artist.get_paths()
+    sels = [_compute_projection_pick(artist, paths[ind], (event.x, event.y))
+            for ind in info["ind"]]
     sel, index = min(((sel, idx) for idx, sel in enumerate(sels) if sel),
                      key=lambda sel_idx: sel_idx[0].dist, default=(None, None))
     if sel:
@@ -256,27 +262,50 @@ def _(artist, event):
 
 @compute_pick.register(PathCollection)
 def _(artist, event):
+    # Use the C implementation to prune the list of segments.
     contains, info = artist.contains(event)
     if not contains:
         return
-    # Snapping, really only works for scatter plots (for example,
-    # `PathCollection`s created through `matplotlib.tri` are unsupported).
-    if len(artist.get_paths()) != 1:
-        warnings.warn("Only PathCollections created through `plt.scatter` are "
-                      "supported.")
-        return
-    ax = artist.axes
-    idxs = info["ind"]
-    offsets = artist.get_offsets()[idxs]
-    ds = np.hypot(*(ax.transData.transform(offsets) - [event.x, event.y]).T)
-    argmin = ds.argmin()
-    target = AttrArray(offsets[argmin])
-    target.index = idxs[argmin]
-    return Selection(artist, target, ds[argmin], None, None)
+    offsets = artist.get_offsets()
+    paths = artist.get_paths()
+    if type(artist) == PathCollection and len(paths) == 1:
+        # Likely created through `scatter`, so snap it.  See
+        # matplotlib/examples/misc/contour_manual.py for an incorrect guess...
+        ax = artist.axes
+        inds = info["ind"]
+        offsets = offsets[inds]
+        ds = np.hypot(*(ax.transData.transform(offsets)
+                        - [event.x, event.y]).T)
+        argmin = ds.argmin()
+        target = AttrArray(offsets[argmin])
+        target.index = inds[argmin]
+        return Selection(artist, target, ds[argmin], None, None)
+    else:
+        # Note that this won't select implicitly closed paths.
+        sels = [
+            _compute_projection_pick(
+                artist,
+                Affine2D().translate(*offsets[ind % len(offsets)])
+                .transform_path(paths[ind % len(paths)]),
+                (event.x, event.y))
+            for ind in info["ind"]]
+        sel, index = min(((sel, idx) for idx, sel in enumerate(sels) if sel),
+                         key=lambda sel_idx: sel_idx[0].dist,
+                         default=(None, None))
+        if sel:
+            sel = sel._replace(artist=artist)
+            sel.target.index = (index, getattr(sel.target, "index", None))
+        return sel
 
 
 @compute_pick.register(AxesImage)
 def _(artist, event):
+    if type(artist) != AxesImage:
+        # Skip and warn on subclasses (`NonUniformImage`, `PcolorImage`) as
+        # they do not implement `contains` correctly.  Even if they did, they
+        # would not support moving as we do not know where a given index maps
+        # back physically.
+        return compute_pick.dispatch(object)(artist, event)
     contains, _ = artist.contains(event)
     if not contains:
         return
@@ -333,14 +362,12 @@ def _call_with_selection(func):
 
 
 def _format_coord_unspaced(ax, x, y):
-    # Un-space-pad and remove empty coordinates from the output of
-    # `format_{x,y}data`.
-    lines = []
-    for line, exclude in zip(re.split("[ ,] +", ax.format_coord(x, y)),
-                             chain(["x=", "y=", "z="], repeat(None))):
-        if line != exclude:
-            lines.append(line)
-    return "\n".join(lines).rstrip()
+    # Un-space-pad, remove empty coordinates from the output of
+    # `format_{x,y}data`, and rejoin with newlines.
+    return "\n".join(
+        line for line, empty in zip(re.split("[ ,] +", ax.format_coord(x, y)),
+                                    chain(["x=", "y=", "z="], repeat(None)))
+        if line != empty).rstrip()
 
 
 @functools.singledispatch
@@ -432,11 +459,6 @@ def _(sel, *, key):
 @move.register(AxesImage)
 @_call_with_selection
 def _(sel, *, key):
-    if type(sel.artist) != AxesImage:
-        # All bets are off with subclasses such as NonUniformImage even if they
-        # implement `get_cursor_data` because we do not know where a given
-        # index maps back physically.
-        return sel
     low, high = np.reshape(sel.artist.get_extent(), (2, 2)).T
     ns = np.asarray(sel.artist.get_array().shape)[::-1]  # (y, x) -> (x, y)
     idxs = ((sel.target - low) / (high - low) * ns).astype(int)
