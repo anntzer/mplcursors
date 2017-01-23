@@ -349,5 +349,5 @@ intersphinx_mapping = {'matplotlib': ('http://matplotlib.org', None),
                        'pandas': ('http://pandas.pydata.org/pandas-docs/stable', None)}
 
 
-# Additional customizations
+# Additional customizations.
 autodoc_member_order = 'bysource'

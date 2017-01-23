@@ -3,6 +3,7 @@
 # defined).
 
 from collections import ChainMap, namedtuple
+from contextlib import suppress
 import copy
 import functools
 import inspect
@@ -10,8 +11,10 @@ from inspect import Signature
 from itertools import chain, repeat
 import re
 import warnings
+from weakref import WeakSet
 
 from matplotlib import cbook
+from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection, PathCollection
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
@@ -21,6 +24,35 @@ from matplotlib.quiver import Barbs, Quiver
 from matplotlib.text import Text
 from matplotlib.transforms import Affine2D
 import numpy as np
+
+
+def _register_scatter():
+    """Patch `PathCollection` and `scatter` to register their return values.
+
+    This registration allows us to distinguish `PathCollection`s created by
+    `Axes.scatter`, which should use point-like picking, from others, which
+    should use path-like picking.  The former is more common, so we store the
+    latter instead; this also lets us guess the type better if this module is
+    imported late.
+    """
+
+    @functools.wraps(PathCollection.__init__)
+    def __init__(self, *args, **kwargs):
+        _nonscatter_pathcollections.add(self)
+        return __init__.__wrapped__(self, *args, **kwargs)
+    PathCollection.__init__ = __init__
+
+    @functools.wraps(Axes.scatter)
+    def scatter(*args, **kwargs):
+        paths = scatter.__wrapped__(*args, **kwargs)
+        with suppress(KeyError):
+            _nonscatter_pathcollections.remove(paths)
+        return paths
+    Axes.scatter = scatter
+
+
+_nonscatter_pathcollections = WeakSet()
+_register_scatter()
 
 
 class AttrArray(np.ndarray):
@@ -130,9 +162,9 @@ def _compute_projection_pick(artist, path_or_vertices, xy):
 
     *path* is first transformed to screen coordinates using the artist
     transform, and the target of the returned `Selection` is transformed
-    back to data coordinates using the artist *axes* inverse transform.
-    The `Selection` `index` is returned as a float.  This function returns
-    ``None`` for degenerate inputs.
+    back to data coordinates using the artist *axes* inverse transform.  The
+    `Selection` `index` is returned as a float.  This function returns ``None``
+    for degenerate inputs.
 
     The caller is responsible for converting the index to the proper class if
     needed.
@@ -268,9 +300,8 @@ def _(artist, event):
         return
     offsets = artist.get_offsets()
     paths = artist.get_paths()
-    if type(artist) == PathCollection and len(paths) == 1:
-        # Likely created through `scatter`, so snap it.  See
-        # matplotlib/examples/misc/contour_manual.py for an incorrect guess...
+    if artist not in _nonscatter_pathcollections:
+        # i.e., the result of a `scatter` call.
         ax = artist.axes
         inds = info["ind"]
         offsets = offsets[inds]
@@ -501,7 +532,7 @@ def _(sel, *, highlight_kwargs):
 def _(sel, *, highlight_kwargs):
     hl = copy.copy(sel.artist)
     offsets = hl.get_offsets()
-    hl.set_offsets(np.where(np.arange(len(offsets))[None] == sel.target.index,
-                            offsets, np.nan))
+    hl.set_offsets(np.where(
+        np.arange(len(offsets))[:, None] == sel.target.index, offsets, np.nan))
     _set_valid_props(hl, highlight_kwargs)
     return hl
