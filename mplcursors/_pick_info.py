@@ -8,7 +8,8 @@ import copy
 import functools
 import inspect
 from inspect import Signature
-from itertools import chain, repeat
+import itertools
+from numbers import Integral
 import re
 import warnings
 from weakref import WeakSet
@@ -16,6 +17,7 @@ from weakref import WeakSet
 from matplotlib import cbook
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection, PathCollection
+from matplotlib.container import BarContainer, ErrorbarContainer, StemContainer
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, PathPatch, Polygon, Rectangle
@@ -24,6 +26,9 @@ from matplotlib.quiver import Barbs, Quiver
 from matplotlib.text import Text
 from matplotlib.transforms import Affine2D
 import numpy as np
+
+
+Integral.register(np.integer)  # Back-compatibility for numpy 1.7, 1.8.
 
 
 def _register_scatter():
@@ -53,6 +58,27 @@ def _register_scatter():
 
 _nonscatter_pathcollections = WeakSet()
 _register_scatter()
+
+
+def _artist_in_container(container):
+    return next(filter(None, cbook.flatten(container)))
+
+
+class ContainerArtist:
+    """Workaround to make containers behave more like artists.
+    """
+
+    def __init__(self, container):
+        self.container = container  # Guaranteed to be nonempty.
+        # We can't weakref the Container (which subclasses tuple), so
+        # we instead create a reference cycle between the Container and
+        # the ContainerArtist; as no one else strongly references the
+        # ContainerArtist, it will get GC'd whenever the Container is.
+        vars(container).setdefault(
+            "_{}__keep_alive".format(__class__.__name__), []).append(self)
+
+    figure = property(lambda self: _artist_in_container(self.container).figure)
+    axes = property(lambda self: _artist_in_container(self.container).axes)
 
 
 class AttrArray(np.ndarray):
@@ -284,8 +310,9 @@ def _(artist, event):
     paths = artist.get_paths()
     sels = [_compute_projection_pick(artist, paths[ind], (event.x, event.y))
             for ind in info["ind"]]
-    sel, index = min(((sel, idx) for idx, sel in enumerate(sels) if sel),
-                     key=lambda sel_idx: sel_idx[0].dist, default=(None, None))
+    sel, index = min(
+        ((sel, info["ind"][idx]) for idx, sel in enumerate(sels) if sel),
+        key=lambda sel_idx: sel_idx[0].dist, default=(None, None))
     if sel:
         sel = sel._replace(artist=artist)
         sel.target.index = (index, getattr(sel.target, "index", None))
@@ -363,6 +390,70 @@ def _(artist, event):
     return
 
 
+@compute_pick.register(ContainerArtist)
+def _(artist, event):
+    sel = compute_pick(artist.container, event)
+    if sel:
+        sel = sel._replace(artist=artist)
+    return sel
+
+
+@compute_pick.register(BarContainer)
+def _(container, event):
+    try:
+        patch, = {patch for patch in container.patches
+                  if patch.contains(event)[0]}
+    except ValueError:
+        return
+    sel = Selection(None, [event.xdata, event.ydata], 0, None, None)
+    if patch.sticky_edges.x:
+        sel.target[0], = (
+            x for x in [patch.get_x(), patch.get_x() + patch.get_width()]
+            if x not in patch.sticky_edges.x)
+    if patch.sticky_edges.y:
+        sel.target[1], = (
+            y for y in [patch.get_y(), patch.get_y() + patch.get_height()]
+            if y not in patch.sticky_edges.y)
+    return sel
+
+
+@compute_pick.register(ErrorbarContainer)
+def _(container, event):
+    data_line, cap_lines, err_lcs = container
+    sel_data = compute_pick(data_line, event) if data_line else None
+    sel_err = min(
+        filter(None, (compute_pick(err_lc, event) for err_lc in err_lcs)),
+        key=lambda sel: sel.dist, default=None)
+    if (sel_data and sel_data.dist < getattr(sel_err, "dist", np.inf)):
+        return sel_data
+    elif sel_err:
+        idx, _ = sel_err.target.index
+        if data_line:
+            target = AttrArray(data_line.get_xydata()[idx])
+            target.index = idx
+        else:  # We can't guess the original data in that case!
+            return
+        return Selection(None, target, 0, None, None)
+    else:
+        return
+
+
+@compute_pick.register(StemContainer)
+def _(container, event):
+    sel = compute_pick(container.markerline, event)
+    if sel:
+        return sel
+    idx_sel = min(filter(lambda idx_sel: idx_sel[1] is not None,
+                         ((idx, compute_pick(line, event))
+                          for idx, line in enumerate(container.stemlines))),
+                  key=lambda idx_sel: idx_sel[1].dist, default=None)
+    if idx_sel:
+        idx, _ = idx_sel
+        target = AttrArray(container.stemlines[idx].get_xydata()[-1])
+        target.index = idx
+        return Selection(None, target, 0, None, None)
+
+
 def _call_with_selection(func):
     """Decorator that passes a `Selection` built from the non-kwonly args.
     """
@@ -392,12 +483,13 @@ def _call_with_selection(func):
     return wrapper
 
 
-def _format_coord_unspaced(ax, x, y):
+def _format_coord_unspaced(ax, xy):
     # Un-space-pad, remove empty coordinates from the output of
     # `format_{x,y}data`, and rejoin with newlines.
     return "\n".join(
-        line for line, empty in zip(re.split("[ ,] +", ax.format_coord(x, y)),
-                                    chain(["x=", "y=", "z="], repeat(None)))
+        line for line, empty in zip(
+            re.split("[ ,] +", ax.format_coord(*xy)),
+            itertools.chain(["x=", "y=", "z="], itertools.repeat(None)))
         if line != empty).rstrip()
 
 
@@ -422,7 +514,7 @@ def get_ann_text(sel):
 def _(sel):
     artist = sel.artist
     label = artist.get_label() or ""
-    text = _format_coord_unspaced(artist.axes, *sel.target)
+    text = _format_coord_unspaced(artist.axes, sel.target)
     if re.match("[^_]", label):
         text = "{}\n{}".format(label, text)
     return text
@@ -432,7 +524,7 @@ def _(sel):
 @_call_with_selection
 def _(sel):
     artist = sel.artist
-    text = _format_coord_unspaced(artist.axes, *sel.target)
+    text = _format_coord_unspaced(artist.axes, sel.target)
     event = namedtuple("event", "xdata ydata")(*sel.target)
     text += "\n[{}]".format(
         artist.format_cursor_data(artist.get_cursor_data(event)))
@@ -451,9 +543,53 @@ def _(sel):
     else:
         raise TypeError("Unexpected type")
     text = "{}\n{}".format(
-        _format_coord_unspaced(artist.axes, *sel.target),
+        _format_coord_unspaced(artist.axes, sel.target),
         (u[sel.target.index], v[sel.target.index]))
     return text
+
+
+@get_ann_text.register(ContainerArtist)
+@_call_with_selection
+def _(sel):
+    return get_ann_text(*sel._replace(artist=sel.artist.container))
+
+
+@get_ann_text.register(BarContainer)
+@_call_with_selection
+def _(sel):
+    return _format_coord_unspaced(
+        _artist_in_container(sel.artist).axes, sel.target)
+
+
+@get_ann_text.register(ErrorbarContainer)
+@_call_with_selection
+def _(sel):
+    data_line, cap_lines, err_lcs = sel.artist
+    ann_text = get_ann_text(*sel._replace(artist=data_line))
+    if isinstance(sel.target.index, Integral):
+        err_lcs = iter(err_lcs)
+        for idx, (dir, has) in enumerate(
+                zip("xy", [sel.artist.has_xerr, sel.artist.has_yerr])):
+            if has:
+                err = (next(err_lcs).get_paths()[sel.target.index].vertices
+                       - data_line.get_xydata()[sel.target.index])[:, idx]
+                fmt = getattr(_artist_in_container(sel.artist).axes,
+                              "format_{}data".format(dir))
+                *err_s, = map(fmt, err)
+                err_s = [("+" if not s.startswith(("+", "-")) else "") + s
+                         for s in err_s]
+                ann_text = re.sub(
+                    "({})=(.*)(\n?)".format(dir),
+                    r"\1=$\2_{{{}}}^{{{}}}$\3".format(*err_s)
+                    if err.sum() else r"\1=$\2\pm{}$".format(fmt(err[1])),
+                    ann_text)
+    return ann_text
+
+
+@get_ann_text.register(StemContainer)
+@_call_with_selection
+def _(sel):
+    return get_ann_text(*sel._replace(artist=sel.artist.markerline))
 
 
 @functools.singledispatch

@@ -8,8 +8,11 @@ from types import MappingProxyType
 import weakref
 from weakref import WeakKeyDictionary
 
+from matplotlib import cbook
+from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.cbook import CallbackRegistry
+from matplotlib.container import Container
 import numpy as np
 
 from . import _pick_info
@@ -72,7 +75,9 @@ def _is_alive(artist):
     """Check whether an artist is still present on an axes.
     """
     return bool(artist and artist.axes
-                and artist.axes.findobj(lambda obj: obj is artist))
+                and (artist.container in artist.axes.containers
+                     if isinstance(artist, _pick_info.ContainerArtist)
+                     else artist.axes.findobj(lambda obj: obj is artist)))
 
 
 def _reassigned_axes_event(event, ax):
@@ -139,7 +144,7 @@ class Cursor:
             Whether to select artists upon hovering instead of by clicking.
         """
 
-        artists = list(artists)
+        *artists, = artists
         # Be careful with GC.
         self._artists = [weakref.ref(artist) for artist in artists]
 
@@ -162,7 +167,7 @@ class Cursor:
         else:
             connect_pairs += [
                 ("button_press_event", self._on_button_press)]
-        self._disconnect_cids = [
+        self._disconnectors = [
             partial(canvas.mpl_disconnect, canvas.mpl_connect(*pair))
             for pair in connect_pairs
             for canvas in {artist.figure.canvas for artist in artists}]
@@ -185,19 +190,15 @@ class Cursor:
     def enabled(self, value):
         self._enabled = value
 
-    @property
-    def artists(self):
-        """The tuple of selectable artists.
-        """
+    artists = property(
         # Work around matplotlib/matplotlib#6982: `cla()` does not clear
         # `.axes`.
-        return tuple(filter(_is_alive, (ref() for ref in self._artists)))
-
-    @property
-    def selections(self):
-        """The tuple of current `Selection`\\s.
-        """
-        return tuple(self._selections)
+        lambda self: tuple(filter(_is_alive,
+                                  (ref() for ref in self._artists))),
+        doc="The tuple of selectable artists.")
+    selections = property(
+        lambda self: tuple(self._selections),
+        "The tuple of current `Selection`\\s.")
 
     def add_selection(self, pi):
         """Create an annotation for a `Selection` and register it.
@@ -334,8 +335,8 @@ class Cursor:
     def remove(self):
         """Remove all `Selection`\\s and disconnect all callbacks.
         """
-        for disconnect_cid in self._disconnect_cids:
-            disconnect_cid()
+        for disconnectors in self._disconnectors:
+            disconnectors()
         for sel in self._selections[:]:
             self._remove_selection(sel)
 
@@ -426,38 +427,51 @@ class Cursor:
             figure.canvas.draw_idle()
 
 
-def cursor(artists_or_axes=None, **kwargs):
-    """Create a :class:`Cursor` for a list of artists or axes.
+def cursor(pickables=None, **kwargs):
+    """Create a :class:`Cursor` for a list of artists, containers, and axes.
 
     Parameters
     ----------
 
-    artists_or_axes : Optional[List[Union[Artist, Axes]]]
-        All artists in the list and all artists on any of the axes passed in
+    pickables : Optional[List[Union[Artist, Container, Axes]]]
+        All artists and containers in the list or on any of the axes passed in
         the list are selectable by the constructed :class:`Cursor`.  Defaults
-        to all artists on any of the figures that :mod:`pyplot` is tracking.
+        to all artists and containers on any of the figures that :mod:`pyplot`
+        is tracking.
 
     **kwargs
         Keyword arguments are passed to the :class:`Cursor` constructor.
     """
 
-    if artists_or_axes is None:
+    if pickables is None:
         # Do not import pyplot ourselves to avoid forcing the backend.
         plt = sys.modules.get("matplotlib.pyplot")
-        artists_or_axes = [ax
-                           for fig in map(plt.figure, plt.get_fignums())
-                           for ax in fig.axes] if plt else []
-    elif not isinstance(artists_or_axes, Iterable):
-        artists_or_axes = [artists_or_axes]
+        pickables = [ax for fig in map(plt.figure, plt.get_fignums())
+                        for ax in fig.axes] if plt else []
+    elif (isinstance(pickables, Container)
+          or not isinstance(pickables, Iterable)):
+        pickables = [pickables]
     artists = []
-    for entry in artists_or_axes:
+    for entry in pickables:
         if isinstance(entry, Axes):
             ax = entry
             artists.extend(
                 ax.collections + ax.images + ax.lines + ax.patches + ax.texts)
-            # No need to extend with each container (ax.containers): the
-            # contained artists have already been added.
-        else:
+            for container in ax.containers:
+                *contained, = filter(None, cbook.flatten(container))
+                for artist in contained:
+                    artists.remove(artist)
+                if contained:
+                    artists.append(_pick_info.ContainerArtist(container))
+        elif isinstance(entry, Container):
+            *contained, = filter(None, cbook.flatten(entry))
+            for artist in contained:
+                artists.remove(artist)
+            if contained:
+                artists.append(_pick_info.ContainerArtist(entry))
+        elif isinstance(entry, Artist):
             artist = entry
             artists.append(artist)
+        else:
+            raise TypeError("Unknown argument type")
     return Cursor(artists, **kwargs)

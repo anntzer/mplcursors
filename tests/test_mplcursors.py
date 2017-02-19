@@ -259,8 +259,6 @@ def test_bar(ax):
     ax.bar(0, 1)
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (0, .5), 1)
-    assert len(cursor.selections) == 0
-    _process_event("__mouse_click__", ax, (0, 1), 1)
     assert_allclose(cursor.selections[0].target, (0, 1))
 
 
@@ -277,7 +275,7 @@ def test_quiver_and_barbs(ax, plotter):
 
 def test_container(ax):
     ax.bar(range(3), [1] * 3)
-    assert len(mplcursors.cursor().artists) == 3
+    assert len(mplcursors.cursor().artists) == 1
 
 
 @pytest.mark.parametrize(

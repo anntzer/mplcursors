@@ -10,7 +10,7 @@ Welcome to mplcursors' documentation!
 :mod:`matplotlib`.  It is heavily inspired from :mod:`mpldatacursor`
 (https://github.com/joferkington/mpldatacursor), with a much simplified API.
 
-:mod:`mplcursors` requires Python 3, and :mod:`matplotlib`\>=1.5.0.
+:mod:`mplcursors` requires Python 3, and :mod:`matplotlib`\>=2.0.
 
 .. _installation:
 

@@ -74,6 +74,6 @@ setup(name="mplcursors",
       packages=find_packages(include=["mplcursors", "mplcursors.*"]),
       python_requires=">=3.4",
       install_requires=[
-          "matplotlib>=1.5"
+          "matplotlib>=2.0"
       ],
       )
