@@ -1,4 +1,4 @@
-"""Labeling points from a DataFrame scatter plot using a third column.
+"""Labeling points from a `DataFrame` scatter plot using a third column.
 """
 
 from matplotlib import pyplot as plt
