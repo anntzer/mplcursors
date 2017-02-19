@@ -404,16 +404,6 @@ class Cursor:
 
     def _remove_selection(self, sel):
         self._selections.remove(sel)
-        # Work around matplotlib/matplotlib#6785: dragging callbacks are left
-        # connected.
-        draggable = sel.annotation._draggable
-        try:
-            draggable.disconnect()
-            sel.annotation.figure.canvas.mpl_disconnect(
-                sel.annotation._draggable._c1)
-        except AttributeError:
-            pass
-        # (end of workaround).
         # <artist>.figure will be unset so we save them first.
         figures = {artist.figure for artist in [sel.annotation] + sel.extras}
         # ValueError is raised if the artist has already been removed.
