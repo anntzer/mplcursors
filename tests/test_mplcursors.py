@@ -1,3 +1,4 @@
+import functools
 import gc
 from pathlib import Path
 import weakref
@@ -12,7 +13,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 import pytest
 
 
-_eps = .001
+assert_almost_equal = functools.partial(assert_allclose, atol=1e-7)
 
 
 @pytest.fixture
@@ -107,7 +108,7 @@ def test_line(ax):
     _process_event(*_get_remove_args(cursor.selections[0]))
     assert len(cursor.selections) == len(ax.texts) == 0
     # Will project on the vertex at (.2, .8).
-    _process_event("__mouse_click__", ax, (.2 - _eps, .8 + _eps), 1)
+    _process_event("__mouse_click__", ax, (.2 - .001, .8 + .001), 1)
     assert len(cursor.selections) == len(ax.texts) == 1
 
 
@@ -138,10 +139,10 @@ def test_steps_pre(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, .5), 1)
     index = cursor.selections[0].target.index
-    assert_allclose((index.int, index.x, index.y), (0, 0, .5))
+    assert_almost_equal((index.int, index.x, index.y), (0, 0, .5))
     _process_event("__mouse_click__", ax, (.5, 1), 1)
     index = cursor.selections[0].target.index
-    assert_allclose((index.int, index.x, index.y), (0, .5, 1))
+    assert_almost_equal((index.int, index.x, index.y), (0, .5, 1))
 
 
 def test_steps_mid(ax):
@@ -154,13 +155,13 @@ def test_steps_mid(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.25, 0), 1)
     index = cursor.selections[0].target.index
-    assert_allclose((index.int, index.x, index.y), (0, .25, 0))
+    assert_almost_equal((index.int, index.x, index.y), (0, .25, 0))
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     index = cursor.selections[0].target.index
-    assert_allclose((index.int, index.x, index.y), (0, .5, .5))
+    assert_almost_equal((index.int, index.x, index.y), (0, .5, .5))
     _process_event("__mouse_click__", ax, (.75, 1), 1)
     index = cursor.selections[0].target.index
-    assert_allclose((index.int, index.x, index.y), (0, .75, 1))
+    assert_almost_equal((index.int, index.x, index.y), (0, .75, 1))
 
 
 def test_steps_post(ax):
@@ -171,10 +172,10 @@ def test_steps_post(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.5, 0), 1)
     index = cursor.selections[0].target.index
-    assert_allclose((index.int, index.x, index.y), (0, .5, 0))
+    assert_almost_equal((index.int, index.x, index.y), (0, .5, 0))
     _process_event("__mouse_click__", ax, (1, .5), 1)
     index = cursor.selections[0].target.index
-    assert_allclose((index.int, index.x, index.y), (0, 1, .5))
+    assert_almost_equal((index.int, index.x, index.y), (0, 1, .5))
 
 
 @pytest.mark.parametrize("ls", ["-", "o"])
@@ -182,7 +183,7 @@ def test_line_single_point(ax, ls):
     ax.plot(0, ls)
     ax.set(xlim=(-1, 1), ylim=(-1, 1))
     cursor = mplcursors.cursor()
-    _process_event("__mouse_click__", ax, (_eps, _eps), 1)
+    _process_event("__mouse_click__", ax, (.001, .001), 1)
     assert len(cursor.selections) == len(ax.texts) == (ls == "o")
     if cursor.selections:
         assert_array_equal(np.asarray(cursor.selections[0].target), (0, 0))
@@ -198,7 +199,7 @@ def test_nan(ax, plot_args, click, targets):
     _process_event("__mouse_click__", ax, click, 1)
     assert len(cursor.selections) == len(ax.texts) == len(targets)
     for sel, target in zip(cursor.selections, targets):
-        assert_allclose(sel.target, target)
+        assert_almost_equal(sel.target, target)
 
 
 def test_repeated_point(ax):
@@ -252,14 +253,7 @@ def test_linecollection(ax):
     _process_event("__mouse_click__", ax, (0, .5), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, 1), 1)
-    assert_allclose(cursor.selections[0].target.index, (0, .5))
-
-
-def test_bar(ax):
-    ax.bar(0, 1)
-    cursor = mplcursors.cursor()
-    _process_event("__mouse_click__", ax, (0, .5), 1)
-    assert_allclose(cursor.selections[0].target, (0, 1))
+    assert_almost_equal(cursor.selections[0].target.index, (0, .5))
 
 
 @pytest.mark.parametrize("plotter",
@@ -273,9 +267,42 @@ def test_quiver_and_barbs(ax, plotter):
     assert cursor.selections[0].annotation.get_text() == "x=1\ny=0\n(1, 1)"
 
 
-def test_container(ax):
-    ax.bar(range(3), [1] * 3)
-    assert len(mplcursors.cursor().artists) == 1
+@pytest.mark.parametrize("plotter,order",
+                         [(Axes.bar, np.s_[:]), (Axes.barh, np.s_[::-1])])
+def test_bar(ax, plotter, order):
+    plotter(ax, range(3), range(1, 4))
+    cursor = mplcursors.cursor()
+    assert len(cursor.artists) == 1
+    _process_event("__mouse_click__", ax, (0, 2)[order], 1)
+    assert len(cursor.selections) == 0
+    _process_event("__mouse_click__", ax, (0, .5)[order], 1)
+    assert_almost_equal(cursor.selections[0].target, (0, 1)[order])
+
+
+def test_errorbar(ax):
+    ax.errorbar(range(1, 4), range(1, 4), xerr=.5)
+    cursor = mplcursors.cursor()
+    assert len(cursor.artists) == 1
+    _process_event("__mouse_click__", ax, (1, 2), 1)
+    assert len(cursor.selections) == 0
+    _process_event("__mouse_click__", ax, (1.5, 1.5), 1)
+    assert_almost_equal(cursor.selections[0].target, (1.5, 1.5))
+    assert cursor.selections[0].annotation.get_text() == "x=1.5\ny=1.5"
+    _process_event("__mouse_click__", ax, (2.75, 3), 1)
+    assert_almost_equal(cursor.selections[0].target, (3, 3))
+    assert cursor.selections[0].annotation.get_text() == "x=$3\\pm0.5$\ny=3"
+
+
+def test_stem(ax):
+    ax.stem([1, 2, 3])
+    cursor = mplcursors.cursor()
+    assert len(cursor.artists) == 1
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    assert len(cursor.selections) == 0
+    _process_event("__mouse_click__", ax, (0, 1), 1)
+    assert_almost_equal(cursor.selections[0].target, (0, 1))
+    _process_event("__mouse_click__", ax, (0, .5), 1)
+    assert_almost_equal(cursor.selections[0].target, (0, 1))
 
 
 @pytest.mark.parametrize(
@@ -440,14 +467,12 @@ def test_keys(ax):
 
 def test_convenience(ax):
     l, = ax.plot([1, 2])
-    cursor = mplcursors.cursor()
-    assert len(cursor.artists) == 1
-    cursor = mplcursors.cursor(ax)
-    assert len(cursor.artists) == 1
-    cursor = mplcursors.cursor(l)
-    assert len(cursor.artists) == 1
-    cursor = mplcursors.cursor([l])
-    assert len(cursor.artists) == 1
+    assert len(mplcursors.cursor().artists) == 1
+    assert len(mplcursors.cursor(ax).artists) == 1
+    assert len(mplcursors.cursor(l).artists) == 1
+    assert len(mplcursors.cursor([l]).artists) == 1
+    bc = ax.bar(range(3), range(3))
+    assert len(mplcursors.cursor(bc).artists) == 1
 
 
 def test_invalid_args():

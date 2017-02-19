@@ -144,7 +144,7 @@ class Cursor:
             Whether to select artists upon hovering instead of by clicking.
         """
 
-        *artists, = artists
+        artists = list(artists)
         # Be careful with GC.
         self._artists = [weakref.ref(artist) for artist in artists]
 
@@ -451,27 +451,34 @@ def cursor(pickables=None, **kwargs):
     elif (isinstance(pickables, Container)
           or not isinstance(pickables, Iterable)):
         pickables = [pickables]
+    else:
+        pickables = list(pickables)  # To keep track of unknown args.
     artists = []
-    for entry in pickables:
+    for entry in pickables[:]:
         if isinstance(entry, Axes):
             ax = entry
             artists.extend(
                 ax.collections + ax.images + ax.lines + ax.patches + ax.texts)
             for container in ax.containers:
-                *contained, = filter(None, cbook.flatten(container))
+                contained = list(filter(None, cbook.flatten(container)))
                 for artist in contained:
                     artists.remove(artist)
                 if contained:
                     artists.append(_pick_info.ContainerArtist(container))
-        elif isinstance(entry, Container):
-            *contained, = filter(None, cbook.flatten(entry))
-            for artist in contained:
-                artists.remove(artist)
-            if contained:
-                artists.append(_pick_info.ContainerArtist(entry))
+            pickables.remove(entry)
         elif isinstance(entry, Artist):
             artist = entry
             artists.append(artist)
-        else:
-            raise TypeError("Unknown argument type")
+            pickables.remove(entry)
+    for entry in pickables[:]:
+        if isinstance(entry, Container):
+            contained = list(filter(None, cbook.flatten(entry)))
+            for artist in contained:
+                with suppress(ValueError):
+                    artists.remove(artist)
+            if contained:
+                artists.append(_pick_info.ContainerArtist(entry))
+            pickables.remove(entry)
+    if pickables:
+        raise TypeError("Unknown argument type")
     return Cursor(artists, **kwargs)
