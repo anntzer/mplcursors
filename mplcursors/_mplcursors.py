@@ -156,6 +156,7 @@ class Cursor:
 
         self._enabled = True
         self._selections = []
+        self._last_auto_position = None
         self._callbacks = CallbackRegistry()
 
         connect_pairs = [("key_press_event", self._on_key_press)]
@@ -238,7 +239,8 @@ class Cursor:
             fig_bbox = pi.artist.figure.get_window_extent()
             ax_bbox = pi.artist.axes.get_window_extent()
             overlaps = []
-            for annotation_position in default_annotation_positions:
+            for idx, annotation_position in enumerate(
+                    default_annotation_positions):
                 ann.set(**annotation_position)
                 # Work around matplotlib/matplotlib#7614: position update is
                 # missing.
@@ -246,9 +248,13 @@ class Cursor:
                 bbox = ann.get_window_extent(renderer)
                 overlaps.append(
                     (_get_rounded_intersection_area(fig_bbox, bbox),
-                     _get_rounded_intersection_area(ax_bbox, bbox)))
-            ann.set(**default_annotation_positions[
-                max(range(len(overlaps)), key=overlaps.__getitem__)])
+                     _get_rounded_intersection_area(ax_bbox, bbox),
+                     # Avoid needlessly jumping around by breaking ties using
+                     # the last used position as default.
+                     idx == self._last_auto_position))
+            auto_position = max(range(len(overlaps)), key=overlaps.__getitem__)
+            ann.set(**default_annotation_positions[auto_position])
+            self._last_auto_position = auto_position
         else:
             if isinstance(ann.get_ha(), _MarkedStr):
                 ann.set_ha({-1: "right", 0: "center", 1: "left"}[
