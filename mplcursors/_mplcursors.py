@@ -52,8 +52,8 @@ default_bindings = MappingProxyType(dict(
     right="shift+right",
     up="shift+up",
     down="shift+down",
-    toggle_visibility="d",
-    toggle_enabled="t"))
+    toggle_enabled="e",
+    toggle_visible="v"))
 
 
 class _MarkedStr(str):
@@ -121,23 +121,26 @@ class Cursor:
         bindings : dict
             A mapping of button and keybindings to actions.  Valid entries are:
 
-            =================== ===============================================
-            'select'            mouse button to select an artist (default: 1)
-            'deselect'          mouse button to deselect an artist (default: 3)
-            'left'              move to the previous point in the selected
-                                path, or to the left in the selected image
-                                (default: shift+left)
-            'right'             move to the next point in the selected path, or
-                                to the right in the selected image
-                                (default: shift+right)
-            'up'                move up in the selected image
-                                (default: shift+up)
-            'down'              move down in the selected image
-                                (default: shift+down)
-            'toggle_visibility' toggle visibility of all cursors (default: d)
-            'toggle_enabled'    toggle whether the cursor is active
-                                (default: t)
-            =================== ===============================================
+            ================ ===============================================
+            'select'         mouse button to select an artist
+                             (default: 1)
+            'deselect'       mouse button to deselect an artist
+                             (default: 3)
+            'left'           move to the previous point in the selected path,
+                             or to the left in the selected image
+                             (default: shift+left)
+            'right'          move to the next point in the selected path, or to
+                             the right in the selected image
+                             (default: shift+right)
+            'up'             move up in the selected image
+                             (default: shift+up)
+            'down'           move down in the selected image
+                             (default: shift+down)
+            'toggle_enabled' toggle whether the cursor is active
+                             (default: e)
+            'toggle_visible' toggle default cursor visibility and apply it to
+                             all cursors (default: v)
+            ================ ===============================================
 
         hover : bool
             Whether to select artists upon hovering instead of by clicking.
@@ -153,6 +156,7 @@ class Cursor:
         self._multiple = multiple
         self._highlight = highlight
 
+        self._visible = True
         self._enabled = True
         self._selections = []
         self._last_auto_position = None
@@ -190,6 +194,22 @@ class Cursor:
     def enabled(self, value):
         self._enabled = value
 
+    @property
+    def visible(self):
+        """Whether selections are visible by default.
+
+        Setting this property also updates the visibility status of current
+        selections.
+        """
+        return self._visible
+
+    @visible.setter
+    def visible(self, value):
+        self._visible = value
+        for sel in self._selections:
+            sel.annotation.set_visible(value)
+            sel.annotation.figure.canvas.draw_idle()
+
     artists = property(
         # Work around matplotlib/matplotlib#6982: `cla()` does not clear
         # `.axes`.
@@ -223,6 +243,7 @@ class Cursor:
             _pick_info.get_ann_text(*pi), xy=pi.target,
             xytext=(np.nan, np.nan),
             ha=_MarkedStr("center"), va=_MarkedStr("center"),
+            visible=self.visible,
             **default_annotation_kwargs)
         ann.draggable(use_blit=True)
         extras = []
@@ -393,10 +414,8 @@ class Cursor:
     def _on_key_press(self, event):
         if event.key == self._bindings["toggle_enabled"]:
             self.enabled = not self.enabled
-        elif event.key == self._bindings["toggle_visibility"]:
-            for sel in self._selections:
-                sel.annotation.set_visible(not sel.annotation.get_visible())
-                sel.annotation.figure.canvas.draw_idle()
+        elif event.key == self._bindings["toggle_visible"]:
+            self.visible = not self.visible
         if self._selections:
             sel = self._selections[-1]
         else:

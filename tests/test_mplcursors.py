@@ -444,12 +444,12 @@ def test_keys(ax):
     cursor = mplcursors.cursor(multiple=True)
     _process_event("__mouse_click__", ax, (.3, .3), 1)
     # Toggle visibility.
-    _process_event("key_press_event", ax, (.123, .456), "d")
+    _process_event("key_press_event", ax, (.123, .456), "v")
     assert not cursor.selections[0].annotation.get_visible()
-    _process_event("key_press_event", ax, (.123, .456), "d")
+    _process_event("key_press_event", ax, (.123, .456), "v")
     assert cursor.selections[0].annotation.get_visible()
     # Disable the cursor.
-    _process_event("key_press_event", ax, (.123, .456), "t")
+    _process_event("key_press_event", ax, (.123, .456), "e")
     assert not cursor.enabled
     # (Adding becomes inactive.)
     _process_event("__mouse_click__", ax, (.6, .6), 1)
@@ -459,7 +459,7 @@ def test_keys(ax):
     _process_event(*_get_remove_args(cursor.selections[0]))
     assert len(cursor.selections) == 1
     # Reenable it.
-    _process_event("key_press_event", ax, (.123, .456), "t")
+    _process_event("key_press_event", ax, (.123, .456), "e")
     assert cursor.enabled
     _process_event(*_get_remove_args(cursor.selections[0]))
     assert len(cursor.selections) == 0
