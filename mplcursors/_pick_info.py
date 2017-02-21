@@ -61,7 +61,7 @@ _register_scatter()
 
 
 def _artist_in_container(container):
-    return next(filter(None, cbook.flatten(container)))
+    return next(filter(None, container.get_children()))
 
 
 class ContainerArtist:

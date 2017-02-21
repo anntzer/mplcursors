@@ -8,7 +8,6 @@ from types import MappingProxyType
 import weakref
 from weakref import WeakKeyDictionary
 
-from matplotlib import cbook
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.cbook import CallbackRegistry
@@ -456,7 +455,7 @@ def cursor(pickables=None, **kwargs):
             artists.extend(
                 ax.collections + ax.images + ax.lines + ax.patches + ax.texts)
             for container in ax.containers:
-                contained = list(filter(None, cbook.flatten(container)))
+                contained = list(filter(None, container.get_children()))
                 for artist in contained:
                     artists.remove(artist)
                 if contained:
@@ -468,7 +467,7 @@ def cursor(pickables=None, **kwargs):
             pickables.remove(entry)
     for entry in pickables[:]:
         if isinstance(entry, Container):
-            contained = list(filter(None, cbook.flatten(entry)))
+            contained = list(filter(None, entry.get_children()))
             for artist in contained:
                 with suppress(ValueError):
                     artists.remove(artist)
