@@ -57,6 +57,8 @@ def _register_scatter():
 
 
 _nonscatter_pathcollections = WeakSet()
+_is_scatter = lambda artist: (isinstance(artist, PathCollection)
+                              and artist not in _nonscatter_pathcollections)
 _register_scatter()
 
 
@@ -327,8 +329,7 @@ def _(artist, event):
         return
     offsets = artist.get_offsets()
     paths = artist.get_paths()
-    if artist not in _nonscatter_pathcollections:
-        # i.e., the result of a `scatter` call.
+    if _is_scatter(artist):
         ax = artist.axes
         inds = info["ind"]
         offsets = offsets[inds]
@@ -606,21 +607,34 @@ def move(sel, *, key):
     return sel
 
 
+def _move_within_points(sel, xys, *, key):
+    # Avoid infinite loop in case everything became nan at some point.
+    for _ in range(len(xys)):
+        new_idx = (int(np.ceil(sel.target.index) - 1) if key == "left"
+                   else int(np.floor(sel.target.index) + 1) if key == "right"
+                   else sel.target.index) % len(xys)
+        target = AttrArray(xys[new_idx])
+        target.index = new_idx
+        sel = sel._replace(target=target, dist=0)
+        if np.isfinite(target).all():
+            return sel
+
+
 @move.register(Line2D)
 @_call_with_selection
 def _(sel, *, key):
     if not hasattr(sel.target, "index"):
         return sel
-    while True:
-        artist_xys = sel.artist.get_xydata()
-        new_idx = (int(np.ceil(sel.target.index) - 1) if key == "left"
-                   else int(np.floor(sel.target.index) + 1) if key == "right"
-                   else sel.target.index) % len(artist_xys)
-        target = AttrArray(artist_xys[new_idx])
-        target.index = new_idx
-        sel = sel._replace(target=target, dist=0)
-        if np.isfinite(target).all():
-            return sel
+    return _move_within_points(sel, sel.artist.get_xydata(), key=key)
+
+
+@move.register(PathCollection)
+@_call_with_selection
+def _(sel, *, key):
+    if _is_scatter(sel.artist):
+        return _move_within_points(sel, sel.artist.get_offsets(), key=key)
+    else:
+        return sel
 
 
 @move.register(AxesImage)
