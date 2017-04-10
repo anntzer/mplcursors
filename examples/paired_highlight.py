@@ -1,6 +1,9 @@
-""""Linked" artists: when one is selected, its partner is also highlighted.
+"""
+"Linked" artists
+================
 
-An example of connecting to cursor events.
+An example of connecting to cursor events: when an artist is selected, also
+highlight its "partner".
 """
 
 import numpy as np
@@ -20,11 +23,12 @@ def main():
 
     points = []
     for x, y in xy:
-        point, = axes[1].plot([x], [y], linestyle='none', marker='o')
+        point, = axes[1].plot([x], [y], linestyle="none", marker="o")
         points.append(point)
 
     cursor = mplcursors.cursor(points + lines, highlight=True)
-    pairs = {**dict(zip(points, lines)), **dict(zip(lines, points))}
+    pairs = dict(zip(points, lines))
+    pairs.update(zip(lines, points))
 
     @cursor.connect("add")
     def on_add(sel):
@@ -33,5 +37,5 @@ def main():
     plt.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

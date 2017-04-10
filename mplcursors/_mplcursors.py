@@ -1,4 +1,4 @@
-from collections import ChainMap
+from collections import ChainMap, Counter
 from collections.abc import Iterable
 from contextlib import suppress
 import copy
@@ -177,11 +177,15 @@ class Cursor:
             for canvas in {artist.figure.canvas for artist in artists}]
 
         bindings = dict(ChainMap(bindings, default_bindings))
-        if set(bindings) != set(default_bindings):
-            raise ValueError("Unknown bindings")
-        actually_bound = {k: v for k, v in bindings.items() if v is not None}
-        if len(set(actually_bound.values())) != len(actually_bound):
-            raise ValueError("Duplicate bindings")
+        unknown_bindings = set(bindings) - set(default_bindings)
+        if unknown_bindings:
+            raise ValueError("Unknown binding(s): {}".format(
+                ", ".join(sorted(unknown_bindings))))
+        duplicate_bindings = [
+            k for k, v in Counter(list(bindings.values())).items() if v > 1]
+        if duplicate_bindings:
+            raise ValueError("Duplicate binding(s): {}".format(
+                ", ".join(sorted(map(str, duplicate_bindings)))))
         self._bindings = bindings
 
     @property

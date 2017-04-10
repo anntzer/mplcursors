@@ -1,4 +1,11 @@
-"""Using multiple annotations and disabling draggability via signals.
+"""
+Using multiple annotations and disabling draggability via signals
+=================================================================
+
+By default, each `Cursor` will ever display one annotation at a time.  Pass
+``multiple=True`` to display multiple annotations.
+
+Annotations can be made non-draggable by hooking their creation.
 """
 
 import matplotlib.pyplot as plt

@@ -1,4 +1,8 @@
-"""A very basic example of mplcursor's functionalities.
+"""
+mplcursors' core functionality
+==============================
+
+... is to add interactive data cursors to a figure.
 """
 
 import matplotlib.pyplot as plt

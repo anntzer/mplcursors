@@ -1,3 +1,5 @@
-_build
-_static
-_templates
+_build/
+_static/
+_templates/
+examples/
+modules/generated/

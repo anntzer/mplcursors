@@ -1,4 +1,8 @@
-"""Labeling points from a `DataFrame` scatter plot using a third column.
+"""
+Labeling points from a `DataFrame` scatter plot using a third column
+====================================================================
+
+`DataFrame`\\s can be used similarly to any other kind of input.
 """
 
 from matplotlib import pyplot as plt
@@ -17,3 +21,5 @@ df.plot.scatter("height", "weight")
 mplcursors.cursor().connect(
     "add", lambda sel: sel.annotation.set_text(df["name"][sel.target.index]))
 plt.show()
+
+# test: skip

@@ -35,6 +35,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
+    'sphinx_gallery.gen_gallery',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -55,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'mplcursors'
-copyright = '2016, Antony Lee'
+copyright = '2016-2017, Antony Lee'
 author = 'Antony Lee'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -351,3 +352,7 @@ intersphinx_mapping = {'matplotlib': ('http://matplotlib.org', None),
 
 # Additional customizations.
 autodoc_member_order = 'bysource'
+sphinx_gallery_conf = {
+    'example_dirs': '../examples',
+    'filename_pattern': '.*\.py',
+    'gallery_dirs': 'examples'}

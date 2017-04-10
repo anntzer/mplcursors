@@ -1,7 +1,9 @@
-name: py35
+name: py36
 dependencies:
-    - python=3.5.2
-    - qt=4.8.7 # conda's dependencies seem messed up.
-    - matplotlib=1.5.1
+    - python=3.6.1
+    - qt=5.6.0
     - pip:
-        - sphinx==1.4.5
+        - matplotlib==2.0.0
+        - pandas==0.19.2
+        - sphinx==1.5.5
+        - sphinx-gallery==0.1.8

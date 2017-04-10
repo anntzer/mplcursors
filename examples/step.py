@@ -1,4 +1,9 @@
-"""Support for various step plots.
+"""
+Step plots
+==========
+
+A selection on a step plot holds precise information on the x and y position
+in the ``sel.target.index`` sub-attribute.
 """
 
 from matplotlib import pyplot as plt

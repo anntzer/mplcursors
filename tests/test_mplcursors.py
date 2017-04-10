@@ -1,6 +1,9 @@
 import functools
 import gc
+import os
 from pathlib import Path
+import subprocess
+import sys
 import weakref
 
 from matplotlib import pyplot as plt
@@ -528,3 +531,13 @@ def test_gc(ax):
     gc.collect()
     assert not f_img.alive
     assert not f_cursor.alive
+
+
+@pytest.mark.parametrize(
+    "example",
+    [path for path in Path("examples").glob("*.py")
+     if not "test: skip" in path.open().read()])
+def test_example(example):
+    subprocess.check_call(
+        [sys.executable, "-mexamples.{}".format(example.with_suffix("").name)],
+        env=dict(os.environ, MPLBACKEND="Agg"))

@@ -1,4 +1,6 @@
-"""Contour plot support.
+"""
+Contour plot support
+====================
 
 Contour plot support is limited to picking the individual `LineCollection`\s,
 which are directly registered with the axes and thus picked up by

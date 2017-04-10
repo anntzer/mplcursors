@@ -79,6 +79,12 @@ class ContainerArtist:
         vars(container).setdefault(
             "_{}__keep_alive".format(__class__.__name__), []).append(self)
 
+    def __str__(self):
+        return "<{}({})>".format(type(self).__name__, self.container)
+
+    def __getitem__(self, key):
+        return self.container[key]
+
     figure = property(lambda self: _artist_in_container(self.container).figure)
     axes = property(lambda self: _artist_in_container(self.container).axes)
 
@@ -402,20 +408,22 @@ def _(artist, event):
 @compute_pick.register(BarContainer)
 def _(container, event):
     try:
-        patch, = {patch for patch in container.patches
-                  if patch.contains(event)[0]}
+        (idx, patch), = {
+            (idx, patch) for idx, patch in enumerate(container.patches)
+            if patch.contains(event)[0]}
     except ValueError:
         return
-    sel = Selection(None, [event.xdata, event.ydata], 0, None, None)
+    target = AttrArray([event.xdata, event.ydata])
+    target.index = idx
     if patch.sticky_edges.x:
-        sel.target[0], = (
+        target[0], = (
             x for x in [patch.get_x(), patch.get_x() + patch.get_width()]
             if x not in patch.sticky_edges.x)
     if patch.sticky_edges.y:
-        sel.target[1], = (
+        target[1], = (
             y for y in [patch.get_y(), patch.get_y() + patch.get_height()]
             if y not in patch.sticky_edges.y)
-    return sel
+    return Selection(None, target, 0, None, None)
 
 
 @compute_pick.register(ErrorbarContainer)
@@ -489,7 +497,7 @@ def _format_coord_unspaced(ax, xy):
     # `format_{x,y}data`, and rejoin with newlines.
     return "\n".join(
         line for line, empty in zip(
-            re.split("[ ,] +", ax.format_coord(*xy)),
+            re.split(",? +", ax.format_coord(*xy)),
             itertools.chain(["x=", "y=", "z="], itertools.repeat(None)))
         if line != empty).rstrip()
 

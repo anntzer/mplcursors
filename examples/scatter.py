@@ -1,4 +1,9 @@
-"""Scatter plots are highlighted point-by-point.
+"""
+Scatter plots are highlighted point-by-point.
+=============================================
+
+... as opposed to lines with a ``"."`` style, which have the same appearance,
+but are highlighted as a whole.
 """
 
 import numpy as np

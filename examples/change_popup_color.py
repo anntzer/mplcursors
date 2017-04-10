@@ -1,4 +1,8 @@
-"""Changing properties of the popup.
+"""
+Changing properties of the popup
+================================
+
+Use an event handler to customize the popup.
 """
 
 import matplotlib.pyplot as plt
@@ -8,10 +12,10 @@ import mplcursors
 fig, axes = plt.subplots(ncols=2)
 
 left_artist = axes[0].plot(range(11))
-axes[0].set(title='No box, different position', aspect=1)
+axes[0].set(title="No box, different position", aspect=1)
 
 right_artist = axes[1].imshow(np.arange(100).reshape(10, 10))
-axes[1].set(title='Fancy white background')
+axes[1].set(title="Fancy white background")
 
 # Make the text pop up "underneath" the line and remove the box...
 c1 = mplcursors.cursor(left_artist)

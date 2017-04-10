@@ -126,9 +126,12 @@ is available in the :attr:`target.index` sub-attribute:
     - For `Line2D <matplotlib.lines.Line2D>`\s, it contains the index of the
       selected point (see :ref:`selection-indices` for more details, especially
       regarding step plots).
-    - For `LineCollection <matplotlib.collections.LineCollection>`\s, it
-      contains a pair: the index of the selected line, and the index within the
-      line, as defined above.
+    - For `Container <matplotlib.collections.Container>`\s, it contains the
+      index of the selected sub-artist.
+    - For `LineCollection <matplotlib.collections.LineCollection>`\s and
+      `PathCollection <matplotlib.collections.PathCollection>`\s, it contains a
+      pair: the index of the selected line, and the index within the line, as
+      defined above.
 
 Thus, in order to customize, e.g., the annotation text, one can call::
 
