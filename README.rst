@@ -23,4 +23,4 @@ Install with ``python -mpip install mplcursors`` (from PyPI) or
 ``python -mpip install git+https://github.com/anntzer/mplcursors`` (from
 Github).
 
-Run tests with ``py.test>=2.8.0``.
+Run tests with ``pytest>=3.0.0``.

@@ -17,10 +17,12 @@ Welcome to mplcursors' documentation!
 Installation
 ------------
 
-Pick one among::
+Pick one among:
 
-    $ pip install mplcursors # from PyPI
-    $ pip install git+https://github.com/anntzer/mplcursors # from Github
+.. code-block:: sh
+
+    $ pip install mplcursors  # from PyPI
+    $ pip install git+https://github.com/anntzer/mplcursors  # from Github
 
 .. _basic-example:
 
@@ -61,7 +63,7 @@ Activation by environment variable
 
 It is possible to use :mod:`mplcursors` without modifying *any* source
 code: setting the :envvar:`MPLCURSORS` environment variable to a
-JSON-encoded dict will patch :func:`plt.show <matplotlib.pyplot.show>` to
+JSON-encoded dict will patch `plt.show <matplotlib.pyplot.show>` to
 automatically call `cursor` before displaying the figure (with the passed
 keyword arguments, if any).  Typical settings include::
 
@@ -108,30 +110,30 @@ namedtuples) and lets you hook into their addition and removal.
 
 Specifically, a `Selection` has the following fields:
 
-    - :attr:`artist`: the selected artist,
-    - :attr:`target`: the point picked within the artist; if a point is picked
-      on a `Line2D <matplotlib.lines.Line2D>`, the index of the point is
+    - :attr:`~.artist`: the selected artist,
+    - :attr:`~.target`: the point picked within the artist; if a point is
+      picked on a :class:`~matplotlib.lines.Line2D`, the index of the point is
       available as the :attr:`target.index` sub-attribute (for more details,
       see :ref:`selection-indices`).
-    - :attr:`dist`: the distance from the point clicked to the :attr:`target`
-      (mostly used to decide which ).
-    - :attr:`annotation`: a `matplotlib Annotation
-      <matplotlib.text.Annotation>` object.
-    - :attr:`extras`: an additional list of artists, that will be removed
-      whenever the main :attr:`annotation` is deselected.
+    - :attr:`~.dist`: the distance from the point clicked to the
+      :attr:`~.target` (mostly used to decide which artist to select).
+    - :attr:`~.annotation`: a :mod:`matplotlib`
+      :class:`~matplotlib.text.Annotation` object.
+    - :attr:`~.extras`: an additional list of artists, that will be removed
+      whenever the main :attr:`~.annotation` is deselected.
 
 For certain classes of artists, additional information about the picked point
 is available in the :attr:`target.index` sub-attribute:
 
-    - For `Line2D <matplotlib.lines.Line2D>`\s, it contains the index of the
+    - For :class:`~matplotlib.lines.Line2D`\s, it contains the index of the
       selected point (see :ref:`selection-indices` for more details, especially
       regarding step plots).
-    - For `Container <matplotlib.collections.Container>`\s, it contains the
-      index of the selected sub-artist.
-    - For `LineCollection <matplotlib.collections.LineCollection>`\s and
-      `PathCollection <matplotlib.collections.PathCollection>`\s, it contains a
-      pair: the index of the selected line, and the index within the line, as
-      defined above.
+    - For :class:`~matplotlib.container.Container`\s, it contains the index of
+      the selected sub-artist.
+    - For :class:`~matplotlib.collections.LineCollection`\s and
+      :class:`~matplotlib.collections.PathCollection`\s, it contains a pair:
+      the index of the selected line, and the index within the line, as defined
+      above.
 
 Thus, in order to customize, e.g., the annotation text, one can call::
 
@@ -196,9 +198,9 @@ Complex plots
 -------------
 
 Some complex plots, such as contour plots, may be partially supported,
-or not at all.  Typically, it is because they do not subclass `Artist
-<matplotlib.artist.Artist>`, and thus appear to `cursor` as a collection of
-independent artists (each contour level, in the case of contour plots).
+or not at all.  Typically, it is because they do not subclass
+:class:`~matplotlib.artist.Artist`, and thus appear to `cursor` as a collection
+of independent artists (each contour level, in the case of contour plots).
 
 It is usually possible, again, to hook the ``"add"`` signal to provide
 additional information in the annotation text.  See :file:`examples/coutour.py`
