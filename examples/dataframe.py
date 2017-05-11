@@ -1,8 +1,10 @@
 """
-Labeling points from a `DataFrame` scatter plot using a third column
-====================================================================
+Extracting data and labels from a :class:`~pandas.DataFrame`
+============================================================
 
-`DataFrame`\\s can be used similarly to any other kind of input.
+:class:`~pandas.DataFrame`\\s can be used similarly to any other kind of input.
+Here, we generate a scatter plot using two columns and label the points using
+a third column.
 """
 
 from matplotlib import pyplot as plt

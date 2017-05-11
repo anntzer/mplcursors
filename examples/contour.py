@@ -2,10 +2,11 @@
 Contour plot support
 ====================
 
-Contour plot support is limited to picking the individual `LineCollection`\s,
-which are directly registered with the axes and thus picked up by
-`mplcursors.cursor` (`QuadContourSet`\s are not even artists, which make them
-hard to handle without additional special-casing).  It remains possible to
+Contour plot support is limited to picking the individual
+:class:`~matplotlib.collections.LineCollection`\s, which are directly
+registered with the axes and thus picked up by `mplcursors.cursor`
+(:class:`~matplotlib.contour.QuadContourSet`\s are not even artists, which make
+them hard to handle without additional special-casing).  It remains possible to
 retrieve the ``z`` value and add it manually to the annotation, though.
 """
 

@@ -6,8 +6,8 @@
 Welcome to mplcursors' documentation!
 =====================================
 
-:mod:`mplcursors` provide interactive, clickable annotation for
-:mod:`matplotlib`.  It is heavily inspired from :mod:`mpldatacursor`
+:mod:`mplcursors` provides interactive, clickable annotations for
+:mod:`matplotlib`.  It is inspired from :mod:`mpldatacursor`
 (https://github.com/joferkington/mpldatacursor), with a much simplified API.
 
 :mod:`mplcursors` requires Python 3, and :mod:`matplotlib`\>=2.0.

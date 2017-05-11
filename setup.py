@@ -55,7 +55,7 @@ class install_lib_with_pth(install_lib):
 
 
 setup(name="mplcursors",
-      description="Interactive, clickable annotations for matplotlib.",
+      description="Interactive, clickable annotations for Matplotlib.",
       long_description=open("README.rst").read(),
       version=versioneer.get_version(),
       cmdclass=ChainMap(versioneer.get_cmdclass(),

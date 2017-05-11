@@ -1,4 +1,4 @@
-mplcursors – Interactive, clickable annotations for matplotlib
+mplcursors – Interactive, clickable annotations for Matplotlib
 ==============================================================
 
 |Python34| |Join the chat at https://gitter.im/mplcursors/mplcursors| |Documentation Status| |Travis| |CodeCov|
@@ -13,14 +13,24 @@ mplcursors – Interactive, clickable annotations for matplotlib
 .. |CodeCov| image:: https://codecov.io/gh/anntzer/mplcursors/master.svg
    :target: https://codecov.io/gh/anntzer/mplcursors
 
-``mplcursors`` is my variation on ``mpldatacursor``
-(https://github.com/joferkington/mpldatacursor), with a much simplified
-API, for Python3.4+ and ``matplotlib>=1.5.0``.
+mplcursors provides interactive, clickable annotations for Matplotlib_.  It is
+inspired from mpldatacursor_, with a much simplified API.
 
-Full documentation on `RTD <https://mplcursors.readthedocs.org>`__.
+mplcursors requires Python 3, and Matplotlib_\≥2.0.
 
-Install with ``python -mpip install mplcursors`` (from PyPI) or
-``python -mpip install git+https://github.com/anntzer/mplcursors`` (from
-Github).
+Read the documentation `on readthedocs.org
+<https://mplcursors.readthedocs.org>`_.
 
-Run tests with ``pytest>=3.0.0``.
+Install from PyPI with::
+
+   python -mpip install mplcursors
+
+or from Github with::
+
+   python -mpip install git+https://github.com/anntzer/mplcursors
+
+Run tests with pytest_\≥3.0.0.
+
+.. _Matplotlib: http://matplotlib.org
+.. _mpldatacursor: https://github.com/joferkington/mpldatacursor
+.. _pytest: http://pytest.org

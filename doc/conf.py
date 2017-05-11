@@ -354,6 +354,7 @@ intersphinx_mapping = {
 # Additional customizations.
 autodoc_member_order = 'bysource'
 sphinx_gallery_conf = {
+    'backreferences_dir': False,
     'example_dirs': '../examples',
     'filename_pattern': '.*\.py',
     'gallery_dirs': 'examples'}
