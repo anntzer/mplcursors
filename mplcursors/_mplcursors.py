@@ -210,7 +210,7 @@ class Cursor:
     @visible.setter
     def visible(self, value):
         self._visible = value
-        for sel in self._selections:
+        for sel in self.selections:
             sel.annotation.set_visible(value)
             sel.annotation.figure.canvas.draw_idle()
 
@@ -220,9 +220,16 @@ class Cursor:
         lambda self: tuple(filter(_is_alive,
                                   (ref() for ref in self._artists))),
         doc="The tuple of selectable artists.")
-    selections = property(
-        lambda self: tuple(self._selections),
-        "The tuple of current `Selection`\\s.")
+
+    @property
+    def selections(self):
+        """The tuple of current `Selection`\\s.
+        """
+        for sel in self._selections:
+            if sel.annotation.axes is None:
+                raise RuntimeError("Annotation unexpectedly removed; "
+                                   "use `cursor.remove_selection instead`")
+        return tuple(self._selections)
 
     def add_selection(self, pi):
         """Create an annotation for a `Selection` and register it.
@@ -240,8 +247,11 @@ class Cursor:
         is, then a suitable alignment will be automatically computed.
         """
         # pi: "pick_info", i.e. an incomplete selection.
-        if pi.artist.axes.get_renderer_cache() is None:
-            pi.artist.figure.canvas.draw()
+        # Pre-fetch the figure and axes, as callbacks may actually unset them.
+        figure = pi.artist.figure
+        axes = pi.artist.axes
+        if axes.get_renderer_cache() is None:
+            figure.canvas.draw()
         renderer = pi.artist.axes.get_renderer_cache()
         ann = pi.artist.axes.annotate(
             _pick_info.get_ann_text(*pi), xy=pi.target,
@@ -259,9 +269,11 @@ class Cursor:
         self._selections.append(sel)
         self._callbacks.process("add", sel)
 
-        if ann.xyann == (np.nan, np.nan):
-            fig_bbox = pi.artist.figure.get_window_extent()
-            ax_bbox = pi.artist.axes.get_window_extent()
+        # Check that `ann.axes` is still set, as callbacks may have removed the
+        # annotation.
+        if ann.axes and ann.xyann == (np.nan, np.nan):
+            fig_bbox = figure.get_window_extent()
+            ax_bbox = axes.get_window_extent()
             overlaps = []
             for idx, annotation_position in enumerate(
                     default_annotation_positions):
@@ -282,29 +294,28 @@ class Cursor:
         else:
             if isinstance(ann.get_ha(), _MarkedStr):
                 ann.set_ha({-1: "right", 0: "center", 1: "left"}[
-                    np.sign(ann.xyann[0])])
+                    np.sign(np.nan_to_num(ann.xyann[0]))])
             if isinstance(ann.get_va(), _MarkedStr):
                 ann.set_va({-1: "top", 0: "center", 1: "bottom"}[
-                    np.sign(ann.xyann[1])])
+                    np.sign(np.nan_to_num(ann.xyann[1]))])
 
         if (extras
-                or len(self._selections) > 1 and not self._multiple
-                or not ann.figure.canvas.supports_blit):
+                or len(self.selections) > 1 and not self._multiple
+                or not figure.canvas.supports_blit):
             # Either:
             #  - there may be more things to draw, or
             #  - annotation removal will make a full redraw necessary, or
             #  - blitting is not (yet) supported.
-            ann.figure.canvas.draw_idle()
-        else:
-            # Fast path.
-            ann.figure.draw_artist(ann)
-            ann.figure.canvas.blit()
+            figure.canvas.draw_idle()
+        elif ann.axes:
+            # Fast path, only needed if the annotation has not been immediately
+            # removed.
+            figure.draw_artist(ann)
+            figure.canvas.blit()
         # Removal comes after addition so that the fast blitting path works.
-        # (This probably also allows weird tricks such as swapping the added
-        # selection from a callback.)
         if not self._multiple:
-            for sel in self._selections[:-1]:
-                self._remove_selection(sel)
+            for sel in self.selections[:-1]:
+                self.remove_selection(sel)
         return sel
 
     def add_highlight(self, artist, *args, **kwargs):
@@ -367,8 +378,8 @@ class Cursor:
         """
         for disconnectors in self._disconnectors:
             disconnectors()
-        for sel in self._selections[:]:
-            self._remove_selection(sel)
+        for sel in self.selections:
+            self.remove_selection(sel)
 
     def _on_button_press(self, event):
         if event.button == self._bindings["select"]:
@@ -407,30 +418,32 @@ class Cursor:
     def _on_deselect_button_press(self, event):
         if not self._filter_mouse_event(event):
             return
-        for sel in self._selections:
+        for sel in self.selections:
             ann = sel.annotation
             if event.canvas is not ann.figure.canvas:
                 continue
             contained, _ = ann.contains(event)
             if contained:
-                self._remove_selection(sel)
+                self.remove_selection(sel)
 
     def _on_key_press(self, event):
         if event.key == self._bindings["toggle_enabled"]:
             self.enabled = not self.enabled
         elif event.key == self._bindings["toggle_visible"]:
             self.visible = not self.visible
-        if self._selections:
-            sel = self._selections[-1]
-        else:
+        try:
+            sel = self.selections[-1]
+        except IndexError:
             return
         for key in ["left", "right", "up", "down"]:
             if event.key == self._bindings[key]:
-                self._remove_selection(sel)
+                self.remove_selection(sel)
                 self.add_selection(_pick_info.move(*sel, key=key))
                 break
 
-    def _remove_selection(self, sel):
+    def remove_selection(self, sel):
+        """Remove a `Selection`.
+        """
         self._selections.remove(sel)
         # <artist>.figure will be unset so we save them first.
         figures = {artist.figure for artist in [sel.annotation] + sel.extras}

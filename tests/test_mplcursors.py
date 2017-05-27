@@ -36,9 +36,10 @@ def cleanup():
 
 
 @pytest.fixture(autouse=True)
-def cleanup_warnings(request):
-    @request.addfinalizer
-    def reset_warning_registry():
+def cleanup_warnings():
+    try:
+        yield
+    finally:
         mplcursors.__warningregistry__ = {}
 
 
@@ -408,19 +409,24 @@ def test_callback(ax):
     assert len(calls) == 1
 
 
+def test_remove_while_adding(ax):
+    ax.plot([0, 1])
+    cursor = mplcursors.cursor()
+    cursor.connect("add", cursor.remove_selection)
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+
+
 def test_autoalign(ax):
     ax.plot([0, 1])
     cursor = mplcursors.cursor()
-    @cursor.connect("add")
-    def on_add(sel):
-        sel.annotation.set(position=(-10, 0))
+    cursor.connect(
+        "add", lambda sel: sel.annotation.set(position=(-10, 0)))
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     sel, = cursor.selections
     assert (sel.annotation.get_ha() == "right"
             and sel.annotation.get_va() == "center")
-    @cursor.connect("add")
-    def on_add(sel):
-        sel.annotation.set(ha="center", va="bottom")
+    cursor.connect(
+        "add", lambda sel: sel.annotation.set(ha="center", va="bottom"))
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     sel, = cursor.selections
     assert (sel.annotation.get_ha() == "center"

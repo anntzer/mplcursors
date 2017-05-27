@@ -324,7 +324,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'mplcursors', 'mplcursors Documentation',
-     author, 'mplcursors', 'One line description of project.',
+     author, 'mplcursors', 'Interactive, clickable annotations for matplotlib.',
      'Miscellaneous'),
 ]
 
