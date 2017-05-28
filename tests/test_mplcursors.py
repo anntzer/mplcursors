@@ -214,32 +214,42 @@ def test_repeated_point(ax):
     assert not _internal_warnings(record)
 
 
-def test_image(ax):
-    ax.imshow([[0, 1], [2, 3]])
+@pytest.mark.parametrize("origin", ["lower", "upper"])
+def test_image(ax, origin):
+    array = np.arange(6).reshape((3, 2))
+    ax.imshow(array, origin=origin)
+
+    cursor = mplcursors.cursor()
+    # Annotation text includes image value.
+    _process_event("__mouse_click__", ax, (.25, .25), 1)
+    sel = cursor.selections[0]
+    assert sel.annotation.get_text() == "x=0.25\ny=0.25\n[0]"
+    # Moving around.
+    _process_event("key_press_event", ax, (.123, .456), "shift+right")
+    sel = cursor.selections[0]
+    assert sel.annotation.get_text() == "x=1\ny=0\n[1]"
+    assert array[sel.target.index] == 1
+    _process_event("key_press_event", ax, (.123, .456), "shift+right")
+    sel = cursor.selections[0]
+    assert sel.annotation.get_text() == "x=0\ny=0\n[0]"
+    assert array[sel.target.index] == 0
+    _process_event("key_press_event", ax, (.123, .456), "shift+up")
+    sel = cursor.selections[0]
+    assert (sel.annotation.get_text()
+            == {"upper": "x=0\ny=2\n[4]", "lower": "x=0\ny=1\n[2]"}[origin])
+    assert array[sel.target.index] == {"upper": 4, "lower": 2}[origin]
+    _process_event("key_press_event", ax, (.123, .456), "shift+down")
+    sel = cursor.selections[0]
+    assert sel.annotation.get_text() == "x=0\ny=0\n[0]"
+    assert array[sel.target.index] == 0
+
     cursor = mplcursors.cursor()
     # Not picking out-of-axes or of image.
     _process_event("__mouse_click__", ax, (-1, -1), 1)
     assert len(cursor.selections) == 0
-    ax.set(xlim=(-.5, 2.5), ylim=(-.5, 2.5))
-    _process_event("__mouse_click__", ax, (2, 2), 1)
+    ax.set(xlim=(-1, None), ylim=(-1, None))
+    _process_event("__mouse_click__", ax, (-.75, -.75), 1)
     assert len(cursor.selections) == 0
-    # Annotation text includes image value.
-    _process_event("__mouse_click__", ax, (.75, .75), 1)
-    assert (cursor.selections[0].annotation.get_text()
-            == "x=0.75\ny=0.75\n[3]")
-    # Moving around.
-    _process_event("key_press_event", ax, (.123, .456), "shift+left")
-    assert (cursor.selections[0].annotation.get_text()
-            == "x=0\ny=1\n[2]")
-    _process_event("key_press_event", ax, (.123, .456), "shift+right")
-    assert (cursor.selections[0].annotation.get_text()
-            == "x=1\ny=1\n[3]")
-    _process_event("key_press_event", ax, (.123, .456), "shift+up")
-    assert (cursor.selections[0].annotation.get_text()
-            == "x=1\ny=0\n[1]")
-    _process_event("key_press_event", ax, (.123, .456), "shift+down")
-    assert (cursor.selections[0].annotation.get_text()
-            == "x=1\ny=1\n[3]")
 
 
 def test_image_subclass(ax):

@@ -97,6 +97,13 @@ class AttrArray(np.ndarray):
         return np.asarray(array).view(cls)
 
 
+def with_attrs(array, **kwargs):
+    array = AttrArray(array)
+    for k, v in kwargs.items():
+        setattr(array, k, v)
+    return array
+
+
 Selection = namedtuple("Selection", "artist target dist annotation extras")
 # Override equality to identity: Selections should be considered immutable
 # (with mutable fields though) and we don't want to trigger casts of array
@@ -275,8 +282,7 @@ def _(artist, event):
             pass
         else:
             # More precise than transforming back.
-            target = AttrArray(artist.get_xydata()[argmin])
-            target.index = argmin
+            target = with_attrs(artist.get_xydata()[argmin], index=argmin)
             sels.append(Selection(artist, target, dmin, None, None))
     # If lines are visible, find the closest projection.
     if (artist.get_linestyle() not in ["None", "none", " ", "", None]
@@ -348,8 +354,7 @@ def _(artist, event):
         ds = np.hypot(*(ax.transData.transform(offsets)
                         - [event.x, event.y]).T)
         argmin = ds.argmin()
-        target = AttrArray(offsets[argmin])
-        target.index = inds[argmin]
+        target = with_attrs(offsets[argmin], index=inds[argmin])
         return Selection(artist, target, ds[argmin], None, None)
     else:
         # Note that this won't select implicitly closed paths.
@@ -380,7 +385,16 @@ def _(artist, event):
     contains, _ = artist.contains(event)
     if not contains:
         return
-    return Selection(artist, (event.xdata, event.ydata), 0, None, None)
+    ns = np.asarray(artist.get_array().shape)[::-1]  # (y, x) -> (x, y)
+    xy = np.array([event.xdata, event.ydata])
+    xmin, xmax, ymin, ymax = artist.get_extent()
+    # Handling of "upper" origin copied from AxesImage.get_cursor_data.
+    if artist.origin == "upper":
+        ymin, ymax = ymax, ymin
+    low, high = np.array([[xmin, ymin], [xmax, ymax]])
+    idxs = ((xy - low) / (high - low) * ns).astype(int)[::-1]
+    target = with_attrs(xy, index=tuple(idxs))
+    return Selection(artist, target, 0, None, None)
 
 
 @compute_pick.register(Barbs)
@@ -391,8 +405,7 @@ def _(artist, event):
         *(artist.axes.transData.transform(offsets) - [event.x, event.y]).T)
     argmin = np.nanargmin(ds)
     if ds[argmin] < artist.get_pickradius():
-        target = AttrArray(offsets[argmin])
-        target.index = argmin
+        target = with_attrs(offsets[argmin], index=argmin)
         return Selection(artist, target, ds[argmin], None, None)
     else:
         return None
@@ -419,8 +432,7 @@ def _(container, event):
             if patch.contains(event)[0]}
     except ValueError:
         return
-    target = AttrArray([event.xdata, event.ydata])
-    target.index = idx
+    target = with_attrs([event.xdata, event.ydata], index=idx)
     if patch.sticky_edges.x:
         target[0], = (
             x for x in [patch.get_x(), patch.get_x() + patch.get_width()]
@@ -444,8 +456,7 @@ def _(container, event):
     elif sel_err:
         idx, _ = sel_err.target.index
         if data_line:
-            target = AttrArray(data_line.get_xydata()[idx])
-            target.index = idx
+            target = with_attrs(data_line.get_xydata()[idx], index=idx)
         else:  # We can't guess the original data in that case!
             return
         return Selection(None, target, 0, None, None)
@@ -464,8 +475,8 @@ def _(container, event):
                   key=lambda idx_sel: idx_sel[1].dist, default=None)
     if idx_sel:
         idx, _ = idx_sel
-        target = AttrArray(container.stemlines[idx].get_xydata()[-1])
-        target.index = idx
+        target = with_attrs(
+            container.stemlines[idx].get_xydata()[-1], index=idx)
         return Selection(None, target, 0, None, None)
 
 
@@ -627,8 +638,7 @@ def _move_within_points(sel, xys, *, key):
         new_idx = (int(np.ceil(sel.target.index) - 1) if key == "left"
                    else int(np.floor(sel.target.index) + 1) if key == "right"
                    else sel.target.index) % len(xys)
-        target = AttrArray(xys[new_idx])
-        target.index = new_idx
+        target = with_attrs(xys[new_idx], index=new_idx)
         sel = sel._replace(target=target, dist=0)
         if np.isfinite(target).all():
             return sel
@@ -654,13 +664,19 @@ def _(sel, *, key):
 @move.register(AxesImage)
 @_call_with_selection
 def _(sel, *, key):
-    low, high = np.reshape(sel.artist.get_extent(), (2, 2)).T
-    ns = np.asarray(sel.artist.get_array().shape)[::-1]  # (y, x) -> (x, y)
-    idxs = ((sel.target - low) / (high - low) * ns).astype(int)
-    idxs += {
-        "left": [-1, 0], "right": [1, 0], "up": [0, 1], "down": [0, -1]}[key]
-    idxs %= ns
-    target = (idxs + .5) / ns * (high - low) + low
+    ns = sel.artist.get_array().shape
+    idxs = (np.asarray(sel.target.index)
+            + {"left": [0, -1],
+               "right": [0, 1],
+               "up": {"lower": [1, 0], "upper": [-1, 0]}[sel.artist.origin],
+               "down": {"lower": [-1, 0], "upper": [1, 0]}[sel.artist.origin]}[
+                   key]) % ns
+    xmin, xmax, ymin, ymax = sel.artist.get_extent()
+    if sel.artist.origin == "upper":
+        ymin, ymax = ymax, ymin
+    low, high = np.array([[xmin, ymin], [xmax, ymax]])
+    target = with_attrs(((idxs + .5) / ns)[::-1] * (high - low) + low,
+                        index=tuple(idxs))
     return sel._replace(target=target)
 
 

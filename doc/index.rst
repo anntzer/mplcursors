@@ -128,6 +128,10 @@ is available in the :attr:`target.index` sub-attribute:
     - For :class:`~matplotlib.lines.Line2D`\s, it contains the index of the
       selected point (see :ref:`selection-indices` for more details, especially
       regarding step plots).
+    - For :class:`~maplotlib.lines.AxesImage`\s, it contains the ``(y, x)``
+      indices of the selected point (such that ``data[y, x]`` in that order is
+      the value at that point; note that this means that the indices are not in
+      the same order as the target coordinates!).
     - For :class:`~matplotlib.container.Container`\s, it contains the index of
       the selected sub-artist.
     - For :class:`~matplotlib.collections.LineCollection`\s and
