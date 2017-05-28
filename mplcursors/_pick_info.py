@@ -314,7 +314,10 @@ def _(artist, event):
 
 @compute_pick.register(LineCollection)
 def _(artist, event):
-    contains, info = artist.contains(event)
+    # Work around until we can rely on maptlotlib/matplotlib#6491 (mpl 2.1).
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", module="matplotlib.collections")
+        contains, info = artist.contains(event)
     paths = artist.get_paths()
     sels = [_compute_projection_pick(artist, paths[ind], (event.x, event.y))
             for ind in info["ind"]]
@@ -330,7 +333,10 @@ def _(artist, event):
 @compute_pick.register(PathCollection)
 def _(artist, event):
     # Use the C implementation to prune the list of segments.
-    contains, info = artist.contains(event)
+    # Work around until we can rely on maptlotlib/matplotlib#6491 (mpl 2.1).
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", module="matplotlib.collections")
+        contains, info = artist.contains(event)
     if not contains:
         return
     offsets = artist.get_offsets()
@@ -590,7 +596,7 @@ def _(sel):
                             for s in map(fmt, err)]
                     repl = r"\1=$\2_{{{}}}^{{{}}}$\3".format(*err_s)
                 else:
-                    repl = r"\1=$\2\pm{}$\3".format(fmt(err[1]))
+                    repl = r"\1=$\2\\pm{}$\3".format(fmt(err[1]))
                 ann_text = re.sub("({})=(.*)(\n?)".format(dir), repl, ann_text)
     return ann_text
 
