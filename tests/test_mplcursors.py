@@ -86,6 +86,13 @@ def test_selection_identity_comparison():
     assert sel0 != sel1
 
 
+def test_degenerate_inputs(ax):
+    empty_container = ax.bar([], [])
+    assert not mplcursors.cursor().artists
+    assert not mplcursors.cursor(empty_container).artists
+    pytest.raises(TypeError, mplcursors.cursor, [1])
+
+
 def test_line(ax):
     l, = ax.plot([0, .2, 1], [0, .8, 1], label="foo")
     cursor = mplcursors.cursor(multiple=True)
