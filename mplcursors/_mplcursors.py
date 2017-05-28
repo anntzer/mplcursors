@@ -4,7 +4,6 @@ from contextlib import suppress
 import copy
 from functools import partial
 import sys
-from types import MappingProxyType
 import weakref
 from weakref import WeakKeyDictionary
 
@@ -17,7 +16,16 @@ import numpy as np
 from . import _pick_info
 
 
-default_annotation_kwargs = MappingProxyType(dict(
+_default_bindings = dict(
+    select=1,
+    deselect=3,
+    left="shift+left",
+    right="shift+right",
+    up="shift+up",
+    down="shift+down",
+    toggle_enabled="e",
+    toggle_visible="v")
+_default_annotation_kwargs = dict(
     textcoords="offset points",
     bbox=dict(
         boxstyle="round,pad=.5",
@@ -28,14 +36,13 @@ default_annotation_kwargs = MappingProxyType(dict(
         arrowstyle="->",
         connectionstyle="arc3",
         shrinkB=0,
-        ec="k")))
-default_annotation_positions = (
-    MappingProxyType(dict(position=(-15, 15), ha="right", va="bottom")),
-    MappingProxyType(dict(position=(15, 15), ha="left", va="bottom")),
-    MappingProxyType(dict(position=(15, -15), ha="left", va="top")),
-    MappingProxyType(dict(position=(-15, -15), ha="right", va="top")),
-)
-default_highlight_kwargs = MappingProxyType(dict(
+        ec="k"))
+_default_annotation_positions = [
+    dict(position=(-15, 15), ha="right", va="bottom"),
+    dict(position=(15, 15), ha="left", va="bottom"),
+    dict(position=(15, -15), ha="left", va="top"),
+    dict(position=(-15, -15), ha="right", va="top")]
+_default_highlight_kwargs = dict(
     # Only the kwargs corresponding to properties of the artist will be passed.
     # Line2D.
     color="yellow",
@@ -44,16 +51,7 @@ default_highlight_kwargs = MappingProxyType(dict(
     markeredgewidth=3,
     # PathCollection.
     facecolor="yellow",
-    edgecolor="yellow"))
-default_bindings = MappingProxyType(dict(
-    select=1,
-    deselect=3,
-    left="shift+left",
-    right="shift+right",
-    up="shift+up",
-    down="shift+down",
-    toggle_enabled="e",
-    toggle_visible="v"))
+    edgecolor="yellow")
 
 
 class _MarkedStr(str):
@@ -90,6 +88,17 @@ def _reassigned_axes_event(event, ax):
 
 class Cursor:
     """A cursor for selecting artists on a matplotlib figure.
+
+    Attributes
+    ----------
+    bindings : dict
+        See the *bindings* keyword argument to the constructor.
+    annotation_kwargs : dict
+        See the *annotation_kwargs* keyword argument to the constructor.
+    annotation_positions : dict
+        See the *annotation_positions* keyword argument to the constructor.
+    highlight_kwargs : dict
+        See the *highlight_kwargs* keyword argument to the constructor.
     """
 
     _keep_alive = WeakKeyDictionary()
@@ -100,7 +109,10 @@ class Cursor:
                  multiple=False,
                  highlight=False,
                  hover=False,
-                 bindings=default_bindings):
+                 bindings=None,
+                 annotation_kwargs=None,
+                 annotation_positions=None,
+                 highlight_kwargs=None):
         """Construct a cursor.
 
         Parameters
@@ -109,16 +121,19 @@ class Cursor:
         artists : List[Artist]
             A list of artists that can be selected by this cursor.
 
-        multiple : bool
+        multiple : bool, optional
             Whether multiple artists can be "on" at the same time (defaults to
             False).
 
-        highlight : bool
+        highlight : bool, optional
             Whether to also highlight the selected artist.  If so,
             "highlighter" artists will be placed as the first item in the
             :attr:`extras` attribute of the `Selection`.
 
-        bindings : dict
+        hover : bool, optional
+            Whether to select artists upon hovering instead of by clicking.
+
+        bindings : dict, optional
             A mapping of button and keybindings to actions.  Valid entries are:
 
             ================ ===============================================
@@ -142,8 +157,18 @@ class Cursor:
                              all cursors (default: v)
             ================ ===============================================
 
-        hover : bool
-            Whether to select artists upon hovering instead of by clicking.
+            Missing entries will be set to the defaults.  In order to not
+            assign any binding to an action, set it to ``None``.
+
+        annotation_kwargs : dict, optional
+            Keyword argments passed to the `annotate
+            <matplotlib.axes.Axes.annotate>` call.
+
+        annotation_positions : List[dict], optional
+            List of positions tried by the annotation positioning algorithm.
+
+        highlight_kwargs : dict, optional
+            Keyword arguments used to create a highlighted artist.
         """
 
         artists = list(artists)
@@ -176,8 +201,9 @@ class Cursor:
             for pair in connect_pairs
             for canvas in {artist.figure.canvas for artist in artists}]
 
-        bindings = dict(ChainMap(bindings, default_bindings))
-        unknown_bindings = set(bindings) - set(default_bindings)
+        bindings = dict(ChainMap(bindings if bindings is not None else {},
+                                 _default_bindings))
+        unknown_bindings = set(bindings) - set(_default_bindings)
         if unknown_bindings:
             raise ValueError("Unknown binding(s): {}".format(
                 ", ".join(sorted(unknown_bindings))))
@@ -186,7 +212,25 @@ class Cursor:
         if duplicate_bindings:
             raise ValueError("Duplicate binding(s): {}".format(
                 ", ".join(sorted(map(str, duplicate_bindings)))))
-        self._bindings = bindings
+        self.bindings = bindings
+
+        self.annotation_kwargs = (
+            annotation_kwargs if annotation_kwargs is not None
+            else copy.deepcopy(_default_annotation_kwargs))
+        self.annotation_positions = (
+            annotation_positions if annotation_positions is not None
+            else copy.deepcopy(_default_annotation_positions))
+        self.highlight_kwargs = (
+            highlight_kwargs if highlight_kwargs is not None
+            else copy.deepcopy(_default_highlight_kwargs))
+
+    @property
+    def artists(self):
+        """The tuple of selectable artists.
+        """
+        # Work around matplotlib/matplotlib#6982: `cla()` does not clear
+        # `.axes`.
+        return tuple(filter(_is_alive, (ref() for ref in self._artists)))
 
     @property
     def enabled(self):
@@ -197,6 +241,16 @@ class Cursor:
     @enabled.setter
     def enabled(self, value):
         self._enabled = value
+
+    @property
+    def selections(self):
+        """The tuple of current `Selection`\\s.
+        """
+        for sel in self._selections:
+            if sel.annotation.axes is None:
+                raise RuntimeError("Annotation unexpectedly removed; "
+                                   "use 'cursor.remove_selection' instead")
+        return tuple(self._selections)
 
     @property
     def visible(self):
@@ -213,23 +267,6 @@ class Cursor:
         for sel in self.selections:
             sel.annotation.set_visible(value)
             sel.annotation.figure.canvas.draw_idle()
-
-    artists = property(
-        # Work around matplotlib/matplotlib#6982: `cla()` does not clear
-        # `.axes`.
-        lambda self: tuple(filter(_is_alive,
-                                  (ref() for ref in self._artists))),
-        doc="The tuple of selectable artists.")
-
-    @property
-    def selections(self):
-        """The tuple of current `Selection`\\s.
-        """
-        for sel in self._selections:
-            if sel.annotation.axes is None:
-                raise RuntimeError("Annotation unexpectedly removed; "
-                                   "use `cursor.remove_selection instead`")
-        return tuple(self._selections)
 
     def add_selection(self, pi):
         """Create an annotation for a `Selection` and register it.
@@ -258,7 +295,7 @@ class Cursor:
             xytext=(np.nan, np.nan),
             ha=_MarkedStr("center"), va=_MarkedStr("center"),
             visible=self.visible,
-            **default_annotation_kwargs)
+            **self.annotation_kwargs)
         ann.draggable(use_blit=True)
         extras = []
         if self._highlight:
@@ -276,7 +313,7 @@ class Cursor:
             ax_bbox = axes.get_window_extent()
             overlaps = []
             for idx, annotation_position in enumerate(
-                    default_annotation_positions):
+                    self.annotation_positions):
                 ann.set(**annotation_position)
                 # Work around matplotlib/matplotlib#7614: position update is
                 # missing.
@@ -289,7 +326,7 @@ class Cursor:
                      # the last used position as default.
                      idx == self._last_auto_position))
             auto_position = max(range(len(overlaps)), key=overlaps.__getitem__)
-            ann.set(**default_annotation_positions[auto_position])
+            ann.set(**self.annotation_positions[auto_position])
             self._last_auto_position = auto_position
         else:
             if isinstance(ann.get_ha(), _MarkedStr):
@@ -329,7 +366,7 @@ class Cursor:
         """
         hl = _pick_info.make_highlight(
             artist, *args,
-            **ChainMap({"highlight_kwargs": default_highlight_kwargs}, kwargs))
+            **ChainMap({"highlight_kwargs": self.highlight_kwargs}, kwargs))
         if hl:
             artist.axes.add_artist(hl)
             return hl
@@ -382,9 +419,9 @@ class Cursor:
             self.remove_selection(sel)
 
     def _on_button_press(self, event):
-        if event.button == self._bindings["select"]:
+        if event.button == self.bindings["select"]:
             self._on_select_button_press(event)
-        if event.button == self._bindings["deselect"]:
+        if event.button == self.bindings["deselect"]:
             self._on_deselect_button_press(event)
 
     def _filter_mouse_event(self, event):
@@ -427,16 +464,16 @@ class Cursor:
                 self.remove_selection(sel)
 
     def _on_key_press(self, event):
-        if event.key == self._bindings["toggle_enabled"]:
+        if event.key == self.bindings["toggle_enabled"]:
             self.enabled = not self.enabled
-        elif event.key == self._bindings["toggle_visible"]:
+        elif event.key == self.bindings["toggle_visible"]:
             self.visible = not self.visible
         try:
             sel = self.selections[-1]
         except IndexError:
             return
         for key in ["left", "right", "up", "down"]:
-            if event.key == self._bindings[key]:
+            if event.key == self.bindings[key]:
                 self.remove_selection(sel)
                 self.add_selection(_pick_info.move(*sel, key=key))
                 break
