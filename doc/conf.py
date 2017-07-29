@@ -137,7 +137,7 @@ html_theme = 'alabaster'
 #
 html_sidebars = {'**': ['about.html', 'navigation.html', 'localtoc.html']}
 html_theme_options = {
-    'description': 'Interactive, clickable annotations for matplotlib.',
+    'description': 'Interactive data selection cursors for Matplotlib.',
     'github_user': 'anntzer',
     'github_repo': 'mplcursors',
     'github_banner': True,
@@ -327,7 +327,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'mplcursors', 'mplcursors Documentation',
-     author, 'mplcursors', 'Interactive, clickable annotations for matplotlib.',
+     author, 'mplcursors', 'Interactive data selection cursors for Matplotlib.',
      'Miscellaneous'),
 ]
 

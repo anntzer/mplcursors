@@ -1,4 +1,4 @@
-mplcursors – Interactive, clickable annotations for Matplotlib
+mplcursors – Interactive data selection cursors for Matplotlib
 ==============================================================
 
 |Python34| |Join the chat at https://gitter.im/mplcursors/mplcursors| |Documentation Status| |Travis| |CodeCov|
@@ -13,7 +13,7 @@ mplcursors – Interactive, clickable annotations for Matplotlib
 .. |CodeCov| image:: https://codecov.io/gh/anntzer/mplcursors/master.svg
    :target: https://codecov.io/gh/anntzer/mplcursors
 
-mplcursors provides interactive, clickable annotations for Matplotlib_.  It is
+mplcursors provides interactive data selection cursors for Matplotlib_.  It is
 inspired from mpldatacursor_, with a much simplified API.
 
 mplcursors requires Python 3, and Matplotlib_\≥2.0.

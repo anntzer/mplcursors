@@ -12,7 +12,7 @@
 Welcome to mplcursors' documentation!
 =====================================
 
-:mod:`mplcursors` provides interactive, clickable annotations for
+:mod:`mplcursors` provides interactive data selection cursors for
 :mod:`matplotlib`.  It is inspired from :mod:`mpldatacursor`
 (https://github.com/joferkington/mpldatacursor), with a much simplified API.
 
