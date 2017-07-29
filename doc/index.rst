@@ -3,6 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. toctree::
+   :hidden:
+
+   Main page <self>
+   Examples <examples/index>
+
 Welcome to mplcursors' documentation!
 =====================================
 
@@ -10,7 +16,7 @@ Welcome to mplcursors' documentation!
 :mod:`matplotlib`.  It is inspired from :mod:`mpldatacursor`
 (https://github.com/joferkington/mpldatacursor), with a much simplified API.
 
-:mod:`mplcursors` requires Python 3, and :mod:`matplotlib`\>=2.0.
+:mod:`mplcursors` requires Python 3, and :mod:`matplotlib`\≥2.0.
 
 .. _installation:
 
@@ -153,16 +159,18 @@ with the `Selection` as only argument.  Here, the only callback updates the
 text of the annotation to a per-point label. (``cursor.connect("add")`` can
 also be used as a decorator to register a callback, see below for an example.)
 For an example using :mod:`pandas`’ :class:`DataFrame <pandas.DataFrame>`\s,
-see :file:`examples/dataframe.py`.
+see :ref:`examples/dataframe.py <sphx_glr_examples_dataframe.py>`.
 
-For additional customizations of the position and appearance of the annotation,
-see :file:`examples/bar_example.py` and :file:`examples/change_popup_color.py`.
+For additional customizations of the position and
+appearance of the annotation, see :ref:`examples/bar.py
+<sphx_glr_examples_bar.py>` and :ref:`examples/change_popup_color.py
+<sphx_glr_examples_change_popup_color.py>`.
 
 Callbacks can also be used to make additional changes to the figure when
 a selection occurs.  For example, the following snippet (extracted from
-:file:`examples/multi_highlight_example.py`) ensures that whenever an artist is
-selected, another artist that has been "paired" with it (via the ``pairs`` map)
-also gets selected::
+:ref:`examples/paired_highlight.py <sphx_glr_examples_paired_highlight.py>`)
+ensures that whenever an artist is selected, another artist that has been
+"paired" with it (via the ``pairs`` map) also gets selected::
 
     @cursor.connect("add")
     def on_add(sel):
@@ -192,9 +200,10 @@ where the point is within that segment.
 Such an approach does not make sense for step plots (i.e., created by
 `plt.step <matplotlib.pyplot.step>` or `plt.plot(..., drawstyle="steps-...")
 <matplotlib.pyplot.plot>`.  In this case, we return a special :class:`Index`
-object, with attributes :attr:`int` (the segment index), :attr:`x` (how far the
-point has advanced in the ``x`` direction) and :attr:`y` (how far the point has
-advanced in the ``y`` direction).  See :file:`examples/step.py` for an example.
+object, with attributes :attr:`int` (the segment index), :attr:`x` (how
+far the point has advanced in the ``x`` direction) and :attr:`y` (how far
+the point has advanced in the ``y`` direction).  See :ref:`examples/step.py
+<sphx_glr_examples_step.py>` for an example.
 
 .. _complex-plots:
 
@@ -207,11 +216,8 @@ or not at all.  Typically, it is because they do not subclass
 of independent artists (each contour level, in the case of contour plots).
 
 It is usually possible, again, to hook the ``"add"`` signal to provide
-additional information in the annotation text.  See :file:`examples/coutour.py`
-for an example.
-
-.. toctree::
-   :maxdepth: 2
+additional information in the annotation text.  See :ref:`examples/coutour.py
+<sphx_glr_examples_contour.py>` for an example.
 
 Indices and tables
 ==================

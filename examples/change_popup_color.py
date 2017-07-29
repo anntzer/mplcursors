@@ -21,7 +21,8 @@ axes[1].set(title="Fancy white background")
 c1 = mplcursors.cursor(left_artist)
 @c1.connect("add")
 def _(sel):
-    sel.annotation.set(position=(15, -15), bbox=None)
+    sel.annotation.set(position=(15, -15))
+    # Note: Needs to be set separately due to matplotlib/matplotlib#8956.
     sel.annotation.set_bbox(None)
 
 # Make the box have a white background with a fancier connecting arrow
