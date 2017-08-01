@@ -177,7 +177,7 @@ class Cursor:
         self._artists = [weakref.ref(artist) for artist in artists]
 
         for artist in artists:
-            type(self)._keep_alive.setdefault(artist, []).append(self)
+            type(self)._keep_alive.setdefault(artist, set()).add(self)
 
         self._multiple = multiple
         self._highlight = highlight
@@ -413,13 +413,18 @@ class Cursor:
         self._callbacks.disconnect(cid)
 
     def remove(self):
-        """Remove all `Selection`\\s and disconnect all callbacks.
+        """Remove a cursor.
+
+        Remove all `Selection`\\s, disconnect all callbacks, and allow the
+        cursor to be garbage collected.
         """
         for disconnectors in self._disconnectors:
             disconnectors()
         for sel in self.selections:
             self.remove_selection(sel)
-        # FIXME This should also unregister self from _keep_alive.
+        for s in type(self)._keep_alive.values():
+            with suppress(KeyError):
+                s.remove(self)
 
     def _on_button_press(self, event):
         if event.button == self.bindings["select"]:
