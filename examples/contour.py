@@ -14,6 +14,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import mplcursors
 
+np.random.seed(42)
+
 fig, ax = plt.subplots()
 cf = ax.contour(np.random.random((10, 10)))
 cursor = mplcursors.cursor()

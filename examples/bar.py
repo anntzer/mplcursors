@@ -1,6 +1,6 @@
 """
-Display a bar's height and name on top of it upon hovering.
-===========================================================
+Display a bar's height and name on top of it upon hovering
+==========================================================
 
 Using an event handler to change the annotation text and position.
 """

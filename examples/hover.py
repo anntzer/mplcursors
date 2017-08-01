@@ -1,24 +1,20 @@
 """
-Hovering and custom formatters.
-===============================
+Annotate on hover
+=================
 
-Not much to it.
+When ``hover`` is set to ``True``, annotations are displayed when the mouse
+hovers over the artist, without the need for clicking.
 """
 
-import string
 import matplotlib.pyplot as plt
 import numpy as np
 import mplcursors
-np.random.seed(1977)
-
-x, y = np.random.random((2, 26))
-labels = string.ascii_lowercase
+np.random.seed(42)
 
 fig, ax = plt.subplots()
-ax.scatter(x, y, s=200)
+ax.scatter(*np.random.random((2, 26)))
 ax.set_title("Mouse over a point")
 
-mplcursors.cursor(hover=True).connect(
-    "add", lambda sel: sel.annotation.set_text(labels[sel.target.index]))
+mplcursors.cursor(hover=True)
 
 plt.show()
