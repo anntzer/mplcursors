@@ -133,6 +133,8 @@ class Cursor:
 
         hover : bool, optional
             Whether to select artists upon hovering instead of by clicking.
+            (Hover over an artist while a button is pressed will not trigger a
+            selection.)
 
         bindings : dict, optional
             A mapping of button and keybindings to actions.  Valid entries are:
@@ -193,7 +195,7 @@ class Cursor:
             if multiple:
                 raise ValueError("'hover' and 'multiple' are incompatible")
             connect_pairs += [
-                ("motion_notify_event", self._on_select_button_press)]
+                ("motion_notify_event", self._on_motion_notify)]
         else:
             connect_pairs += [
                 ("button_press_event", self._on_button_press)]
@@ -297,7 +299,6 @@ class Cursor:
             ha=_MarkedStr("center"), va=_MarkedStr("center"),
             visible=self.visible,
             **self.annotation_kwargs)
-        # FIXME draggable and hover are incompatible.
         ann.draggable(use_blit=True)
         extras = []
         if self._highlight:
@@ -431,6 +432,12 @@ class Cursor:
             self._on_select_button_press(event)
         if event.button == self.bindings["deselect"]:
             self._on_deselect_button_press(event)
+
+    def _on_motion_notify(self, event):
+        # Filter away events where the mouse is pressed, in particular to avoid
+        # conflicts between hover and draggable.
+        if event.button is None:
+            self._on_select_button_press(event)
 
     def _filter_mouse_event(self, event):
         # Accept the event iff we are enabled, and either

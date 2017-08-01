@@ -387,6 +387,8 @@ def test_hover(ax):
     l1, = ax.plot([0, 1])
     l2, = ax.plot([1, 2])
     cursor = mplcursors.cursor(hover=True)
+    _process_event("motion_notify_event", ax, (.5, .5), 1)
+    assert len(cursor.selections) == 0  # No trigger if mouse button pressed.
     _process_event("motion_notify_event", ax, (.5, .5))
     assert cursor.selections[0].artist == l1
     _process_event("motion_notify_event", ax, (.5, 1.5))
