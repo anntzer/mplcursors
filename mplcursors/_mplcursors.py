@@ -11,6 +11,7 @@ from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.cbook import CallbackRegistry
 from matplotlib.container import Container
+from matplotlib.figure import Figure
 import numpy as np
 
 from . import _pick_info
@@ -501,11 +502,11 @@ def cursor(pickables=None, **kwargs):
     Parameters
     ----------
 
-    pickables : Optional[List[Union[Artist, Container, Axes]]]
-        All artists and containers in the list or on any of the axes passed in
-        the list are selectable by the constructed :class:`Cursor`.  Defaults
-        to all artists and containers on any of the figures that :mod:`pyplot`
-        is tracking.
+    pickables : Optional[List[Union[Artist, Container, Axes, Figure]]]
+        All artists and containers in the list or on any of the axes or figures
+        passed in the list are selectable by the constructed :class:`Cursor`.
+        Defaults to all artists and containers on any of the figures that
+        :mod:`pyplot` is tracking.
 
     **kwargs
         Keyword arguments are passed to the :class:`Cursor` constructor.
@@ -514,39 +515,39 @@ def cursor(pickables=None, **kwargs):
     if pickables is None:
         # Do not import pyplot ourselves to avoid forcing the backend.
         plt = sys.modules.get("matplotlib.pyplot")
-        pickables = [ax for fig in map(plt.figure, plt.get_fignums())
-                        for ax in fig.axes] if plt else []
+        pickables = [
+            plt.figure(num) for num in plt.get_fignums()] if plt else []
     elif (isinstance(pickables, Container)
           or not isinstance(pickables, Iterable)):
         pickables = [pickables]
-    else:
-        pickables = list(pickables)  # To keep track of unknown args.
-    artists = []
-    for entry in pickables[:]:
-        if isinstance(entry, Axes):
-            ax = entry
-            artists.extend(
-                ax.collections + ax.images + ax.lines + ax.patches + ax.texts)
-            for container in ax.containers:
-                contained = list(filter(None, container.get_children()))
-                for artist in contained:
-                    artists.remove(artist)
-                if contained:
-                    artists.append(_pick_info.ContainerArtist(container))
-            pickables.remove(entry)
-        elif isinstance(entry, Artist):
-            artist = entry
-            artists.append(artist)
-            pickables.remove(entry)
-    for entry in pickables[:]:
-        if isinstance(entry, Container):
-            contained = list(filter(None, entry.get_children()))
-            for artist in contained:
-                with suppress(ValueError):
-                    artists.remove(artist)
-            if contained:
-                artists.append(_pick_info.ContainerArtist(entry))
-            pickables.remove(entry)
-    if pickables:
-        raise TypeError("Unknown argument type")
+
+    def iter_unpack_figures(pickables):
+        for entry in pickables:
+            if isinstance(entry, Figure):
+                yield from entry.axes
+            else:
+                yield entry
+
+    def iter_unpack_axes(pickables):
+        for entry in pickables:
+            if isinstance(entry, Axes):
+                for artists in [entry.collections, entry.images, entry.lines,
+                                entry.patches, entry.texts]:
+                    yield from artists
+                containers.extend(entry.containers)
+            elif isinstance(entry, Container):
+                containers.append(entry)
+            else:
+                yield entry
+
+    containers = []
+    artists = list(iter_unpack_axes(iter_unpack_figures(pickables)))
+    for container in containers:
+        contained = list(filter(None, container.get_children()))
+        for artist in contained:
+            with suppress(ValueError):
+                artists.remove(artist)
+        if contained:
+            artists.append(_pick_info.ContainerArtist(container))
+
     return Cursor(artists, **kwargs)
