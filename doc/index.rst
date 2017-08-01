@@ -67,11 +67,12 @@ constructor's documentation.
 Activation by environment variable
 ----------------------------------
 
-It is possible to use :mod:`mplcursors` without modifying *any* source
-code: setting the :envvar:`MPLCURSORS` environment variable to a
-JSON-encoded dict will patch `plt.show <matplotlib.pyplot.show>` to
-automatically call `cursor` before displaying the figure (with the passed
-keyword arguments, if any).  Typical settings include::
+It is possible to use :mod:`mplcursors` without modifying *any* source code:
+setting the :envvar:`MPLCURSORS` environment variable to a JSON-encoded dict
+will patch `Figure.draw <matplotlib.figure.Figure.draw>` to automatically
+call `cursor` (with the passed keyword arguments, if any) after the figure is
+drawn for the first time (more precisely, after the first draw that includes a
+selectable artist). Typical settings include::
 
     $ MPLCURSORS={} python foo.py
 
@@ -81,6 +82,9 @@ and::
 
 Note that this will only work if :mod:`mplcursors` has been installed, not if
 it is simply added to the :envvar:`PYTHONPATH`.
+
+Note that this will not pick up artists added to the figure after the first
+draw, e.g. through interactive callbacks.
 
 .. _default-ui:
 

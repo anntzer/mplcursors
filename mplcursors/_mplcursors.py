@@ -297,6 +297,7 @@ class Cursor:
             ha=_MarkedStr("center"), va=_MarkedStr("center"),
             visible=self.visible,
             **self.annotation_kwargs)
+        # FIXME draggable and hover are incompatible.
         ann.draggable(use_blit=True)
         extras = []
         if self._highlight:
@@ -418,6 +419,7 @@ class Cursor:
             disconnectors()
         for sel in self.selections:
             self.remove_selection(sel)
+        # FIXME This should also unregister self from _keep_alive.
 
     def _on_button_press(self, event):
         if event.button == self.bindings["select"]:
