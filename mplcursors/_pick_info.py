@@ -82,8 +82,8 @@ class ContainerArtist:
     def __str__(self):
         return "<{}({})>".format(type(self).__name__, self.container)
 
-    def __getitem__(self, key):
-        return self.container[key]
+    def __repr__(self):
+        return "<{}({!r})>".format(type(self).__name__, self.container)
 
     figure = property(lambda self: _artist_in_container(self.container).figure)
     axes = property(lambda self: _artist_in_container(self.container).axes)
@@ -558,19 +558,22 @@ def _(sel):
 
 
 @get_ann_text.register(Barbs)
+@_call_with_selection
+def _(sel):
+    artist = sel.artist
+    text = "{}\n{}".format(
+        _format_coord_unspaced(artist.axes, sel.target),
+        (artist.u[sel.target.index], artist.v[sel.target.index]))
+    return text
+
+
 @get_ann_text.register(Quiver)
 @_call_with_selection
 def _(sel):
     artist = sel.artist
-    if isinstance(artist, Barbs):
-        u, v = artist.u, artist.v
-    elif isinstance(artist, Quiver):
-        u, v = artist.U, artist.V
-    else:
-        raise TypeError("Unexpected type")
     text = "{}\n{}".format(
         _format_coord_unspaced(artist.axes, sel.target),
-        (u[sel.target.index], v[sel.target.index]))
+        (artist.U[sel.target.index], artist.V[sel.target.index]))
     return text
 
 

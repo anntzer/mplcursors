@@ -93,8 +93,9 @@ def test_degenerate_inputs(ax):
     pytest.raises(TypeError, mplcursors.cursor, [1])
 
 
-def test_line(ax):
-    l, = ax.plot([0, .2, 1], [0, .8, 1], label="foo")
+@pytest.mark.parametrize("plotter", [Axes.plot, Axes.fill])
+def test_line(ax, plotter):
+    artist, = plotter(ax, [0, .2, 1], [0, .8, 1], label="foo")
     cursor = mplcursors.cursor(multiple=True)
     # Far, far away.
     _process_event("__mouse_click__", ax, (0, 1), 1)
@@ -107,7 +108,7 @@ def test_line(ax):
     _process_event("__mouse_click__", ax, (0, 1), 3)
     assert len(cursor.selections) == len(ax.texts) == 1
     # Remove the text label; add another annotation.
-    l.set_label(None)
+    artist.set_label(None)
     _process_event("__mouse_click__", ax, (.6, .9), 1)
     assert len(cursor.selections) == len(ax.texts) == 2
     assert cursor.selections[1].annotation.get_text() == "x=0.6\ny=0.9"
@@ -277,8 +278,7 @@ def test_linecollection(ax):
     assert_almost_equal(cursor.selections[0].target.index, (0, .5))
 
 
-@pytest.mark.parametrize("plotter",
-                         [Axes.quiver, Axes.barbs])
+@pytest.mark.parametrize("plotter", [Axes.quiver, Axes.barbs])
 def test_quiver_and_barbs(ax, plotter):
     plotter(ax, range(3), range(3))
     cursor = mplcursors.cursor()
@@ -301,17 +301,20 @@ def test_bar(ax, plotter, order):
 
 
 def test_errorbar(ax):
-    ax.errorbar(range(1, 4), range(1, 4), xerr=.5)
+    ax.errorbar(range(2), range(2), [(1, 1), (1, 2)])
     cursor = mplcursors.cursor()
     assert len(cursor.artists) == 1
-    _process_event("__mouse_click__", ax, (1, 2), 1)
+    _process_event("__mouse_click__", ax, (0, 2), 1)
     assert len(cursor.selections) == 0
-    _process_event("__mouse_click__", ax, (1.5, 1.5), 1)
-    assert_almost_equal(cursor.selections[0].target, (1.5, 1.5))
-    assert cursor.selections[0].annotation.get_text() == "x=1.5\ny=1.5"
-    _process_event("__mouse_click__", ax, (2.75, 3), 1)
-    assert_almost_equal(cursor.selections[0].target, (3, 3))
-    assert cursor.selections[0].annotation.get_text() == "x=$3\\pm0.5$\ny=3"
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    assert_almost_equal(cursor.selections[0].target, (.5, .5))
+    assert cursor.selections[0].annotation.get_text() == "x=0.5\ny=0.5"
+    _process_event("__mouse_click__", ax, (0, 1), 1)
+    assert_almost_equal(cursor.selections[0].target, (0, 0))
+    assert cursor.selections[0].annotation.get_text() == "x=0\ny=$0\\pm1$"
+    _process_event("__mouse_click__", ax, (1, 2), 1)
+    assert_almost_equal(cursor.selections[0].target, (1, 1))
+    assert cursor.selections[0].annotation.get_text() == "x=1\ny=$1_{-1}^{+2}$"
 
 
 def test_stem(ax):
@@ -329,12 +332,13 @@ def test_stem(ax):
 @pytest.mark.parametrize(
     "plotter,warns",
     [(lambda ax: ax.text(.5, .5, "foo"), False),
-     (lambda ax: ax.fill_between([0, 1], 0, 1), True)])
+     (lambda ax: ax.fill_between([0, 1], [0, 1]), True)])
 def test_misc_artists(ax, plotter, warns):
     plotter(ax)
     cursor = mplcursors.cursor()
     with pytest.warns(None) as record:
         _process_event("__mouse_click__", ax, (.5, .5), 1)
+    assert len(cursor.selections) == 0
     assert len(_internal_warnings(record)) == warns
 
 
