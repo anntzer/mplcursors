@@ -102,12 +102,13 @@ Default UI
   :kbd:`Shift-Right` move the cursor "left" or "right" by one data point.  For
   annotations pointing to images, :kbd:`Shift-Up` and :kbd:`Shift-Down` are
   likewise available.
-- :kbd:`d` toggles the visibility of the existing annotation(s).
-- :kbd:`t` toggles whether the `Cursor` is active at all (if not, no event
-  other than re-activation) is propagated.
+- :kbd:`v` toggles the visibility of the existing annotation(s).
+- :kbd:`e` toggles whether the `Cursor` is active at all (if not, no event
+  other than re-activation is propagated).
 
 These bindings are all customizable via `Cursor`’s ``bindings`` keyword
-argument.
+argument.  Note that the keyboard bindings are only active if the canvas has
+the keyboard input focus.
 
 .. _customization:
 
@@ -138,7 +139,7 @@ is available in the :attr:`target.index` sub-attribute:
     - For :class:`~matplotlib.lines.Line2D`\s, it contains the index of the
       selected point (see :ref:`selection-indices` for more details, especially
       regarding step plots).
-    - For :class:`~maplotlib.lines.AxesImage`\s, it contains the ``(y, x)``
+    - For :class:`~maplotlib.image.AxesImage`\s, it contains the ``(y, x)``
       indices of the selected point (such that ``data[y, x]`` in that order is
       the value at that point; note that this means that the indices are not in
       the same order as the target coordinates!).

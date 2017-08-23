@@ -139,7 +139,7 @@ class Cursor:
         bindings : dict, optional
             A mapping of button and keybindings to actions.  Valid entries are:
 
-            ================ ===============================================
+            ================ ==================================================
             'select'         mouse button to select an artist
                              (default: 1)
             'deselect'       mouse button to deselect an artist
@@ -158,7 +158,7 @@ class Cursor:
                              (default: e)
             'toggle_visible' toggle default cursor visibility and apply it to
                              all cursors (default: v)
-            ================ ===============================================
+            ================ ==================================================
 
             Missing entries will be set to the defaults.  In order to not
             assign any binding to an action, set it to ``None``.
@@ -291,7 +291,7 @@ class Cursor:
         figure = pi.artist.figure
         axes = pi.artist.axes
         if axes.get_renderer_cache() is None:
-            figure.canvas.draw()
+            figure.canvas.draw()  # Needed by draw_artist below anyways.
         renderer = pi.artist.axes.get_renderer_cache()
         ann = pi.artist.axes.annotate(
             _pick_info.get_ann_text(*pi), xy=pi.target,

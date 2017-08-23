@@ -67,7 +67,7 @@ class install_lib_with_pth(install_lib):
 
 setup(name="mplcursors",
       description="Interactive data selection cursors for Matplotlib.",
-      long_description=open("README.rst").read(),
+      long_description=open("README.rst", encoding="utf-8").read(),
       version=versioneer.get_version(),
       cmdclass=ChainMap(versioneer.get_cmdclass(),
                         {"install_lib": install_lib_with_pth}),

@@ -18,8 +18,7 @@ inspired from mpldatacursor_, with a much simplified API.
 
 mplcursors requires Python 3, and Matplotlib_\≥2.0.
 
-Read the documentation `on readthedocs.org
-<https://mplcursors.readthedocs.org>`_.
+Read the documentation on `readthedocs.org`_.
 
 Install from PyPI with::
 
@@ -34,3 +33,4 @@ Run tests with pytest_\≥3.0.0.
 .. _Matplotlib: http://matplotlib.org
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor
 .. _pytest: http://pytest.org
+.. _readthedocs.org: https://mplcursors.readthedocs.org
