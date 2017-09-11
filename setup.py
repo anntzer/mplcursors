@@ -73,10 +73,10 @@ setup(name="mplcursors",
                         {"install_lib": install_lib_with_pth}),
       author="Antony Lee",
       url="https://github.com/anntzer/mplcursors",
-      license="BSD",
+      license="MIT",
       classifiers=[
           "Development Status :: 4 - Beta",
-          "License :: OSI Approved :: BSD License",
+          "License :: OSI Approved :: MIT License",
           "Programming Language :: Python :: 3.4",
           "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6"
