@@ -3,12 +3,16 @@
 
 - Updated dependency to matplotlib 2.0 (which gives more information about
   oritentation of bar plots).
+- Setting `MPLCURSORS` hooks `Figure.draw` (once per figure only) instead of
+  `plt.show`, thus supporting figures created after the first call to
+  `plt.show`.
 - Automatic positioning and alignment of annotation text.
-- `Patch`\es now pick on their borders, not their interior.
+- Selections on images now have an index as well.
+- Selections created on `scatter`\plots can now be moved.
 - `PathCollection`\s not created by `plt.scatter` are now picked as paths, not
   as collections of points.
+- `Patch`\es now pick on their borders, not their interior.
 - Improved picking of `Container`\s.
-
 
 0.1
 ===
