@@ -1,9 +1,0 @@
-name: py36
-dependencies:
-    - python=3.6.2
-    - qt=5.6.0
-    - pip:
-        - matplotlib==2.0.0
-        - pandas==0.20.3
-        - sphinx==1.5.6
-        - sphinx-gallery==0.1.13

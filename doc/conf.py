@@ -3,7 +3,6 @@
 
 # -- General configuration ------------------------------------------------
 
-needs_sphinx = '1.6.4'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
