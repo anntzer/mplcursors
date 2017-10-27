@@ -13,6 +13,7 @@
   as collections of points.
 - `Patch`\es now pick on their borders, not their interior.
 - Improved picking of `Container`\s.
+- In hover mode, annotations can still be removed by right-clicking.
 
 0.1
 ===

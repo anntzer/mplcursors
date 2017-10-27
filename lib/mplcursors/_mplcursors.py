@@ -133,8 +133,8 @@ class Cursor:
 
         hover : bool, optional
             Whether to select artists upon hovering instead of by clicking.
-            (Hover over an artist while a button is pressed will not trigger a
-            selection.)
+            (Hovering over an artist while a button is pressed will not trigger
+            a selection; right clicking on an annotation will still remove it.)
 
         bindings : dict, optional
             A mapping of button and keybindings to actions.  Valid entries are:
@@ -195,10 +195,11 @@ class Cursor:
             if multiple:
                 raise ValueError("'hover' and 'multiple' are incompatible")
             connect_pairs += [
-                ("motion_notify_event", self._on_motion_notify)]
+                ("motion_notify_event", self._hover_handler),
+                ("button_press_event", self._hover_handler)]
         else:
             connect_pairs += [
-                ("button_press_event", self._on_button_press)]
+                ("button_press_event", self._nonhover_handler)]
         self._disconnectors = [
             partial(canvas.mpl_disconnect, canvas.mpl_connect(*pair))
             for pair in connect_pairs
@@ -427,17 +428,22 @@ class Cursor:
             with suppress(KeyError):
                 s.remove(self)
 
-    def _on_button_press(self, event):
-        if event.button == self.bindings["select"]:
-            self._on_select_button_press(event)
-        if event.button == self.bindings["deselect"]:
-            self._on_deselect_button_press(event)
+    def _nonhover_handler(self, event):
+        if event.name == "button_press_event":
+            if event.button == self.bindings["select"]:
+                self._on_select_button_press(event)
+            if event.button == self.bindings["deselect"]:
+                self._on_deselect_button_press(event)
 
-    def _on_motion_notify(self, event):
-        # Filter away events where the mouse is pressed, in particular to avoid
-        # conflicts between hover and draggable.
-        if event.button is None:
+    def _hover_handler(self, event):
+        if event.name == "motion_notify_event" and event.button is None:
+            # Filter away events where the mouse is pressed, in particular to
+            # avoid conflicts between hover and draggable.
             self._on_select_button_press(event)
+        elif (event.name == "button_press_event"
+              and event.button == self.bindings["deselect"]):
+            # Still allow removing the annotation by right clicking.
+            self._on_deselect_button_press(event)
 
     def _filter_mouse_event(self, event):
         # Accept the event iff we are enabled, and either
