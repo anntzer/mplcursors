@@ -81,7 +81,7 @@ intersphinx_mapping = {
 
 sphinx_gallery_conf = {
     'backreferences_dir': False,
-    'example_dirs': '../examples',
+    'examples_dirs': '../../examples',
     'filename_pattern': '.*\.py',
     'gallery_dirs': 'examples',
     'min_reported_time': 1}
