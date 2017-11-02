@@ -546,12 +546,15 @@ def _(sel):
     return text
 
 
+_Event = namedtuple("_Event", "xdata ydata")
+
+
 @get_ann_text.register(AxesImage)
 @_call_with_selection
 def _(sel):
     artist = sel.artist
     text = _format_coord_unspaced(artist.axes, sel.target)
-    event = namedtuple("event", "xdata ydata")(*sel.target)
+    event = _Event(*sel.target)
     text += "\n[{}]".format(
         artist.format_cursor_data(artist.get_cursor_data(event)))
     return text

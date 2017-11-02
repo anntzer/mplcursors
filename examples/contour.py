@@ -1,6 +1,6 @@
 """
-Contour plot support
-====================
+Contour plots
+=============
 
 Contour plot support is limited to picking the individual
 :class:`~matplotlib.collections.LineCollection`\s, which are directly

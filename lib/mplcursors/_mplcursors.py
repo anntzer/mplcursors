@@ -88,7 +88,7 @@ def _reassigned_axes_event(event, ax):
 
 
 class Cursor:
-    """A cursor for selecting artists on a matplotlib figure.
+    """A cursor for selecting Matplotlib artists.
 
     Attributes
     ----------
@@ -384,7 +384,7 @@ class Cursor:
             - ``"add"`` when a `Selection` is added, and
             - ``"remove"`` when a `Selection` is removed.
 
-        The callback registry relies on :mod:`matplotlib`'s implementation; in
+        The callback registry relies on Matplotlib's implementation; in
         particular, only weak references are kept for bound methods.
 
         This method is can also be used as a decorator::
@@ -517,19 +517,21 @@ class Cursor:
 
 
 def cursor(pickables=None, **kwargs):
-    """Create a :class:`Cursor` for a list of artists, containers, and axes.
+    """Create a `Cursor` for a list of artists, containers, and axes.
 
     Parameters
     ----------
 
     pickables : Optional[List[Union[Artist, Container, Axes, Figure]]]
-        All artists and containers in the list or on any of the axes or figures
-        passed in the list are selectable by the constructed :class:`Cursor`.
+        All artists and containers in the list or on any of the axes or
+        figures passed in the list are selectable by the constructed `Cursor`.
         Defaults to all artists and containers on any of the figures that
-        :mod:`pyplot` is tracking.
+        :mod:`~matplotlib.pyplot` is tracking.  Note that the latter will only
+        work when relying on pyplot, not when figures are directly instantiated
+        (e.g., when manually embedding Matplotlib in a GUI toolkit).
 
     **kwargs
-        Keyword arguments are passed to the :class:`Cursor` constructor.
+        Keyword arguments are passed to the `Cursor` constructor.
     """
 
     if pickables is None:

@@ -1,6 +1,6 @@
 """
-"Linked" artists
-================
+Linked artists
+==============
 
 An example of connecting to cursor events: when an artist is selected, also
 highlight its "partner".

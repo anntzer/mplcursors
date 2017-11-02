@@ -5,6 +5,7 @@
 
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
@@ -76,6 +77,7 @@ texinfo_documents = [
 autodoc_member_order = 'bysource'
 
 intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
     'matplotlib': ('http://matplotlib.org', None),
     'pandas': ('http://pandas.pydata.org/pandas-docs/stable', None)}
 
