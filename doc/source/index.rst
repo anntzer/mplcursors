@@ -7,7 +7,7 @@ It is inspired from mpldatacursor_, with a much simplified API.
 .. _Matplotlib: http://matplotlib.org
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor
 
-:mod:`mplcursors` requires Python 3, and Matplotlib≥2.0.
+:mod:`mplcursors` requires Python 3, and Matplotlib≥2.1.
 
 .. _installation:
 
@@ -201,12 +201,19 @@ When picking a point on a "normal" line, the target index has an integer part
 equal to the index of segment it is on, and a fractional part that indicates
 where the point is within that segment.
 
-Such an approach does not make sense for step plots (i.e., created by `plt.step
-<matplotlib.pyplot.step>` or `plt.plot <matplotlib.pyplot.plot>`\ ``(...,
-drawstyle="steps-...")``.  In this case, we return a special :class:`Index`
-object, with attributes :attr:`int` (the segment index), :attr:`x` (how far the
-point has advanced in the ``x`` direction) and :attr:`y` (how far the point has
-advanced in the ``y`` direction).  See `/examples/step` for an example.
+For step plots (i.e., created by `plt.step <matplotlib.pyplot.step>` or
+`plt.plot <matplotlib.pyplot.plot>`\ ``(..., drawstyle="steps-...")``, we
+return a special :class:`Index` object, with attributes :attr:`int` (the
+segment index), :attr:`x` (how far the point has advanced in the ``x``
+direction) and :attr:`y` (how far the point has advanced in the ``y``
+direction).  See `/examples/step` for an example.
+
+On polar plots, lines can be either drawn with a "straight" connection between
+two points (in screen space), or "curved" (i.e., using linear interpolation in
+data space).  In the first case, the fractional part of the index is defined as
+for cartesian plots.  In the second case, the index in computed first on the
+interpolated path, then divided by the interpolation factor (i.e., pretending
+that each interpolated segment advances the same index by the same amount).
 
 .. _complex-plots:
 

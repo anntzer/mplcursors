@@ -59,12 +59,12 @@ setup(name="mplcursors",
           "License :: OSI Approved :: MIT License",
           "Programming Language :: Python :: 3.4",
           "Programming Language :: Python :: 3.5",
-          "Programming Language :: Python :: 3.6"
+          "Programming Language :: Python :: 3.6",
       ],
       packages=find_packages("lib"),
       package_dir={"": "lib"},
       python_requires=">=3.4",
       install_requires=[
-          "matplotlib>=2.0"
+          "matplotlib>=2.1",
       ],
       )

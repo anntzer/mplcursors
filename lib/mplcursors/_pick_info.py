@@ -198,8 +198,8 @@ def _check_clean_path(path):
     assert np.in1d(codes[1:-1], [path.LINETO, path.CLOSEPOLY]).all()
 
 
-def _compute_projection_pick(artist, path_or_vertices, xy):
-    """Project *xy* on *path_or_vertices* to obtain a `Selection` for *artist*.
+def _compute_projection_pick(artist, path, xy):
+    """Project *xy* on *path* to obtain a `Selection` for *artist*.
 
     *path* is first transformed to screen coordinates using the artist
     transform, and the target of the returned `Selection` is transformed
@@ -211,25 +211,15 @@ def _compute_projection_pick(artist, path_or_vertices, xy):
     needed.
     """
     transform = artist.get_transform().frozen()
-    if isinstance(path_or_vertices, np.ndarray):
-        vertices = path_or_vertices
-        vertices = (transform.transform(vertices) if transform.is_affine
-                    # Geo transforms perform interpolation.
-                    else transform.transform_path(MPath(vertices)).vertices)
-    elif isinstance(path_or_vertices, MPath):
-        path = path_or_vertices
-        path = (path.cleaned(transform) if transform.is_affine
-                # `cleaned` only handles affine transforms.
-                else transform.transform_path(path).cleaned())
-        # `cleaned` should return a path where the first element is
-        # `MOVETO`, the following are `LINETO` or `CLOSEPOLY`, and the
-        # last one is `STOP`.  In case of unexpected behavior, debug using
-        # `_check_clean_path(path)`.
-        vertices = path.vertices[:-1]
-        codes = path.codes[:-1]
-        vertices[codes == path.CLOSEPOLY] = vertices[0]
-    else:
-        raise TypeError("Unexpected input type")
+    tpath = (path.cleaned(transform) if transform.is_affine
+             # `cleaned` only handles affine transforms.
+             else transform.transform_path(path).cleaned())
+    # `cleaned` should return a path where the first element is `MOVETO`, the
+    # following are `LINETO` or `CLOSEPOLY`, and the last one is `STOP`.  In
+    # case of unexpected behavior, debug using `_check_clean_path(tpath)`.
+    vertices = tpath.vertices[:-1]
+    codes = tpath.codes[:-1]
+    vertices[codes == tpath.CLOSEPOLY] = vertices[0]
     # Unit vectors for each segment.
     us = vertices[1:] - vertices[:-1]
     ls = np.hypot(*us.T)
@@ -251,8 +241,9 @@ def _compute_projection_pick(artist, path_or_vertices, xy):
     else:
         target = AttrArray(
             artist.axes.transData.inverted().transform_point(projs[argmin]))
-        if transform.is_affine:
-            target.index = argmin + dot[argmin] / ls[argmin]
+        target.index = (
+            (argmin + dot[argmin] / ls[argmin])
+            / (path._interpolation_steps / tpath._interpolation_steps))
         return Selection(artist, target, dmin, None, None)
 
 
@@ -287,21 +278,14 @@ def _(artist, event):
     # If lines are visible, find the closest projection.
     if (artist.get_linestyle() not in ["None", "none", " ", "", None]
             and len(artist.get_xydata()) > 1):
-        drawstyle = Line2D.drawStyles[artist.get_drawstyle()]
-        drawstyle_conv = {
-            "_draw_lines": lambda xs, ys: (xs, ys),
-            "_draw_steps_pre": cbook.pts_to_prestep,
-            "_draw_steps_mid": cbook.pts_to_midstep,
-            "_draw_steps_post": cbook.pts_to_poststep}[drawstyle]
-        sel = _compute_projection_pick(
-            artist, np.asarray(drawstyle_conv(*data_xy.T)).T, xy)
+        sel = _compute_projection_pick(artist, artist.get_path(), xy)
         if sel is not None:
-            if hasattr(sel.target, "index"):
-                sel.target.index = {
-                    "_draw_lines": lambda _, index: index,
-                    "_draw_steps_pre": Index.pre_index,
-                    "_draw_steps_mid": Index.mid_index,
-                    "_draw_steps_post": Index.post_index}[drawstyle](
+            sel.target.index = {
+                "_draw_lines": lambda _, index: index,
+                "_draw_steps_pre": Index.pre_index,
+                "_draw_steps_mid": Index.mid_index,
+                "_draw_steps_post": Index.post_index}[
+                    Line2D.drawStyles[artist.get_drawstyle()]](
                         len(data_xy), sel.target.index)
             sels.append(sel)
     sel = min(sels, key=lambda sel: sel.dist, default=None)
@@ -320,10 +304,7 @@ def _(artist, event):
 
 @compute_pick.register(LineCollection)
 def _(artist, event):
-    # Work around until we can rely on maptlotlib/matplotlib#6491 (mpl 2.1).
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", module="matplotlib.collections")
-        contains, info = artist.contains(event)
+    contains, info = artist.contains(event)
     paths = artist.get_paths()
     sels = [_compute_projection_pick(artist, paths[ind], (event.x, event.y))
             for ind in info["ind"]]
@@ -332,17 +313,14 @@ def _(artist, event):
         key=lambda sel_idx: sel_idx[0].dist, default=(None, None))
     if sel:
         sel = sel._replace(artist=artist)
-        sel.target.index = (index, getattr(sel.target, "index", None))
+        sel.target.index = (index, sel.target.index)
     return sel
 
 
 @compute_pick.register(PathCollection)
 def _(artist, event):
     # Use the C implementation to prune the list of segments.
-    # Work around until we can rely on maptlotlib/matplotlib#6491 (mpl 2.1).
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", module="matplotlib.collections")
-        contains, info = artist.contains(event)
+    contains, info = artist.contains(event)
     if not contains:
         return
     offsets = artist.get_offsets()
@@ -370,7 +348,7 @@ def _(artist, event):
                          default=(None, None))
         if sel:
             sel = sel._replace(artist=artist)
-            sel.target.index = (index, getattr(sel.target, "index", None))
+            sel.target.index = (index, sel.target.index)
         return sel
 
 
@@ -653,8 +631,6 @@ def _move_within_points(sel, xys, *, key):
 @move.register(Line2D)
 @_call_with_selection
 def _(sel, *, key):
-    if not hasattr(sel.target, "index"):
-        return sel
     return _move_within_points(sel, sel.artist.get_xydata(), key=key)
 
 
