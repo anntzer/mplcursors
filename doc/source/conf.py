@@ -81,9 +81,16 @@ intersphinx_mapping = {
     'matplotlib': ('http://matplotlib.org', None),
     'pandas': ('http://pandas.pydata.org/pandas-docs/stable', None)}
 
+import os, sys; sys.path.append(".")
+# CustomSortKey cannot be defined *here* because it would be unpicklable as
+# this file is exec'd rather than imported.
+from _local_ext import CustomSortKey
+
 sphinx_gallery_conf = {
     'backreferences_dir': False,
     'examples_dirs': '../../examples',
     'filename_pattern': '.*\.py',
     'gallery_dirs': 'examples',
-    'min_reported_time': 1}
+    'min_reported_time': 1,
+    'within_subsection_order': CustomSortKey,
+}
