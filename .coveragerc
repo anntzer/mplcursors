@@ -1,4 +1,4 @@
 [run]
 branch = true
-source = mplcursors
-omit = lib/mplcursors/_version.py
+source = lib
+omit = **/_version.py

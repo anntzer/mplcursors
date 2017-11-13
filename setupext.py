@@ -7,10 +7,6 @@ import setuptools
 from setuptools import Extension, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install_lib import install_lib
-try:
-    import versioneer
-except ImportError:
-    versioneer = None
 
 
 __all__ = ["setup", "get_pybind_include",
@@ -22,12 +18,7 @@ class setup:
 
     def __new__(cls, **kwargs):
 
-        kwargs.setdefault("cmdclass", {})
-
-        if versioneer:
-            kwargs.setdefault("version", versioneer.get_version())
-            kwargs["cmdclass"] = dict(versioneer.get_cmdclass(),
-                                      **kwargs["cmdclass"])
+        cmdclass = kwargs.setdefault("cmdclass", {})
 
         class pth_hook_mixin:
 
@@ -43,7 +34,6 @@ class setup:
                         + [str(Path(self.install_dir, fname))
                            for fname in cls._pth_hooks])
 
-        cmdclass = kwargs["cmdclass"]
         cmdclass["develop"] = type(
             "develop_with_pth_hook",
             (pth_hook_mixin, cmdclass.get("develop", develop)),

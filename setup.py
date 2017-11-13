@@ -48,23 +48,30 @@ def _pth_hook():
         sys.meta_path.insert(0, MplcursorsMetaPathFinder())
 
 
-setup(name="mplcursors",
-      description="Interactive data selection cursors for Matplotlib.",
-      long_description=open("README.rst", encoding="utf-8").read(),
-      author="Antony Lee",
-      url="https://github.com/anntzer/mplcursors",
-      license="MIT",
-      classifiers=[
-          "Development Status :: 4 - Beta",
-          "License :: OSI Approved :: MIT License",
-          "Programming Language :: Python :: 3.4",
-          "Programming Language :: Python :: 3.5",
-          "Programming Language :: Python :: 3.6",
-      ],
-      packages=find_packages("lib"),
-      package_dir={"": "lib"},
-      python_requires=">=3.4",
-      install_requires=[
-          "matplotlib>=2.1",
-      ],
-      )
+setup(
+    name="mplcursors",
+    description="Interactive data selection cursors for Matplotlib.",
+    long_description=open("README.rst", encoding="utf-8").read(),
+    author="Antony Lee",
+    url="https://github.com/anntzer/mplcursors",
+    license="MIT",
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+    ],
+    packages=find_packages("lib"),
+    package_dir={"": "lib"},
+    python_requires=">=3.4",
+    setup_requires=["setuptools_scm"],
+    use_scm_version=lambda: {  # xref __init__.py
+        "version_scheme": "post-release",
+        "local_scheme": "node-and-date",
+        "write_to": "lib/mplcursors/_version.py",
+    },
+    install_requires=[
+        "matplotlib>=2.1",
+    ],
+)
