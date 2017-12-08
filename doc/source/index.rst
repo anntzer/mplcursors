@@ -229,6 +229,24 @@ It is usually possible, again, to hook the ``"add"`` signal to provide
 additional information in the annotation text.  See `/examples/contour` for an
 example.
 
+Animations
+----------
+
+Matplotlib's :mod:`~.animation` blitting mode assumes that the animation
+object is entirely in charge of deciding what artists to draw and when.  In
+particular, this means that the ``animated`` property is set on certain
+artists.  As a result, when :mod:`mplcursors` tries to blit an animation on top
+of the image, the animated artists will not be drawn, and disappear.  More
+importantly, it also means that once an annotation is added, :mod:`mplcursors`
+cannot remove it (as it needs to know what artists to redraw to restore the
+original state).
+
+As a workaround, either switch off blitting, or unset the ``animated`` property
+on the relevant artists before using a cursor.  (The only other fix I can
+envision is to walk the entire tree of artists, record their visibility status,
+and try to later restore them; but this would fail for `~.ArtistAnimation`\s
+which themselves fiddle with artist visibility).
+
 Indices and tables
 ==================
 
