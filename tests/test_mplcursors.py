@@ -362,7 +362,7 @@ def test_cropped_by_axes():
     assert len(cursor.selections) == 0
 
 
-@pytest.mark.parametrize("plotter", [Axes.plot, Axes.scatter])
+@pytest.mark.parametrize("plotter", [Axes.plot, Axes.scatter, Axes.errorbar])
 def test_move(ax, plotter):
     plotter(ax, [0, 1, 2], [0, 1, np.nan])
     cursor = mplcursors.cursor()
@@ -370,7 +370,7 @@ def test_move(ax, plotter):
     _process_event("key_press_event", ax, (.123, .456), "shift+left")
     assert len(cursor.selections) == 0
     # Now we move the cursor left or right.
-    if plotter is Axes.plot:
+    if plotter in [Axes.plot, Axes.errorbar]:
         _process_event("__mouse_click__", ax, (.5, .5), 1)
         assert tuple(cursor.selections[0].target) == (.5, .5)
         _process_event("key_press_event", ax, (.123, .456), "shift+left")

@@ -500,7 +500,7 @@ def _format_coord_unspaced(ax, xy):
 @functools.singledispatch
 @_call_with_selection
 def get_ann_text(sel):
-    """Compute an annotating text for a `Selection` (passed unpacked).
+    """Compute an annotating text for a `Selection` (passed **unpacked**).
 
     This is a single-dispatch function; implementations for various artist
     classes follow.
@@ -605,7 +605,7 @@ def _(sel):
 @functools.singledispatch
 @_call_with_selection
 def move(sel, *, key):
-    """Move a `Selection` (passed unpacked) following a keypress.
+    """Move a `Selection` (passed **unpacked**) following a keypress.
 
     This function is used to implement annotation displacement through the
     keyboard.
@@ -660,6 +660,20 @@ def _(sel, *, key):
     target = with_attrs(((idxs + .5) / ns)[::-1] * (high - low) + low,
                         index=tuple(idxs))
     return sel._replace(target=target)
+
+
+@move.register(ContainerArtist)
+@_call_with_selection
+def _(sel, *, key):
+    return (move(*sel._replace(artist=sel.artist.container), key=key)
+            ._replace(artist=sel.artist))
+
+
+@move.register(ErrorbarContainer)
+@_call_with_selection
+def _(sel, *, key):
+    data_line, cap_lines, err_lcs = sel.artist
+    return _move_within_points(sel, data_line.get_xydata(), key=key)
 
 
 @functools.singledispatch

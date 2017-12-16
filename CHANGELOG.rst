@@ -8,7 +8,8 @@
   `plt.show`.
 - Automatic positioning and alignment of annotation text.
 - Selections on images now have an index as well.
-- Selections created on `scatter` and `polar` plots can now be moved.
+- Selections created on `scatter` plots, `errorbar` plots, and `polar` plots
+  can now be moved.
 - `PathCollection`\s not created by `plt.scatter` are now picked as paths, not
   as collections of points.
 - `Patch`\es now pick on their borders, not their interior.
