@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import KeyEvent, MouseEvent
 import mplcursors
-from mplcursors import Selection
+from mplcursors import _pick_info, Selection
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 import pytest
@@ -76,6 +76,12 @@ def _get_remove_args(sel):
     return "__mouse_click__", ax, center, 3
 
 
+def test_containerartist(ax):
+    artist = _pick_info.ContainerArtist(ax.errorbar([], []))
+    str(artist)
+    repr(artist)
+
+
 def test_selection_identity_comparison():
     sel0, sel1 = [Selection(artist=None,
                             target=np.array([0, 0]),
@@ -137,8 +143,7 @@ def test_scatter(ax, plotter):
 
 
 def test_steps_index():
-    from mplcursors._pick_info import Index
-    index = Index(0, .5, .5)
+    index = _pick_info.Index(0, .5, .5)
     assert np.floor(index) == 0 and np.ceil(index) == 1
     assert str(index) == "0.(x=0.5, y=0.5)"
 
@@ -315,6 +320,15 @@ def test_errorbar(ax):
     _process_event("__mouse_click__", ax, (1, 2), 1)
     assert_almost_equal(cursor.selections[0].target, (1, 1))
     assert cursor.selections[0].annotation.get_text() == "x=1\ny=$1_{-1}^{+2}$"
+
+
+def test_dataless_errorbar(ax):
+    # Unfortunately, the original data cannot be recovered when fmt="none".
+    ax.errorbar(range(2), range(2), [(1, 1), (1, 2)], fmt="none")
+    cursor = mplcursors.cursor()
+    assert len(cursor.artists) == 1
+    _process_event("__mouse_click__", ax, (0, 0), 1)
+    assert len(cursor.selections) == 0
 
 
 def test_stem(ax):

@@ -192,12 +192,6 @@ class Index:
         return cls(i, x, y)
 
 
-def _check_clean_path(path):
-    codes = path.codes
-    assert (codes[0], codes[-1]) == (path.MOVETO, path.STOP)
-    assert np.in1d(codes[1:-1], [path.LINETO, path.CLOSEPOLY]).all()
-
-
 def _compute_projection_pick(artist, path, xy):
     """Project *xy* on *path* to obtain a `Selection` for *artist*.
 
@@ -215,8 +209,10 @@ def _compute_projection_pick(artist, path, xy):
              # `cleaned` only handles affine transforms.
              else transform.transform_path(path).cleaned())
     # `cleaned` should return a path where the first element is `MOVETO`, the
-    # following are `LINETO` or `CLOSEPOLY`, and the last one is `STOP`.  In
-    # case of unexpected behavior, debug using `_check_clean_path(tpath)`.
+    # following are `LINETO` or `CLOSEPOLY`, and the last one is `STOP`, i.e.
+    #     codes = path.codes
+    #     assert (codes[0], codes[-1]) == (path.MOVETO, path.STOP)
+    #     assert np.in1d(codes[1:-1], [path.LINETO, path.CLOSEPOLY]).all()
     vertices = tpath.vertices[:-1]
     codes = tpath.codes[:-1]
     vertices[codes == tpath.CLOSEPOLY] = vertices[0]
