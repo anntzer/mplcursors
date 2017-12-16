@@ -579,15 +579,17 @@ def _(sel):
             if has:
                 err = (next(err_lcs).get_paths()[sel.target.index].vertices
                        - data_line.get_xydata()[sel.target.index])[:, idx]
-                fmt = lambda e: (
-                    getattr(_artist_in_container(sel.artist).axes,
-                            "format_{}data".format(dir))(e).rstrip())
-                if err.sum():
-                    err_s = [("+" if not s.startswith(("+", "-")) else "") + s
-                            for s in map(fmt, err)]
-                    repl = r"\1=$\2_{{{}}}^{{{}}}$\3".format(*err_s)
+                err_s = [getattr(_artist_in_container(sel.artist).axes,
+                                 "format_{}data".format(dir))(e).rstrip()
+                         for e in err]
+                # We'd normally want to check err.sum() == 0, but that can run
+                # into fp inaccuracies.
+                if len({s.lstrip("+-") for s in err_s}) == 1:
+                    repl = r"\1=$\2\\pm{}$\3".format(err_s[1])
                 else:
-                    repl = r"\1=$\2\\pm{}$\3".format(fmt(err[1]))
+                    err_s = [("+" if not s.startswith(("+", "-")) else "") + s
+                             for s in err_s]
+                    repl = r"\1=$\2_{{{}}}^{{{}}}$\3".format(*err_s)
                 ann_text = re.sub("({})=(.*)(\n?)".format(dir), repl, ann_text)
     return ann_text
 
