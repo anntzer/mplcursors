@@ -4,7 +4,7 @@ Welcome to mplcursors' documentation!
 :mod:`mplcursors` provides interactive data selection cursors for Matplotlib_.
 It is inspired from mpldatacursor_, with a much simplified API.
 
-.. _Matplotlib: http://matplotlib.org
+.. _Matplotlib: https://matplotlib.org
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor
 
 :mod:`mplcursors` requires Python 3, and Matplotlib≥2.1.
@@ -111,17 +111,17 @@ namedtuples) and lets you hook into their addition and removal.
 
 Specifically, a `Selection` has the following fields:
 
-- :attr:`~.artist`: the selected artist,
-- :attr:`~.target`: the point picked within the artist; if a point is
+- :attr:`.artist`: the selected artist,
+- :attr:`.target`: the point picked within the artist; if a point is
   picked on a :class:`~matplotlib.lines.Line2D`, the index of the point is
   available as the :attr:`target.index` sub-attribute (for more details, see
   `selection-indices`).
-- :attr:`~.dist`: the distance from the point clicked to the :attr:`~.target`
-  ly used to decide which artist to select).
-- :attr:`~.annotation`: a Matplotlib :class:`~matplotlib.text.Annotation`
+- :attr:`.dist`: the distance from the point clicked to the :attr:`.target`
+  (mostly used to decide which artist to select).
+- :attr:`.annotation`: a Matplotlib :class:`~matplotlib.text.Annotation`
   object.
-- :attr:`~.extras`: an additional list of artists, that will be removed
-  whenever the main :attr:`~.annotation` is deselected.
+- :attr:`.extras`: an additional list of artists, that will be removed whenever
+  the main :attr:`.annotation` is deselected.
 
 For certain classes of artists, additional information about the picked point
 is available in the :attr:`target.index` sub-attribute:
@@ -232,20 +232,21 @@ example.
 Animations
 ----------
 
-Matplotlib's :mod:`~.animation` blitting mode assumes that the animation
+Matplotlib's :mod:`.animation` blitting mode assumes that the animation
 object is entirely in charge of deciding what artists to draw and when.  In
 particular, this means that the ``animated`` property is set on certain
-artists.  As a result, when :mod:`mplcursors` tries to blit an animation on top
-of the image, the animated artists will not be drawn, and disappear.  More
+artists.  As a result, when :mod:`mplcursors` tries to blit an animation on
+top of the image, the animated artists will not be drawn, and disappear.  More
 importantly, it also means that once an annotation is added, :mod:`mplcursors`
 cannot remove it (as it needs to know what artists to redraw to restore the
 original state).
 
-As a workaround, either switch off blitting, or unset the ``animated`` property
-on the relevant artists before using a cursor.  (The only other fix I can
-envision is to walk the entire tree of artists, record their visibility status,
-and try to later restore them; but this would fail for `~.ArtistAnimation`\s
-which themselves fiddle with artist visibility).
+As a workaround, either switch off blitting, or unset the ``animated``
+property on the relevant artists before using a cursor.  (The only other
+fix I can envision is to walk the entire tree of artists, record their
+visibility status, and try to later restore them; but this would fail for
+:class:`~matplotlib.animation.ArtistAnimation`\s which themselves fiddle with
+artist visibility).
 
 Indices and tables
 ==================

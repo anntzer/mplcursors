@@ -1,6 +1,6 @@
 """
-Display an artist's label instead of x, y coordinates.
-======================================================
+Display an artist's label instead of x, y coordinates
+=====================================================
 
 Use an event handler to change the annotation text.
 """

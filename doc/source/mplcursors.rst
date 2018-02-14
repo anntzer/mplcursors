@@ -1,6 +1,8 @@
 The mplcursors API
 ==================
 
+|
+
 .. autosummary::
    mplcursors.Cursor
    mplcursors.cursor

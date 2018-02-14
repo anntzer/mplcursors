@@ -1,20 +1,20 @@
 git:
-    depth: 1
+  depth: 1
 language: python
 cache:
-    pip: true
+  pip: true
 matrix:
-    include:
-        - python: "3.4"
-          env: PYTEST_VERSION='==3.0.0' NUMPY_VERSION='==1.7.1' MATPLOTLIB_VERSION='==2.1.0'
-        - python: "3.6"
-          env: PYTEST_VERSION= NUMPY_VERSION= MATPLOTLIB_VERSION= # latest (via --upgrade).
-install: # force installation order.
-    - |
-        pip install --upgrade pip pytest"$PYTEST_VERSION" pytest-cov codecov
-        pip install --upgrade --upgrade-strategy=only-if-needed numpy"$NUMPY_VERSION"
-        pip install --upgrade --upgrade-strategy=only-if-needed matplotlib"$MATPLOTLIB_VERSION"
-        pip install .
-    - pip list
+  include:
+  - python: "3.4"
+    env: PYTEST_VERSION='==3.0.0' NUMPY_VERSION='==1.7.1' MATPLOTLIB_VERSION='==2.1.0'
+  - python: "3.6"
+    env: PYTEST_VERSION= NUMPY_VERSION= MATPLOTLIB_VERSION=  # latest (via --upgrade).
+install: |
+  pip install --upgrade pip pytest"$PYTEST_VERSION" pytest-cov codecov
+  # Force install of numpy before matplotlib.
+  pip install --upgrade --upgrade-strategy=only-if-needed numpy"$NUMPY_VERSION"
+  pip install --upgrade --upgrade-strategy=only-if-needed matplotlib"$MATPLOTLIB_VERSION"
+  pip install .
+  pip list
 script: pytest --cov
 after_success: codecov
