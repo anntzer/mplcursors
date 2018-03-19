@@ -1,14 +1,19 @@
 mplcursors – Interactive data selection cursors for Matplotlib
 ==============================================================
 
-|Python34| |Documentation Status| |Travis| |CodeCov|
+|PyPI| |Read the Docs| |Travis| |CodeCov|
 
-.. |Python34| image:: https://img.shields.io/badge/python-3.4%2B-blue.svg
-.. |Documentation Status| image:: https://readthedocs.org/projects/mplcursors/badge/?version=latest
+.. |PyPI|
+   image:: https://img.shields.io/pypi/v/mplcursors.svg
+   :target: https://pypi.python.org/pypi/mplcursors
+.. |Read the Docs|
+   image:: https://readthedocs.org/projects/mplcursors/badge/?version=latest
    :target: http://mplcursors.readthedocs.io/en/latest/?badge=latest
-.. |Travis| image:: https://travis-ci.org/anntzer/mplcursors.svg?branch=master
+.. |Travis|
+   image:: https://travis-ci.org/anntzer/mplcursors.svg?branch=master
    :target: https://travis-ci.org/anntzer/mplcursors
-.. |CodeCov| image:: https://codecov.io/gh/anntzer/mplcursors/master.svg
+.. |CodeCov|
+   image:: https://codecov.io/gh/anntzer/mplcursors/master.svg
    :target: https://codecov.io/gh/anntzer/mplcursors
 
 mplcursors provides interactive data selection cursors for Matplotlib_.  It is
