@@ -470,6 +470,18 @@ def test_autoalign(ax):
             and sel.annotation.get_va() == "bottom")
 
 
+@pytest.mark.xfail(reason="Matplotlib fails to disconnect dragging callbacks.")
+def test_drag(ax, capsys):
+    l, = ax.plot([0, 1])
+    cursor = mplcursors.cursor()
+    cursor.connect(
+        "add", lambda sel: sel.annotation.set(position=(0, 0)))
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    _process_event("button_press_event", ax, (.5, .5), 1)
+    _process_event("motion_notify_event", ax, (.4, .6), 1)
+    assert not capsys.readouterr().err
+
+
 def test_removed_artist(ax):
     l, = ax.plot([0, 1])
     cursor = mplcursors.cursor()

@@ -2,6 +2,7 @@
 .cache/
 .eggs/
 .ipynb_checkpoints/
+.pytest_cache/
 build/
 dist/
 htmlcov/
