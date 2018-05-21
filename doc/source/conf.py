@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # -- General configuration ------------------------------------------------
 
@@ -19,7 +18,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 master_doc = 'index'
 
 project = 'mplcursors'
-copyright = '2016-2017, Antony Lee'
+copyright = '2016–present, Antony Lee'
 author = 'Antony Lee'
 
 # RTD modifies conf.py, making versioneer mark the version as -dirty.
@@ -81,9 +80,9 @@ intersphinx_mapping = {
     'matplotlib': ('https://matplotlib.org', None),
     'pandas': ('http://pandas.pydata.org/pandas-docs/stable', None)}
 
-import os, sys; sys.path.append(".")
 # CustomSortKey cannot be defined *here* because it would be unpicklable as
 # this file is exec'd rather than imported.
+import sys; sys.path.append(".")
 from _local_ext import CustomSortKey
 
 sphinx_gallery_conf = {
