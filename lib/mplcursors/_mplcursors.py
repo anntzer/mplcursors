@@ -352,7 +352,8 @@ class Cursor:
             # Fast path, only needed if the annotation has not been immediately
             # removed.
             figure.draw_artist(ann)
-            figure.canvas.blit()
+            # Explicit argument needed on MacOSX backend.
+            figure.canvas.blit(figure.bbox)
         # Removal comes after addition so that the fast blitting path works.
         if not self._multiple:
             for sel in self.selections[:-1]:
