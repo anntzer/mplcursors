@@ -225,7 +225,9 @@ def _compute_projection_pick(artist, path, xy):
     # Vectors from each vertex to the event (overwritten below).
     vs = xy - vertices[:-1]
     # Clipped dot products -- `einsum` cannot be done in place, `clip` can.
-    dot = np.clip(np.einsum("ij,ij->i", vs, us), 0, ls, out=vs[:, 0])
+    # `clip` can trigger invalid comparisons if there are nan points.
+    with np.errstate(invalid="ignore"):
+        dot = np.clip(np.einsum("ij,ij->i", vs, us), 0, ls, out=vs[:, 0])
     # Projections.
     projs = vertices[:-1] + dot[:, None] * us
     ds = np.hypot(*(xy - projs).T, out=vs[:, 1])
