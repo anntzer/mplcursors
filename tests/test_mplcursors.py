@@ -2,6 +2,7 @@ import functools
 import gc
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import weakref
@@ -16,7 +17,11 @@ from numpy.testing import assert_allclose, assert_array_equal
 import pytest
 
 
-assert_almost_equal = functools.partial(assert_allclose, atol=1e-7)
+# The absolute tolerance is quite large to take into account rounding of
+# LocationEvents to the nearest pixel by Matplotlib, which causes a relative
+# error of ~ 1/#pixels.
+assert_almost_equal = functools.partial(assert_allclose, atol=1e-2)
+approx = functools.partial(pytest.approx, abs=1e-2)
 
 
 @pytest.fixture
@@ -76,6 +81,13 @@ def _get_remove_args(sel):
     return "__mouse_click__", ax, center, 3
 
 
+def _parse_annotation(sel, regex):
+    result = re.fullmatch(regex, sel.annotation.get_text())
+    assert result, \
+        "{!r} doesn't match {!r}".format(sel.annotation.get_text(), regex)
+    return tuple(map(float, result.groups()))
+
+
 def test_containerartist(ax):
     artist = _pick_info.ContainerArtist(ax.errorbar([], []))
     str(artist)
@@ -109,7 +121,8 @@ def test_line(ax, plotter):
     # On the line.
     _process_event("__mouse_click__", ax, (.1, .4), 1)
     assert len(cursor.selections) == len(ax.texts) == 1
-    assert cursor.selections[0].annotation.get_text() == "foo\nx=0.1\ny=0.4"
+    assert (_parse_annotation(cursor.selections[0], "foo\nx=(.*)\ny=(.*)")
+            == approx((.1, .4)))
     # Not removing it.
     _process_event("__mouse_click__", ax, (0, 1), 3)
     assert len(cursor.selections) == len(ax.texts) == 1
@@ -117,7 +130,8 @@ def test_line(ax, plotter):
     artist.set_label(None)
     _process_event("__mouse_click__", ax, (.6, .9), 1)
     assert len(cursor.selections) == len(ax.texts) == 2
-    assert cursor.selections[1].annotation.get_text() == "x=0.6\ny=0.9"
+    assert (_parse_annotation(cursor.selections[1], "x=(.*)\ny=(.*)")
+            == approx((.6, .9)))
     # Remove both of them (first removing the second one, to test
     # `Selection.__eq__` -- otherwise it is bypassed as `list.remove`
     # checks identity first).
@@ -235,8 +249,8 @@ def test_image(ax, origin):
     cursor = mplcursors.cursor()
     # Annotation text includes image value.
     _process_event("__mouse_click__", ax, (.25, .25), 1)
-    sel = cursor.selections[0]
-    assert sel.annotation.get_text() == "x=0.25\ny=0.25\n[0]"
+    assert (_parse_annotation(cursor.selections[0], r"x=(.*)\ny=(.*)\n\[0\]")
+            == approx((.25, .25)))
     # Moving around.
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     sel = cursor.selections[0]
@@ -313,7 +327,8 @@ def test_errorbar(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert_almost_equal(cursor.selections[0].target, (.5, .5))
-    assert cursor.selections[0].annotation.get_text() == "x=0.5\ny=0.5"
+    assert (_parse_annotation(cursor.selections[0], "x=(.*)\ny=(.*)")
+            == approx((.5, .5)))
     _process_event("__mouse_click__", ax, (0, 1), 1)
     assert_almost_equal(cursor.selections[0].target, (0, 0))
     assert cursor.selections[0].annotation.get_text() == "x=0\ny=$0\\pm1$"
@@ -386,7 +401,7 @@ def test_move(ax, plotter):
     # Now we move the cursor left or right.
     if plotter in [Axes.plot, Axes.errorbar]:
         _process_event("__mouse_click__", ax, (.5, .5), 1)
-        assert tuple(cursor.selections[0].target) == (.5, .5)
+        assert tuple(cursor.selections[0].target) == approx((.5, .5))
         _process_event("key_press_event", ax, (.123, .456), "shift+left")
     elif plotter is Axes.scatter:
         _process_event("__mouse_click__", ax, (0, 0), 1)
