@@ -31,7 +31,7 @@ or from Github with::
 
    python -mpip install git+https://github.com/anntzer/mplcursors
 
-Run tests with pytest_\≥3.0.0.
+Run tests with pytest_\≥3.2.0.
 
 .. _Matplotlib: http://matplotlib.org
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor

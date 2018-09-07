@@ -13,14 +13,12 @@ from matplotlib.backend_bases import KeyEvent, MouseEvent
 import mplcursors
 from mplcursors import _pick_info, Selection
 import numpy as np
-from numpy.testing import assert_allclose, assert_array_equal
 import pytest
 
 
 # The absolute tolerance is quite large to take into account rounding of
 # LocationEvents to the nearest pixel by Matplotlib, which causes a relative
 # error of ~ 1/#pixels.
-assert_almost_equal = functools.partial(assert_allclose, atol=1e-2)
 approx = functools.partial(pytest.approx, abs=1e-2)
 
 
@@ -170,10 +168,10 @@ def test_steps_pre(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, .5), 1)
     index = cursor.selections[0].target.index
-    assert_almost_equal((index.int, index.x, index.y), (0, 0, .5))
+    assert (index.int, index.x, index.y) == approx((0, 0, .5))
     _process_event("__mouse_click__", ax, (.5, 1), 1)
     index = cursor.selections[0].target.index
-    assert_almost_equal((index.int, index.x, index.y), (0, .5, 1))
+    assert (index.int, index.x, index.y) == approx((0, .5, 1))
 
 
 def test_steps_mid(ax):
@@ -186,13 +184,13 @@ def test_steps_mid(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.25, 0), 1)
     index = cursor.selections[0].target.index
-    assert_almost_equal((index.int, index.x, index.y), (0, .25, 0))
+    assert (index.int, index.x, index.y) == approx((0, .25, 0))
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     index = cursor.selections[0].target.index
-    assert_almost_equal((index.int, index.x, index.y), (0, .5, .5))
+    assert (index.int, index.x, index.y) == approx((0, .5, .5))
     _process_event("__mouse_click__", ax, (.75, 1), 1)
     index = cursor.selections[0].target.index
-    assert_almost_equal((index.int, index.x, index.y), (0, .75, 1))
+    assert (index.int, index.x, index.y) == approx((0, .75, 1))
 
 
 def test_steps_post(ax):
@@ -203,10 +201,10 @@ def test_steps_post(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.5, 0), 1)
     index = cursor.selections[0].target.index
-    assert_almost_equal((index.int, index.x, index.y), (0, .5, 0))
+    assert (index.int, index.x, index.y) == approx((0, .5, 0))
     _process_event("__mouse_click__", ax, (1, .5), 1)
     index = cursor.selections[0].target.index
-    assert_almost_equal((index.int, index.x, index.y), (0, 1, .5))
+    assert (index.int, index.x, index.y) == approx((0, 1, .5))
 
 
 @pytest.mark.parametrize("ls", ["-", "o"])
@@ -217,7 +215,7 @@ def test_line_single_point(ax, ls):
     _process_event("__mouse_click__", ax, (.001, .001), 1)
     assert len(cursor.selections) == len(ax.texts) == (ls == "o")
     if cursor.selections:
-        assert_array_equal(np.asarray(cursor.selections[0].target), (0, 0))
+        assert tuple(cursor.selections[0].target) == (0, 0)
 
 
 @pytest.mark.parametrize("plot_args,click,targets",
@@ -230,7 +228,7 @@ def test_nan(ax, plot_args, click, targets):
     _process_event("__mouse_click__", ax, click, 1)
     assert len(cursor.selections) == len(ax.texts) == len(targets)
     for sel, target in zip(cursor.selections, targets):
-        assert_almost_equal(sel.target, target)
+        assert sel.target == approx(target)
 
 
 def test_repeated_point(ax):
@@ -294,7 +292,7 @@ def test_linecollection(ax):
     _process_event("__mouse_click__", ax, (0, .5), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, 1), 1)
-    assert_almost_equal(cursor.selections[0].target.index, (0, .5))
+    assert cursor.selections[0].target.index == approx((0, .5))
 
 
 @pytest.mark.parametrize("plotter", [Axes.quiver, Axes.barbs])
@@ -316,7 +314,7 @@ def test_bar(ax, plotter, order):
     _process_event("__mouse_click__", ax, (0, 2)[order], 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, .5)[order], 1)
-    assert_almost_equal(cursor.selections[0].target, (0, 1)[order])
+    cursor.selections[0].target == approx((0, 1)[order])
 
 
 def test_errorbar(ax):
@@ -326,14 +324,14 @@ def test_errorbar(ax):
     _process_event("__mouse_click__", ax, (0, 2), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.5, .5), 1)
-    assert_almost_equal(cursor.selections[0].target, (.5, .5))
+    assert cursor.selections[0].target == approx((.5, .5))
     assert (_parse_annotation(cursor.selections[0], "x=(.*)\ny=(.*)")
             == approx((.5, .5)))
     _process_event("__mouse_click__", ax, (0, 1), 1)
-    assert_almost_equal(cursor.selections[0].target, (0, 0))
+    assert cursor.selections[0].target == approx((0, 0))
     assert cursor.selections[0].annotation.get_text() == "x=0\ny=$0\\pm1$"
     _process_event("__mouse_click__", ax, (1, 2), 1)
-    assert_almost_equal(cursor.selections[0].target, (1, 1))
+    assert cursor.selections[0].target == approx((1, 1))
     assert cursor.selections[0].annotation.get_text() == "x=1\ny=$1_{-1}^{+2}$"
 
 
@@ -353,9 +351,9 @@ def test_stem(ax):
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, 1), 1)
-    assert_almost_equal(cursor.selections[0].target, (0, 1))
+    assert cursor.selections[0].target == approx((0, 1))
     _process_event("__mouse_click__", ax, (0, .5), 1)
-    assert_almost_equal(cursor.selections[0].target, (0, 1))
+    assert cursor.selections[0].target == approx((0, 1))
 
 
 @pytest.mark.parametrize(
