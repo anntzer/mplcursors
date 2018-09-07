@@ -7,6 +7,7 @@ import subprocess
 import sys
 import weakref
 
+import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import KeyEvent, MouseEvent
@@ -483,7 +484,9 @@ def test_autoalign(ax):
             and sel.annotation.get_va() == "bottom")
 
 
-@pytest.mark.xfail(reason="Matplotlib fails to disconnect dragging callbacks.")
+@pytest.mark.xfail(
+    int(mpl.__version__.split(".")[0]) < 3,
+    reason="Matplotlib fails to disconnect dragging callbacks.")
 def test_drag(ax, capsys):
     l, = ax.plot([0, 1])
     cursor = mplcursors.cursor()
