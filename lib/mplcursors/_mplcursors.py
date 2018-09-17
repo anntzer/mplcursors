@@ -25,24 +25,29 @@ _default_bindings = dict(
     up="shift+up",
     down="shift+down",
     toggle_enabled="e",
-    toggle_visible="v")
+    toggle_visible="v",
+)
 _default_annotation_kwargs = dict(
     textcoords="offset points",
     bbox=dict(
         boxstyle="round,pad=.5",
         fc="yellow",
         alpha=.5,
-        ec="k"),
+        ec="k",
+    ),
     arrowprops=dict(
         arrowstyle="->",
         connectionstyle="arc3",
         shrinkB=0,
-        ec="k"))
+        ec="k",
+    ),
+)
 _default_annotation_positions = [
     dict(position=(-15, 15), ha="right", va="bottom"),
     dict(position=(15, 15), ha="left", va="bottom"),
     dict(position=(15, -15), ha="left", va="top"),
-    dict(position=(-15, -15), ha="right", va="top")]
+    dict(position=(-15, -15), ha="right", va="top"),
+]
 _default_highlight_kwargs = dict(
     # Only the kwargs corresponding to properties of the artist will be passed.
     # Line2D.
@@ -52,7 +57,8 @@ _default_highlight_kwargs = dict(
     markeredgewidth=3,
     # PathCollection.
     facecolor="yellow",
-    edgecolor="yellow")
+    edgecolor="yellow",
+)
 
 
 class _MarkedStr(str):

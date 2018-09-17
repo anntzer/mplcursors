@@ -247,9 +247,8 @@ def _compute_projection_pick(artist, path, xy):
 
 @compute_pick.register(Line2D)
 def _(artist, event):
-    # No need to call `line.contains` because we're going to redo
-    # the work anyways (and it was broken for step plots up to
-    # matplotlib/matplotlib#6645).
+    # No need to call `line.contains` as we're going to redo the work anyways
+    # (also see matplotlib/matplotlib#6645, though that's fixed in mpl2.1).
 
     # Always work in screen coordinates, as this is how we need to compute
     # distances.  Note that the artist transform may be different from the axes
