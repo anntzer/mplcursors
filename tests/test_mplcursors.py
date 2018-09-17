@@ -401,9 +401,11 @@ def test_move(ax, plotter):
     if plotter in [Axes.plot, Axes.errorbar]:
         _process_event("__mouse_click__", ax, (.5, .5), 1)
         assert tuple(cursor.selections[0].target) == approx((.5, .5))
+        _process_event("key_press_event", ax, (.123, .456), "shift+up")
         _process_event("key_press_event", ax, (.123, .456), "shift+left")
     elif plotter is Axes.scatter:
         _process_event("__mouse_click__", ax, (0, 0), 1)
+        _process_event("key_press_event", ax, (.123, .456), "shift+up")
     assert tuple(cursor.selections[0].target) == (0, 0)
     assert cursor.selections[0].target.index == 0
     _process_event("key_press_event", ax, (.123, .456), "shift+right")

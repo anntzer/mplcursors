@@ -621,9 +621,12 @@ def move(sel, *, key):
 def _move_within_points(sel, xys, *, key):
     # Avoid infinite loop in case everything became nan at some point.
     for _ in range(len(xys)):
-        new_idx = (int(np.ceil(sel.target.index) - 1) if key == "left"
-                   else int(np.floor(sel.target.index) + 1) if key == "right"
-                   else sel.target.index) % len(xys)
+        if key == "left":
+            new_idx = int(np.ceil(sel.target.index) - 1) % len(xys)
+        elif key == "right":
+            new_idx = int(np.floor(sel.target.index) + 1) % len(xys)
+        else:
+            return sel
         target = with_attrs(xys[new_idx], index=new_idx)
         sel = sel._replace(target=target, dist=0)
         if np.isfinite(target).all():
