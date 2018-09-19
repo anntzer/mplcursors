@@ -260,6 +260,16 @@ visibility status, and try to later restore them; but this would fail for
 :class:`~matplotlib.animation.ArtistAnimation`\s which themselves fiddle with
 artist visibility).
 
+Matplotlib version compatibility
+--------------------------------
+
+The following bugs in Matplotlib point releases are known to affect mplcursors:
+
+- In Matplotlib 3.0.0, a bug in annotation containment checks
+  (matplotlib/matplotlib#12164) causes errors when annotations are generated
+  *without* a surrounding box (mplcursors does add a surrounding box by
+  default).
+
 Indices and tables
 ==================
 
