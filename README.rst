@@ -19,7 +19,7 @@ Interactive data selection cursors for Matplotlib
 mplcursors provides interactive data selection cursors for Matplotlib_.  It is
 inspired from mpldatacursor_, with a much simplified API.
 
-mplcursors requires Python 3, and Matplotlib_\≥2.1,≠3.0.0.
+mplcursors requires Matplotlib_\≥3.1.
 
 Read the documentation on `readthedocs.org`_.
 
@@ -32,7 +32,7 @@ As usual, install using pip:
 
 On Fedora, the package is also available as python-mplcursors_.
 
-Run tests with pytest_\≥3.6.0.
+Run tests with pytest_\≥3.7.1.
 
 .. _Matplotlib: http://matplotlib.org
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor

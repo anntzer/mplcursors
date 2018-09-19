@@ -62,14 +62,11 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3",
     ],
     packages=find_packages("lib"),
     package_dir={"": "lib"},
-    python_requires=">=3.4",
+    python_requires=">=3.6",
     setup_requires=["setuptools_scm"],
     use_scm_version=lambda: {  # xref __init__.py
         "version_scheme": "post-release",
@@ -77,6 +74,6 @@ setup(
         "write_to": "lib/mplcursors/_version.py",
     },
     install_requires=[
-        "matplotlib>=2.1,!=3.0.0",
+        "matplotlib>=3.1",
     ],
 )

@@ -19,8 +19,7 @@ It is inspired from mpldatacursor_, with a much simplified API.
 .. _Matplotlib: https://matplotlib.org
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor
 
-:mod:`mplcursors` requires Python 3, and Matplotlib≥2.1,≠3.0.0 (see `Matplotlib
-version compatibility`_).
+:mod:`mplcursors` requires Python 3, and Matplotlib≥3.1.
 
 .. _installation:
 
@@ -260,16 +259,6 @@ fix I can envision is to walk the entire tree of artists, record their
 visibility status, and try to later restore them; but this would fail for
 :class:`~matplotlib.animation.ArtistAnimation`\s which themselves fiddle with
 artist visibility).
-
-Matplotlib version compatibility
---------------------------------
-
-The following bugs in Matplotlib point releases are known to affect mplcursors:
-
-- In Matplotlib 3.0.0, a bug in annotation containment checks
-  (matplotlib/matplotlib#12164) causes errors when annotations are generated
-  *without* a surrounding box (mplcursors does add a surrounding box by
-  default).
 
 Indices and tables
 ==================

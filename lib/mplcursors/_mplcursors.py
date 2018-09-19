@@ -26,7 +26,6 @@ _default_bindings = dict(
     toggle_visible="v",
 )
 _default_annotation_kwargs = dict(
-    textcoords="offset points",
     bbox=dict(
         boxstyle="round,pad=.5",
         fc="yellow",
@@ -41,10 +40,14 @@ _default_annotation_kwargs = dict(
     ),
 )
 _default_annotation_positions = [
-    dict(position=(-15, 15), ha="right", va="bottom"),
-    dict(position=(15, 15), ha="left", va="bottom"),
-    dict(position=(15, -15), ha="left", va="top"),
-    dict(position=(-15, -15), ha="right", va="top"),
+    dict(position=(-15, 15), anncoords="offset points",
+         ha="right", va="bottom"),
+    dict(position=(15, 15), anncoords="offset points",
+         ha="left", va="bottom"),
+    dict(position=(15, -15), anncoords="offset points",
+         ha="left", va="top"),
+    dict(position=(-15, -15), anncoords="offset points",
+         ha="right", va="top"),
 ]
 _default_highlight_kwargs = dict(
     # Only the kwargs corresponding to properties of the artist will be passed.

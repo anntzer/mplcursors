@@ -15,6 +15,8 @@ next
 - Support `Collection`\s where `get_offset_transform()` is not `transData`
   (patch suggested by @yt87).
 - Support setting both ``hover`` and ``multiple``.
+- Updated dependency to Matplotlib 3.1 (``Annotation.{get,set}_anncoords``),
+  and thus Python 3.6, numpy 1.11.
 
 0.2.1
 =====
