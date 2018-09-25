@@ -606,10 +606,15 @@ def test_gc(ax):
     assert not f_cursor.alive
 
 
+def _read_text(path):  # Py3.4 backcompat.
+    with path.open() as file:
+        return file.read()
+
+
 @pytest.mark.parametrize(
     "example",
     [path for path in Path("examples").glob("*.py")
-     if not "test: skip" in path.open().read()])
+     if "test: skip" not in _read_text(path)])
 def test_example(example):
     subprocess.check_call(
         [sys.executable, "-mexamples.{}".format(example.with_suffix("").name)],
