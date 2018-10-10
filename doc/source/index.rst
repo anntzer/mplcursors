@@ -19,7 +19,8 @@ It is inspired from mpldatacursor_, with a much simplified API.
 .. _Matplotlib: https://matplotlib.org
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor
 
-:mod:`mplcursors` requires Python 3, and Matplotlib≥2.1.
+:mod:`mplcursors` requires Python 3, and Matplotlib≥2.1,≠3.0.0 (see `Matplotlib
+version compatibility`_).
 
 .. _installation:
 
