@@ -8,9 +8,24 @@ cache:
 matrix:
   include:
   - python: "3.4"
-    env: PYTEST_VERSION='==3.2.0' NUMPY_VERSION='==1.7.1' MATPLOTLIB_VERSION='==2.1.0'
+    env: |
+      PYTEST_VERSION='==3.2.0'
+      NUMPY_VERSION='==1.7.1'
+      MATPLOTLIB_VERSION='==2.1.0'
   - python: "3.7"
-    env: PYTEST_VERSION= NUMPY_VERSION= MATPLOTLIB_VERSION=  # latest (via --upgrade).
+    env: |
+      PYTEST_VERSION=
+      NUMPY_VERSION=
+      MATPLOTLIB_VERSION=
+  - python: "nightly"
+    env: |
+      PYTEST_VERSION=
+      NUMPY_VERSION=
+      MATPLOTLIB_VERSION=
+      PIP_INSTALL_PRE=1
+      PIP_FIND_LINKS=https://nightly.matplotlib.org
+  allow_failures:
+  - python: "nightly"
 install: |
   pip install --upgrade pip pytest"$PYTEST_VERSION" pytest-cov codecov
   # Force install of numpy before matplotlib.
