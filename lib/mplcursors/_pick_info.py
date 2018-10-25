@@ -21,7 +21,6 @@ from matplotlib.container import BarContainer, ErrorbarContainer, StemContainer
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, PathPatch, Polygon, Rectangle
-from matplotlib.path import Path as MPath
 from matplotlib.quiver import Barbs, Quiver
 from matplotlib.text import Text
 from matplotlib.transforms import Affine2D

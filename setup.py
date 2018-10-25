@@ -9,8 +9,10 @@ from setupext import find_packages, setup
 
 @setup.register_pth_hook("mplcursors.pth")
 def _pth_hook():
+    import os
     if os.environ.get("MPLCURSORS"):
         from importlib.machinery import PathFinder
+        import sys
         class MplcursorsMetaPathFinder(PathFinder):
             def find_spec(self, fullname, path=None, target=None):
                 spec = super().find_spec(fullname, path, target)
@@ -23,7 +25,9 @@ def _pth_hook():
                             import mplcursors
                         except ImportError:
                             return
-                        import functools, json, weakref
+                        import functools
+                        import json
+                        import weakref
                         # Ensure that when the cursor is removed(), or gets
                         # GC'd because its referents artists are GC'd, the
                         # entry also disappears.

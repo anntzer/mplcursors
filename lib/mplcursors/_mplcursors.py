@@ -7,7 +7,6 @@ import sys
 import weakref
 from weakref import WeakKeyDictionary
 
-from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.cbook import CallbackRegistry
 from matplotlib.container import Container
