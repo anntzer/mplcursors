@@ -155,6 +155,13 @@ def test_scatter(ax, plotter):
     assert len(cursor.selections) == len(ax.texts) == 1
 
 
+def test_scatter_text(ax):
+    ax.scatter([0, 1], [0, 1], c=[2, 3])
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (0, 0), 1)
+    assert cursor.selections[0].annotation.get_text() == "x=0\ny=0\n[2.0]"
+
+
 def test_steps_index():
     index = _pick_info.Index(0, .5, .5)
     assert np.floor(index) == 0 and np.ceil(index) == 1

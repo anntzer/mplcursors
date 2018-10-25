@@ -1,3 +1,8 @@
+next
+====
+
+- Display value in annotation for colormapped scatter plots.
+
 0.2.1
 =====
 

@@ -508,6 +508,25 @@ def get_ann_text(sel):
     return ""
 
 
+def _format_scalarmappable_value(artist, idx):  # matplotlib/matplotlib#12473.
+    def _strip_math(s):
+        return (
+            cbook.strip_math(s) if len(s) >= 2 and s[0] == s[-1] == "$" else s)
+
+    if not artist.colorbar:
+        from matplotlib.figure import Figure
+        fig = Figure()
+        ax = fig.subplots()
+        artist.colorbar = fig.colorbar(artist, cax=ax)
+        # This will call the locator and call set_locs() on the formatter.
+        list(ax.yaxis.iter_ticks())
+    value = artist.get_array()[idx]
+    return ("["
+            + _strip_math(artist.colorbar.formatter(value))
+            + _strip_math(artist.colorbar.formatter.get_offset())
+            + "]")
+
+
 @get_ann_text.register(Line2D)
 @get_ann_text.register(LineCollection)
 @get_ann_text.register(PathCollection)
@@ -517,6 +536,14 @@ def _(sel):
     artist = sel.artist
     label = artist.get_label() or ""
     text = _format_coord_unspaced(artist.axes, sel.target)
+    if (_is_scatter(artist)
+            # Heuristic: is the artist colormapped?
+            # Note that this doesn't handle size-mapping (which is more likely
+            # to involve an arbitrary scaling).
+            and artist.get_array() is not None
+            and len(artist.get_array()) == len(artist.get_offsets())):
+        value = _format_scalarmappable_value(artist, sel.target.index)
+        text = "{}\n{}".format(text, value)
     if re.match("[^_]", label):
         text = "{}\n{}".format(label, text)
     return text
