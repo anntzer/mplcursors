@@ -32,7 +32,8 @@ Integral.register(np.integer)  # Back-compatibility for numpy 1.7, 1.8.
 
 
 def _register_scatter():
-    """Patch `PathCollection` and `scatter` to register their return values.
+    """
+    Patch `PathCollection` and `scatter` to register their return values.
 
     This registration allows us to distinguish `PathCollection`s created by
     `Axes.scatter`, which should use point-like picking, from others, which
@@ -67,8 +68,7 @@ def _artist_in_container(container):
 
 
 class ContainerArtist:
-    """Workaround to make containers behave more like artists.
-    """
+    """Workaround to make containers behave more like artists."""
 
     def __init__(self, container):
         self.container = container  # Guaranteed to be nonempty.
@@ -90,8 +90,7 @@ class ContainerArtist:
 
 
 class AttrArray(np.ndarray):
-    """An array subclass that can store additional attributes.
-    """
+    """An array subclass that can store additional attributes."""
 
     def __new__(cls, array):
         return np.asarray(array).view(cls)
@@ -129,7 +128,8 @@ except AttributeError:  # Read-only in Py3.4.
 
 @functools.singledispatch
 def compute_pick(artist, event):
-    """Find whether *artist* has been picked by *event*.
+    """
+    Find whether *artist* has been picked by *event*.
 
     If it has, return the appropriate `Selection`; otherwise return ``None``.
 
@@ -193,7 +193,8 @@ class Index:
 
 
 def _compute_projection_pick(artist, path, xy):
-    """Project *xy* on *path* to obtain a `Selection` for *artist*.
+    """
+    Project *xy* on *path* to obtain a `Selection` for *artist*.
 
     *path* is first transformed to screen coordinates using the artist
     transform, and the target of the returned `Selection` is transformed
@@ -456,8 +457,7 @@ def _(container, event):
 
 
 def _call_with_selection(func):
-    """Decorator that passes a `Selection` built from the non-kwonly args.
-    """
+    """Decorator that passes a `Selection` built from the non-kwonly args."""
     wrapped_kwonly_params = [
         param for param in inspect.signature(func).parameters.values()
         if param.kind == param.KEYWORD_ONLY]
@@ -497,7 +497,8 @@ def _format_coord_unspaced(ax, xy):
 @functools.singledispatch
 @_call_with_selection
 def get_ann_text(sel):
-    """Compute an annotating text for a `Selection` (passed **unpacked**).
+    """
+    Compute an annotating text for a `Selection` (passed **unpacked**).
 
     This is a single-dispatch function; implementations for various artist
     classes follow.
@@ -606,7 +607,8 @@ def _(sel):
 @functools.singledispatch
 @_call_with_selection
 def move(sel, *, key):
-    """Move a `Selection` (passed **unpacked**) following a keypress.
+    """
+    Move a `Selection` (passed **unpacked**) following a keypress.
 
     This function is used to implement annotation displacement through the
     keyboard.
@@ -683,7 +685,8 @@ def _(sel, *, key):
 @functools.singledispatch
 @_call_with_selection
 def make_highlight(sel, *, highlight_kwargs):
-    """Create a highlight for a `Selection`.
+    """
+    Create a highlight for a `Selection`.
 
     This is a single-dispatch function; implementations for various artist
     classes follow.
@@ -693,8 +696,7 @@ def make_highlight(sel, *, highlight_kwargs):
 
 
 def _set_valid_props(artist, kwargs):
-    """Set valid properties for the artist, dropping the others.
-    """
+    """Set valid properties for the artist, dropping the others."""
     artist.set(**{k: kwargs[k] for k in kwargs if hasattr(artist, "set_" + k)})
     return artist
 

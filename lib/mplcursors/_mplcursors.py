@@ -62,22 +62,18 @@ _default_highlight_kwargs = dict(
 
 
 class _MarkedStr(str):
-    """A string subclass solely for marking purposes.
-    """
+    """A string subclass solely for marking purposes."""
 
 
 def _get_rounded_intersection_area(bbox_1, bbox_2):
-    """Compute the intersection area between two bboxes, rounded to 8 digits.
-    """
+    """Compute the intersection area between two bboxes rounded to 8 digits."""
     # The rounding allows sorting areas without floating point issues.
     bbox = bbox_1.intersection(bbox_1, bbox_2)
-    return (round(bbox.width * bbox.height / 1e-8) * 1e-8
-            if bbox else 0)
+    return round(bbox.width * bbox.height, 8) if bbox else 0
 
 
 def _is_alive(artist):
-    """Check whether an artist is still present on an axes.
-    """
+    """Check whether an artist is still present on an axes."""
     return bool(artist and artist.axes
                 and (artist.container in artist.axes.containers
                      if isinstance(artist, _pick_info.ContainerArtist)
@@ -85,8 +81,7 @@ def _is_alive(artist):
 
 
 def _reassigned_axes_event(event, ax):
-    """Reassign *event* to *ax*.
-    """
+    """Reassign *event* to *ax*."""
     event = copy.copy(event)
     event.xdata, event.ydata = (
         ax.transData.inverted().transform_point((event.x, event.y)))
@@ -94,7 +89,8 @@ def _reassigned_axes_event(event, ax):
 
 
 class Cursor:
-    """A cursor for selecting Matplotlib artists.
+    """
+    A cursor for selecting Matplotlib artists.
 
     Attributes
     ----------
@@ -120,7 +116,8 @@ class Cursor:
                  annotation_kwargs=None,
                  annotation_positions=None,
                  highlight_kwargs=None):
-        """Construct a cursor.
+        """
+        Construct a cursor.
 
         Parameters
         ----------
@@ -236,16 +233,14 @@ class Cursor:
 
     @property
     def artists(self):
-        """The tuple of selectable artists.
-        """
+        """The tuple of selectable artists."""
         # Work around matplotlib/matplotlib#6982: `cla()` does not clear
         # `.axes`.
         return tuple(filter(_is_alive, (ref() for ref in self._artists)))
 
     @property
     def enabled(self):
-        """Whether clicks are registered for picking and unpicking events.
-        """
+        """Whether clicks are registered for picking and unpicking events."""
         return self._enabled
 
     @enabled.setter
@@ -254,8 +249,7 @@ class Cursor:
 
     @property
     def selections(self):
-        """The tuple of current `Selection`\\s.
-        """
+        r"""The tuple of current `Selection`\s."""
         for sel in self._selections:
             if sel.annotation.axes is None:
                 raise RuntimeError("Annotation unexpectedly removed; "
@@ -264,7 +258,8 @@ class Cursor:
 
     @property
     def visible(self):
-        """Whether selections are visible by default.
+        """
+        Whether selections are visible by default.
 
         Setting this property also updates the visibility status of current
         selections.
@@ -279,7 +274,8 @@ class Cursor:
             sel.annotation.figure.canvas.draw_idle()
 
     def add_selection(self, pi):
-        """Create an annotation for a `Selection` and register it.
+        """
+        Create an annotation for a `Selection` and register it.
 
         Returns a new `Selection`, that has been registered by the `Cursor`,
         with the added annotation set in the :attr:`annotation` field and, if
@@ -367,7 +363,8 @@ class Cursor:
         return sel
 
     def add_highlight(self, artist, *args, **kwargs):
-        """Create, add and return a highlighting artist.
+        """
+        Create, add and return a highlighting artist.
 
         This method is should be called with an "unpacked" `Selection`,
         possibly with some fields set to None.
@@ -383,7 +380,8 @@ class Cursor:
             return hl
 
     def connect(self, event, func=None):
-        """Connect a callback to a `Cursor` event; return the callback id.
+        """
+        Connect a callback to a `Cursor` event; return the callback id.
 
         Two classes of event can be emitted, both with a `Selection` as single
         argument:
@@ -417,12 +415,12 @@ class Cursor:
         return self._callbacks.connect(event, func)
 
     def disconnect(self, cid):
-        """Disconnect a previously connected callback id.
-        """
+        """Disconnect a previously connected callback id."""
         self._callbacks.disconnect(cid)
 
     def remove(self):
-        """Remove a cursor.
+        """
+        Remove a cursor.
 
         Remove all `Selection`\\s, disconnect all callbacks, and allow the
         cursor to be garbage collected.
@@ -507,8 +505,7 @@ class Cursor:
                 break
 
     def remove_selection(self, sel):
-        """Remove a `Selection`.
-        """
+        """Remove a `Selection`."""
         self._selections.remove(sel)
         # <artist>.figure will be unset so we save them first.
         figures = {artist.figure for artist in [sel.annotation] + sel.extras}
@@ -524,7 +521,8 @@ class Cursor:
 
 
 def cursor(pickables=None, **kwargs):
-    """Create a `Cursor` for a list of artists, containers, and axes.
+    """
+    Create a `Cursor` for a list of artists, containers, and axes.
 
     Parameters
     ----------

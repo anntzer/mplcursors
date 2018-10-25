@@ -9,8 +9,7 @@ from setuptools.command.develop import develop
 from setuptools.command.install_lib import install_lib
 
 
-__all__ = ["setup", "get_pybind_include",
-           "Extension", "find_packages"]
+__all__ = ["setup", "Extension", "find_packages"]
 
 
 class setup:
@@ -40,7 +39,7 @@ class setup:
             {})
         cmdclass["install_lib"] = type(
             "install_lib_with_pth_hook",
-            (pth_hook_mixin, cmdclass.get("install_lib", install_lib)),
+            (pth_hook_mixin, cmdclass.get("istall_lib", install_lib)),
             {})
 
         setuptools.setup(**kwargs)
@@ -60,18 +59,3 @@ class setup:
             raise SyntaxError(
                 "register_pth_hook should define a single function")
         cls._pth_hooks[fname] = func.__name__, source
-
-
-class get_pybind_include(object):
-    """Helper class to determine the pybind11 include path.
-
-    The purpose of this class is to postpone importing pybind11 until it is
-    actually installed, so that the ``get_include()`` method can be invoked.
-    """
-
-    def __init__(self, user=False):
-        self.user = user
-
-    def __str__(self):
-        import pybind11
-        return pybind11.get_include(self.user)
