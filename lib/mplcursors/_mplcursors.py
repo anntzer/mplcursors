@@ -363,13 +363,14 @@ class Cursor:
 
     def add_highlight(self, artist, *args, **kwargs):
         """
-        Create, add and return a highlighting artist.
+        Create, add, and return a highlighting artist.
 
         This method is should be called with an "unpacked" `Selection`,
         possibly with some fields set to None.
 
         It is up to the caller to register the artist with the proper
-        `Selection` in order to ensure cleanup upon deselection.
+        `Selection` (by calling ``sel.extras.append`` on the result of this
+        method) in order to ensure cleanup upon deselection.
         """
         hl = _pick_info.make_highlight(
             artist, *args,
