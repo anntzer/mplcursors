@@ -8,7 +8,6 @@ import weakref
 from weakref import WeakKeyDictionary
 
 from matplotlib.axes import Axes
-from matplotlib.cbook import CallbackRegistry
 from matplotlib.container import Container
 from matplotlib.figure import Figure
 import numpy as np
@@ -190,7 +189,7 @@ class Cursor:
         self._enabled = True
         self._selections = []
         self._last_auto_position = None
-        self._callbacks = CallbackRegistry()
+        self._callbacks = {"add": [], "remove": []}
 
         connect_pairs = [("key_press_event", self._on_key_press)]
         if hover:
@@ -309,7 +308,8 @@ class Cursor:
                 extras.append(hl)
         sel = pi._replace(annotation=ann, extras=extras)
         self._selections.append(sel)
-        self._callbacks.process("add", sel)
+        for cb in self._callbacks["add"]:
+            cb(sel)
 
         # Check that `ann.axes` is still set, as callbacks may have removed the
         # annotation.
@@ -381,18 +381,16 @@ class Cursor:
 
     def connect(self, event, func=None):
         """
-        Connect a callback to a `Cursor` event; return the callback id.
+        Connect a callback to a `Cursor` event; return the callback.
 
-        Two classes of event can be emitted, both with a `Selection` as single
-        argument:
+        Two events can be connected to:
 
-            - ``"add"`` when a `Selection` is added, and
-            - ``"remove"`` when a `Selection` is removed.
+        - callbacks connected to the ``"add"`` event are called when a
+          `Selection` is added, with that selection as only argument;
+        - callbacks connected to the ``"remove"`` event are called when a
+          `Selection` is removed, with that selection as only argument.
 
-        The callback registry relies on Matplotlib's implementation; in
-        particular, only weak references are kept for bound methods.
-
-        This method is can also be used as a decorator::
+        This method can also be used as a decorator::
 
             @cursor.connect("add")
             def on_add(sel):
@@ -408,15 +406,26 @@ class Cursor:
             # Make label non-draggable:
             lambda sel: sel.draggable(False)
         """
-        if event not in ["add", "remove"]:
-            raise ValueError("Invalid cursor event: {}".format(event))
+        if event not in self._callbacks:
+            raise ValueError("{!r} is not a valid cursor event".format(event))
         if func is None:
             return partial(self.connect, event)
-        return self._callbacks.connect(event, func)
+        self._callbacks[event].append(func)
+        return func
 
-    def disconnect(self, cid):
-        """Disconnect a previously connected callback id."""
-        self._callbacks.disconnect(cid)
+    def disconnect(self, event, cb):
+        """
+        Disconnect a previously connected callback.
+
+        If a callback is connected multiple times, only one connection is
+        removed.
+        """
+        try:
+            self._callbacks[event].remove(cb)
+        except KeyError:
+            raise ValueError("{!r} is not a valid cursor event".format(event))
+        except ValueError:
+            raise ValueError("Callback {} is not registered".format(event))
 
     def remove(self):
         """
@@ -515,7 +524,8 @@ class Cursor:
         for artist in sel.extras:
             with suppress(ValueError):
                 artist.remove()
-        self._callbacks.process("remove", sel)
+        for cb in self._callbacks["remove"]:
+            cb(sel)
         for figure in figures:
             figure.canvas.draw_idle()
 

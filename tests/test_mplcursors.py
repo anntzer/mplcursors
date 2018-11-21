@@ -464,7 +464,7 @@ def test_callback(ax):
         calls.append(sel)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert len(calls) == 1
-    cursor.disconnect(on_add)
+    cursor.disconnect("add", on_add)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert len(calls) == 1
 
