@@ -360,7 +360,7 @@ def _(artist, event):
     contains, _ = artist.contains(event)
     if not contains:
         return
-    ns = np.asarray(artist.get_array().shape)[::-1]  # (y, x) -> (x, y)
+    ns = np.asarray(artist.get_array().shape[:2])[::-1]  # (y, x) -> (x, y)
     xy = np.array([event.xdata, event.ydata])
     xmin, xmax, ymin, ymax = artist.get_extent()
     # Handling of "upper" origin copied from AxesImage.get_cursor_data.
