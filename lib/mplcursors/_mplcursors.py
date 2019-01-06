@@ -300,7 +300,7 @@ class Cursor:
             ha=_MarkedStr("center"), va=_MarkedStr("center"),
             visible=self.visible,
             **self.annotation_kwargs)
-        ann.draggable(use_blit=True)
+        ann.draggable(use_blit=not self._multiple)
         extras = []
         if self._highlight:
             hl = self.add_highlight(*pi)
@@ -490,13 +490,14 @@ class Cursor:
     def _on_deselect_button_press(self, event):
         if not self._filter_mouse_event(event):
             return
-        for sel in self.selections:
+        for sel in self.selections[::-1]:  # LIFO.
             ann = sel.annotation
             if event.canvas is not ann.figure.canvas:
                 continue
             contained, _ = ann.contains(event)
             if contained:
                 self.remove_selection(sel)
+                break
 
     def _on_key_press(self, event):
         if event.key == self.bindings["toggle_enabled"]:

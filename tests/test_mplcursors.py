@@ -476,6 +476,18 @@ def test_remove_while_adding(ax):
     _process_event("__mouse_click__", ax, (.5, .5), 1)
 
 
+def test_remove_multiple_overlapping(ax):
+    ax.plot([0, 1])
+    cursor = mplcursors.cursor(multiple=True)
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    c1, c2 = cursor.selections
+    _process_event(*_get_remove_args(c1))
+    assert list(map(id, cursor.selections)) == [id(c1)]  # To check LIFOness.
+    _process_event(*_get_remove_args(c1))
+    assert cursor.selections == ()
+
+
 def test_autoalign(ax):
     ax.plot([0, 1])
     cursor = mplcursors.cursor()
@@ -515,7 +527,7 @@ def test_removed_artist(ax):
     assert len(cursor.selections) == len(ax.texts) == 0
 
 
-def test_remove(ax):
+def test_remove_cursor(ax):
     ax.plot([0, 1])
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (.5, .5), 1)

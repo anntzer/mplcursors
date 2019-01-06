@@ -6,6 +6,7 @@ next
   `Cursor.connect` now returns the callback itself (simplifying its use as a
   decorator).  `Cursor.disconnect` now takes two arguments: the event name and
   the callback function.  Strong references are kept for the callbacks.
+- Overlapping cursors are now removed one at a time.
 
 0.2.1
 =====
