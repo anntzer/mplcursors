@@ -6,7 +6,9 @@ next
   `Cursor.connect` now returns the callback itself (simplifying its use as a
   decorator).  `Cursor.disconnect` now takes two arguments: the event name and
   the callback function.  Strong references are kept for the callbacks.
-- Overlapping cursors are now removed one at a time.
+- Overlapping annotations are now removed one at a time.
+- Re-clicking on an already selected point does not create a new annotation
+  (patch suggested by @schneeammer).
 
 0.2.1
 =====

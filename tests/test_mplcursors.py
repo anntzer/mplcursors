@@ -1,3 +1,4 @@
+import copy
 import functools
 import gc
 import os
@@ -476,16 +477,25 @@ def test_remove_while_adding(ax):
     _process_event("__mouse_click__", ax, (.5, .5), 1)
 
 
-def test_remove_multiple_overlapping(ax):
+def test_no_duplicate(ax):
     ax.plot([0, 1])
     cursor = mplcursors.cursor(multiple=True)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
-    c1, c2 = cursor.selections
-    _process_event(*_get_remove_args(c1))
-    assert list(map(id, cursor.selections)) == [id(c1)]  # To check LIFOness.
-    _process_event(*_get_remove_args(c1))
-    assert cursor.selections == ()
+    assert len(cursor.selections) == 1
+
+
+def test_remove_multiple_overlapping(ax):
+    ax.plot([0, 1])
+    cursor = mplcursors.cursor(multiple=True)
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    sel, = cursor.selections
+    cursor.add_selection(copy.copy(sel))
+    assert len(cursor.selections) == 2
+    _process_event(*_get_remove_args(sel))
+    assert list(map(id, cursor.selections)) == [id(sel)]  # To check LIFOness.
+    _process_event(*_get_remove_args(sel))
+    assert len(cursor.selections) == 0
 
 
 def test_autoalign(ax):
@@ -497,6 +507,7 @@ def test_autoalign(ax):
     sel, = cursor.selections
     assert (sel.annotation.get_ha() == "right"
             and sel.annotation.get_va() == "center")
+    cursor.remove_selection(sel)
     cursor.connect(
         "add", lambda sel: sel.annotation.set(ha="center", va="bottom"))
     _process_event("__mouse_click__", ax, (.5, .5), 1)

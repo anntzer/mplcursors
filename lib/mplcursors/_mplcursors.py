@@ -481,7 +481,9 @@ class Cursor:
                     or not artist.axes.contains(event)[0]):  # Cropped by axes.
                 continue
             pi = _pick_info.compute_pick(artist, per_axes_event[artist.axes])
-            if pi:
+            if pi and not any((pi.artist, tuple(pi.target))
+                              == (other.artist, tuple(other.target))
+                              for other in self._selections):
                 pis.append(pi)
         if not pis:
             return
