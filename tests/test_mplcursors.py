@@ -354,7 +354,8 @@ def test_dataless_errorbar(ax):
 
 
 def test_stem(ax):
-    ax.stem([1, 2, 3])
+    with pytest.warns(None):  # stem use_line_collection API change.
+        ax.stem([1, 2, 3])
     cursor = mplcursors.cursor()
     assert len(cursor.artists) == 1
     _process_event("__mouse_click__", ax, (.5, .5), 1)
