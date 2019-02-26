@@ -32,7 +32,7 @@ As usual, install using pip:
 
 On Fedora, the package is also available as python-mplcursors_.
 
-Run tests with pytest_\≥3.2.0.
+Run tests with pytest_\≥3.6.0.
 
 .. _Matplotlib: http://matplotlib.org
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor
