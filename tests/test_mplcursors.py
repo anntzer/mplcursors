@@ -304,6 +304,18 @@ def test_linecollection(ax):
     assert cursor.selections[0].target.index == approx((0, .5))
 
 
+def test_patchcollection(ax):
+    recs = [mpl.patches.Rectangle(xy, 0.1, 0.2) for xy in zip((.1, .45, .7), (.1, .4, .7))]
+    pc = mpl.collections.PatchCollection(recs, facecolor='r')
+    ax.add_collection(pc)
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (.0, .5), 1)
+    assert len(cursor.selections) == 0
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    assert len(cursor.selections) == 1
+    assert cursor.selections[0].target.index == approx((1, 3.5))
+
+
 @pytest.mark.parametrize("plotter", [Axes.quiver, Axes.barbs])
 def test_quiver_and_barbs(ax, plotter):
     plotter(ax, range(3), range(3))
