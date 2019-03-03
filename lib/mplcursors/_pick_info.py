@@ -57,9 +57,12 @@ def _register_scatter():
 
 
 _nonscatter_pathcollections = WeakSet()
-_is_scatter = lambda artist: (isinstance(artist, PathCollection)
-                              and artist not in _nonscatter_pathcollections)
 _register_scatter()
+
+
+def _is_scatter(artist):
+    return (isinstance(artist, PathCollection)
+            and artist not in _nonscatter_pathcollections)
 
 
 def _artist_in_container(container):
@@ -465,6 +468,7 @@ def _call_with_selection(func):
         parameters=[param.replace(default=None) if param.default is param.empty
                     else param
                     for param in sel_sig.parameters.values()])
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         extra_kw = {param.name: kwargs.pop(param.name)
@@ -478,6 +482,7 @@ def _call_with_selection(func):
              if param.default is not param.empty})
         sel = Selection(*ba.args, **ba.kwargs)
         return func(sel, **extra_kw)
+
     wrapper.__signature__ = Signature(
         list(sel_sig.parameters.values()) + wrapped_kwonly_params)
     return wrapper
