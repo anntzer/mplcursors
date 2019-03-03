@@ -16,7 +16,8 @@ from weakref import WeakSet
 
 from matplotlib import cbook
 from matplotlib.axes import Axes
-from matplotlib.collections import LineCollection, PathCollection, PatchCollection
+from matplotlib.collections import (
+    LineCollection, PatchCollection, PathCollection)
 from matplotlib.container import BarContainer, ErrorbarContainer, StemContainer
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
@@ -529,8 +530,8 @@ def _format_scalarmappable_value(artist, idx):  # matplotlib/matplotlib#12473.
 
 @get_ann_text.register(Line2D)
 @get_ann_text.register(LineCollection)
-@get_ann_text.register(PathCollection)
 @get_ann_text.register(PatchCollection)
+@get_ann_text.register(PathCollection)
 @get_ann_text.register(Patch)
 @_call_with_selection
 def _(sel):

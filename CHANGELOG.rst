@@ -1,6 +1,7 @@
 next
 ====
 
+- PatchCollection items are now pickable
 - Display value in annotation for colormapped scatter plots.
 - The add/remove callbacks no longer rely on Matplotlib's `CallbackRegistry`.
   `Cursor.connect` now returns the callback itself (simplifying its use as a

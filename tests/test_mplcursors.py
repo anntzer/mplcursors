@@ -305,7 +305,8 @@ def test_linecollection(ax):
 
 
 def test_patchcollection(ax):
-    recs = [mpl.patches.Rectangle(xy, 0.1, 0.2) for xy in zip((.1, .45, .7), (.1, .4, .7))]
+    recs = [mpl.patches.Rectangle(xy, 0.1, 0.2)
+            for xy in zip((.1, .45, .7), (.1, .4, .7))]
     pc = mpl.collections.PatchCollection(recs, facecolor='r')
     ax.add_collection(pc)
     cursor = mplcursors.cursor()
