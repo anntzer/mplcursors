@@ -45,6 +45,7 @@ html_theme_options = {
     'github_repo': 'mplcursors',
     'github_banner': True,
     'github_button': False,
+    'code_font_size': '80%',
 }
 # html_last_updated_fmt = ''  # bitprophet/alabaster#93
 
