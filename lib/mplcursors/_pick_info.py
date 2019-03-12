@@ -561,11 +561,7 @@ _Event = namedtuple("_Event", "xdata ydata")
 def _(sel):
     artist = sel.artist
     text = _format_coord_unspaced(artist.axes, sel.target)
-    cursor_text = artist.format_cursor_data(
-        artist.get_cursor_data(_Event(*sel.target)))
-    # get_cursor_data changed in Matplotlib 3.
-    if not re.match(r"\A\[.*\]\Z", cursor_text):
-        cursor_text = "[{}]".format(cursor_text)
+    cursor_text = _format_scalarmappable_value(artist, sel.target.index)
     return "{}\n{}".format(text, cursor_text)
 
 

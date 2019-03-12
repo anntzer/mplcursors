@@ -2,6 +2,7 @@ next
 ====
 
 - Display value in annotation for colormapped scatter plots.
+- Improve formatting of image values.
 - The add/remove callbacks no longer rely on Matplotlib's `CallbackRegistry`.
   `Cursor.connect` now returns the callback itself (simplifying its use as a
   decorator).  `Cursor.disconnect` now takes two arguments: the event name and
