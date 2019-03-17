@@ -160,7 +160,7 @@ def test_scatter_text(ax):
     ax.scatter([0, 1], [0, 1], c=[2, 3])
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (0, 0), 1)
-    assert cursor.selections[0].annotation.get_text() == "x=0\ny=0\n[2.0]"
+    assert cursor.selections[0].annotation.get_text() == "x=0\ny=0\n[2]"
 
 
 def test_steps_index():

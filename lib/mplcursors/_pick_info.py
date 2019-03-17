@@ -526,8 +526,8 @@ def _format_scalarmappable_value(artist, idx):  # matplotlib/matplotlib#12473.
         list(ax.yaxis.iter_ticks())
     value = artist.get_array()[idx]
     return ("["
-            + _strip_math(artist.colorbar.formatter(value))
-            + _strip_math(artist.colorbar.formatter.get_offset())
+            + _strip_math(
+                artist.colorbar.formatter.format_data_short(value).strip())
             + "]")
 
 
