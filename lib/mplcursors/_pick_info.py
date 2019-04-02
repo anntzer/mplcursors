@@ -16,8 +16,10 @@ from weakref import WeakSet
 
 from matplotlib import cbook
 from matplotlib.axes import Axes
+from matplotlib.backend_bases import RendererBase
 from matplotlib.collections import LineCollection, PathCollection
 from matplotlib.container import BarContainer, ErrorbarContainer, StemContainer
+from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, PathPatch, Polygon, Rectangle
@@ -518,12 +520,15 @@ def _format_scalarmappable_value(artist, idx):  # matplotlib/matplotlib#12473.
             cbook.strip_math(s) if len(s) >= 2 and s[0] == s[-1] == "$" else s)
 
     if not artist.colorbar:
-        from matplotlib.figure import Figure
         fig = Figure()
         ax = fig.subplots()
         artist.colorbar = fig.colorbar(artist, cax=ax)
-        # This will call the locator and call set_locs() on the formatter.
-        list(ax.yaxis.iter_ticks())
+        # This hack updates the ticks without actually paying the cost of
+        # drawing (RendererBase.draw_path raises NotImplementedError).
+        try:
+            ax.yaxis.draw(RendererBase())
+        except NotImplementedError:
+            pass
     value = artist.get_array()[idx]
     return ("["
             + _strip_math(
