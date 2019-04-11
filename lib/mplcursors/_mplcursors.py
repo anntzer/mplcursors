@@ -70,12 +70,22 @@ def _get_rounded_intersection_area(bbox_1, bbox_2):
     return round(bbox.width * bbox.height, 8) if bbox else 0
 
 
+def _iter_axes_subartists(ax):
+    r"""Yield all child `Artist`\s (*not* `Container`\s) of *ax*."""
+    yield from ax.collections
+    yield from ax.images
+    yield from ax.lines
+    yield from ax.patches
+    yield from ax.texts
+
+
 def _is_alive(artist):
-    """Check whether an artist is still present on an axes."""
-    return bool(artist and artist.axes
+    """Check whether *artist* is still present on its parent axes."""
+    return bool(artist
+                and artist.axes
                 and (artist.container in artist.axes.containers
-                     if isinstance(artist, _pick_info.ContainerArtist)
-                     else artist.axes.findobj(lambda obj: obj is artist)))
+                     if isinstance(artist, _pick_info.ContainerArtist) else
+                     artist in _iter_axes_subartists(artist.axes)))
 
 
 def _reassigned_axes_event(event, ax):
@@ -571,9 +581,7 @@ def cursor(pickables=None, **kwargs):
     def iter_unpack_axes(pickables):
         for entry in pickables:
             if isinstance(entry, Axes):
-                for artists in [entry.collections, entry.images, entry.lines,
-                                entry.patches, entry.texts]:
-                    yield from artists
+                yield from _iter_axes_subartists(entry)
                 containers.extend(entry.containers)
             elif isinstance(entry, Container):
                 containers.append(entry)

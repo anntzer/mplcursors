@@ -16,9 +16,11 @@ from weakref import WeakSet
 
 from matplotlib import cbook
 from matplotlib.axes import Axes
+from matplotlib.backend_bases import RendererBase
 from matplotlib.collections import (
     LineCollection, PatchCollection, PathCollection)
 from matplotlib.container import BarContainer, ErrorbarContainer, StemContainer
+from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, PathPatch, Polygon, Rectangle
@@ -58,9 +60,12 @@ def _register_scatter():
 
 
 _nonscatter_pathcollections = WeakSet()
-_is_scatter = lambda artist: (isinstance(artist, PathCollection)
-                              and artist not in _nonscatter_pathcollections)
 _register_scatter()
+
+
+def _is_scatter(artist):
+    return (isinstance(artist, PathCollection)
+            and artist not in _nonscatter_pathcollections)
 
 
 def _artist_in_container(container):
@@ -467,6 +472,7 @@ def _call_with_selection(func):
         parameters=[param.replace(default=None) if param.default is param.empty
                     else param
                     for param in sel_sig.parameters.values()])
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         extra_kw = {param.name: kwargs.pop(param.name)
@@ -480,6 +486,7 @@ def _call_with_selection(func):
              if param.default is not param.empty})
         sel = Selection(*ba.args, **ba.kwargs)
         return func(sel, **extra_kw)
+
     wrapper.__signature__ = Signature(
         list(sel_sig.parameters.values()) + wrapped_kwonly_params)
     return wrapper
@@ -515,16 +522,19 @@ def _format_scalarmappable_value(artist, idx):  # matplotlib/matplotlib#12473.
             cbook.strip_math(s) if len(s) >= 2 and s[0] == s[-1] == "$" else s)
 
     if not artist.colorbar:
-        from matplotlib.figure import Figure
         fig = Figure()
         ax = fig.subplots()
         artist.colorbar = fig.colorbar(artist, cax=ax)
-        # This will call the locator and call set_locs() on the formatter.
-        list(ax.yaxis.iter_ticks())
+        # This hack updates the ticks without actually paying the cost of
+        # drawing (RendererBase.draw_path raises NotImplementedError).
+        try:
+            ax.yaxis.draw(RendererBase())
+        except NotImplementedError:
+            pass
     value = artist.get_array()[idx]
     return ("["
-            + _strip_math(artist.colorbar.formatter(value))
-            + _strip_math(artist.colorbar.formatter.get_offset())
+            + _strip_math(
+                artist.colorbar.formatter.format_data_short(value).strip())
             + "]")
 
 
@@ -559,11 +569,7 @@ _Event = namedtuple("_Event", "xdata ydata")
 def _(sel):
     artist = sel.artist
     text = _format_coord_unspaced(artist.axes, sel.target)
-    cursor_text = artist.format_cursor_data(
-        artist.get_cursor_data(_Event(*sel.target)))
-    # get_cursor_data changed in Matplotlib 3.
-    if not re.match(r"\A\[.*\]\Z", cursor_text):
-        cursor_text = "[{}]".format(cursor_text)
+    cursor_text = _format_scalarmappable_value(artist, sel.target.index)
     return "{}\n{}".format(text, cursor_text)
 
 
