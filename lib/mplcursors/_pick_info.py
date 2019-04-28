@@ -507,26 +507,31 @@ def get_ann_text(sel):
     return ""
 
 
-def _format_scalarmappable_value(artist, idx):  # matplotlib/matplotlib#12473.
-    def _strip_math(s):
-        return (
-            cbook.strip_math(s) if len(s) >= 2 and s[0] == s[-1] == "$" else s)
+def _strip_math(s):
+    return cbook.strip_math(s) if len(s) >= 2 and s[0] == s[-1] == "$" else s
 
-    if not artist.colorbar:
-        fig = Figure()
-        ax = fig.subplots()
-        artist.colorbar = fig.colorbar(artist, cax=ax)
-        # This hack updates the ticks without actually paying the cost of
-        # drawing (RendererBase.draw_path raises NotImplementedError).
-        try:
-            ax.yaxis.draw(RendererBase())
-        except NotImplementedError:
-            pass
-    value = artist.get_array()[idx]
-    return ("["
-            + _strip_math(
-                artist.colorbar.formatter.format_data_short(value).strip())
-            + "]")
+
+def _format_scalarmappable_value(artist, idx):  # matplotlib/matplotlib#12473.
+    data = artist.get_array()[idx]
+    if np.ndim(data) == 0:
+        if not artist.colorbar:
+            fig = Figure()
+            ax = fig.subplots()
+            artist.colorbar = fig.colorbar(artist, cax=ax)
+            # This hack updates the ticks without actually paying the cost of
+            # drawing (RendererBase.draw_path raises NotImplementedError).
+            try:
+                ax.yaxis.draw(RendererBase())
+            except NotImplementedError:
+                pass
+        fmt = artist.colorbar.formatter.format_data_short
+        return "[" + _strip_math(fmt(data).strip()) + "]"
+    else:
+        text = artist.format_cursor_data(data)
+        # get_cursor_data changed in Matplotlib 3.
+        if not re.match(r"\A\[.*\]\Z", text):
+            text = "[{}]".format(text)
+        return text
 
 
 @get_ann_text.register(Line2D)

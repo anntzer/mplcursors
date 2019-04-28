@@ -256,24 +256,25 @@ def test_image(ax, origin):
     cursor = mplcursors.cursor()
     # Annotation text includes image value.
     _process_event("__mouse_click__", ax, (.25, .25), 1)
-    assert (_parse_annotation(cursor.selections[0], r"x=(.*)\ny=(.*)\n\[0\]")
+    sel, = cursor.selections
+    assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0\]")
             == approx((.25, .25)))
     # Moving around.
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
-    sel = cursor.selections[0]
+    sel, = cursor.selections
     assert sel.annotation.get_text() == "x=1\ny=0\n[1]"
     assert array[sel.target.index] == 1
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
-    sel = cursor.selections[0]
+    sel, = cursor.selections
     assert sel.annotation.get_text() == "x=0\ny=0\n[0]"
     assert array[sel.target.index] == 0
     _process_event("key_press_event", ax, (.123, .456), "shift+up")
-    sel = cursor.selections[0]
+    sel, = cursor.selections
     assert (sel.annotation.get_text()
             == {"upper": "x=0\ny=2\n[4]", "lower": "x=0\ny=1\n[2]"}[origin])
     assert array[sel.target.index] == {"upper": 4, "lower": 2}[origin]
     _process_event("key_press_event", ax, (.123, .456), "shift+down")
-    sel = cursor.selections[0]
+    sel, = cursor.selections
     assert sel.annotation.get_text() == "x=0\ny=0\n[0]"
     assert array[sel.target.index] == 0
 
@@ -284,6 +285,15 @@ def test_image(ax, origin):
     ax.set(xlim=(-1, None), ylim=(-1, None))
     _process_event("__mouse_click__", ax, (-.75, -.75), 1)
     assert len(cursor.selections) == 0
+
+
+def test_image_rgb(ax):
+    ax.imshow([[[.1, .2, .3]]])
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (0, 0), 1)
+    sel, = cursor.selections
+    assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0.1, 0.2, 0.3\]")
+            == approx((0, 0)))
 
 
 def test_image_subclass(ax):
