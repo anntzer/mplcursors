@@ -102,7 +102,7 @@ class AttrArray(np.ndarray):
         return np.asarray(array).view(cls)
 
 
-def with_attrs(array, **kwargs):
+def _with_attrs(array, **kwargs):
     array = AttrArray(array)
     for k, v in kwargs.items():
         setattr(array, k, v)
@@ -277,7 +277,7 @@ def _(artist, event):
             pass
         else:
             # More precise than transforming back.
-            target = with_attrs(artist.get_xydata()[argmin], index=argmin)
+            target = _with_attrs(artist.get_xydata()[argmin], index=argmin)
             sels.append(Selection(artist, target, dmin, None, None))
     # If lines are visible, find the closest projection.
     if (artist.get_linestyle() not in ["None", "none", " ", "", None]
@@ -323,7 +323,7 @@ def _(artist, event):
         ds = np.hypot(*(ax.transData.transform(offsets)
                         - [event.x, event.y]).T)
         argmin = ds.argmin()
-        target = with_attrs(offsets[argmin], index=inds[argmin])
+        target = _with_attrs(offsets[argmin], index=inds[argmin])
         return Selection(artist, target, ds[argmin], None, None)
     else:
         # Note that this won't select implicitly closed paths.
@@ -366,7 +366,7 @@ def _(artist, event):
         ymin, ymax = ymax, ymin
     low, high = np.array([[xmin, ymin], [xmax, ymax]])
     idxs = ((xy - low) / (high - low) * ns).astype(int)[::-1]
-    target = with_attrs(xy, index=tuple(idxs))
+    target = _with_attrs(xy, index=tuple(idxs))
     return Selection(artist, target, 0, None, None)
 
 
@@ -378,7 +378,7 @@ def _(artist, event):
         *(artist.axes.transData.transform(offsets) - [event.x, event.y]).T)
     argmin = np.nanargmin(ds)
     if ds[argmin] < artist.get_pickradius():
-        target = with_attrs(offsets[argmin], index=argmin)
+        target = _with_attrs(offsets[argmin], index=argmin)
         return Selection(artist, target, ds[argmin], None, None)
     else:
         return None
@@ -405,7 +405,7 @@ def _(container, event):
             if patch.contains(event)[0]}
     except ValueError:
         return
-    target = with_attrs([event.xdata, event.ydata], index=idx)
+    target = _with_attrs([event.xdata, event.ydata], index=idx)
     if patch.sticky_edges.x:
         target[0], = (
             x for x in [patch.get_x(), patch.get_x() + patch.get_width()]
@@ -429,7 +429,7 @@ def _(container, event):
     elif sel_err:
         idx, _ = sel_err.target.index
         if data_line:
-            target = with_attrs(data_line.get_xydata()[idx], index=idx)
+            target = _with_attrs(data_line.get_xydata()[idx], index=idx)
         else:  # We can't guess the original data in that case!
             return
         return Selection(None, target, 0, None, None)
@@ -448,7 +448,7 @@ def _(container, event):
                   key=lambda idx_sel: idx_sel[1].dist, default=None)
     if idx_sel:
         idx, _ = idx_sel
-        target = with_attrs(
+        target = _with_attrs(
             container.stemlines[idx].get_xydata()[-1], index=idx)
         return Selection(None, target, 0, None, None)
 
@@ -659,7 +659,7 @@ def _move_within_points(sel, xys, *, key):
             new_idx = int(np.floor(sel.target.index) + 1) % len(xys)
         else:
             return sel
-        target = with_attrs(xys[new_idx], index=new_idx)
+        target = _with_attrs(xys[new_idx], index=new_idx)
         sel = sel._replace(target=target, dist=0)
         if np.isfinite(target).all():
             return sel
@@ -694,8 +694,8 @@ def _(sel, *, key):
     if sel.artist.origin == "upper":
         ymin, ymax = ymax, ymin
     low, high = np.array([[xmin, ymin], [xmax, ymax]])
-    target = with_attrs(((idxs + .5) / ns)[::-1] * (high - low) + low,
-                        index=tuple(idxs))
+    target = _with_attrs(((idxs + .5) / ns)[::-1] * (high - low) + low,
+                         index=tuple(idxs))
     return sel._replace(target=target)
 
 
