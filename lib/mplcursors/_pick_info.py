@@ -319,11 +319,19 @@ def _(artist, event):
     if _is_scatter(artist):
         ax = artist.axes
         inds = info["ind"]
-        offsets = offsets[inds]
-        ds = np.hypot(*(ax.transData.transform(offsets)
-                        - [event.x, event.y]).T)
+        offsets = artist.get_offsets()[inds]
+        offsets_t = artist.get_offset_transform().transform(offsets)
+        ds = np.hypot(*(offsets_t - [event.x, event.y]).T)
         argmin = ds.argmin()
-        target = _with_attrs(offsets[argmin], index=inds[argmin])
+        target = _with_attrs(
+            # The offsets in Selection should be suitable for being passed to
+            # transData, but if get_offset_transform() is transData, then
+            # applying the transform and its inverse may accumulate floating
+            # point error.
+            offsets[argmin]
+            if artist.get_offset_transform() is artist.axes.transData
+            else artist.axes.transData.inverted().transform(offsets_t[argmin]),
+            index=inds[argmin])
         return Selection(artist, target, ds[argmin], None, None)
     else:
         # Note that this won't select implicitly closed paths.
@@ -374,11 +382,15 @@ def _(artist, event):
 @compute_pick.register(Quiver)
 def _(artist, event):
     offsets = artist.get_offsets()
-    ds = np.hypot(
-        *(artist.axes.transData.transform(offsets) - [event.x, event.y]).T)
+    offsets_t = artist.get_offset_transform().transform(offsets)
+    ds = np.hypot(*(offsets_t - [event.x, event.y]).T)
     argmin = np.nanargmin(ds)
     if ds[argmin] < artist.get_pickradius():
-        target = _with_attrs(offsets[argmin], index=argmin)
+        target = _with_attrs(  # See comment in LineCollection picker.
+            offsets[argmin]
+            if artist.get_offset_transform() is artist.axes.transData
+            else artist.axes.transData.inverted().transform(offsets_t[argmin]),
+            index=argmin)
         return Selection(artist, target, ds[argmin], None, None)
     else:
         return None

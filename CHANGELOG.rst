@@ -12,6 +12,8 @@ next
   (patch suggested by @schneeammer).
 - `PatchCollection`\s are now pickable (on their borders) (patch modified from
   a PR by @secretyv).
+- Support `Collection`\s where `get_offset_transform()` is not `transData`
+  (patch suggested by @yt87).
 
 0.2.1
 =====
