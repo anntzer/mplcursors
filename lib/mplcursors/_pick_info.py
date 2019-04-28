@@ -17,7 +17,8 @@ from weakref import WeakSet
 from matplotlib import cbook
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import RendererBase
-from matplotlib.collections import LineCollection, PathCollection
+from matplotlib.collections import (
+    LineCollection, PatchCollection, PathCollection)
 from matplotlib.container import BarContainer, ErrorbarContainer, StemContainer
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
@@ -30,6 +31,7 @@ import numpy as np
 
 
 Integral.register(np.integer)  # Back-compatibility for numpy 1.7, 1.8.
+PATCH_PICKRADIUS = 5  # FIXME Patches do not provide `pickradius`.
 
 
 def _register_scatter():
@@ -300,25 +302,12 @@ def _(artist, event):
 def _(artist, event):
     sel = _compute_projection_pick(
         artist, artist.get_path(), (event.x, event.y))
-    if sel and sel.dist < 5:  # FIXME Patches do not provide `pickradius`.
+    if sel and sel.dist < PATCH_PICKRADIUS:
         return sel
 
 
 @compute_pick.register(LineCollection)
-def _(artist, event):
-    contains, info = artist.contains(event)
-    paths = artist.get_paths()
-    sels = [_compute_projection_pick(artist, paths[ind], (event.x, event.y))
-            for ind in info["ind"]]
-    sel, index = min(
-        ((sel, info["ind"][idx]) for idx, sel in enumerate(sels) if sel),
-        key=lambda sel_idx: sel_idx[0].dist, default=(None, None))
-    if sel:
-        sel = sel._replace(artist=artist)
-        sel.target.index = (index, sel.target.index)
-    return sel
-
-
+@compute_pick.register(PatchCollection)
 @compute_pick.register(PathCollection)
 def _(artist, event):
     # Use the C implementation to prune the list of segments.
@@ -345,12 +334,16 @@ def _(artist, event):
                 .transform_path(paths[ind % len(paths)]),
                 (event.x, event.y))
             for ind in info["ind"]]
-        sel, index = min(((sel, idx) for idx, sel in enumerate(sels) if sel),
-                         key=lambda sel_idx: sel_idx[0].dist,
-                         default=(None, None))
+        sel, index = min(
+            ((sel, info["ind"][idx]) for idx, sel in enumerate(sels) if sel),
+            key=lambda sel_idx: sel_idx[0].dist,
+            default=(None, None))
         if sel:
             sel = sel._replace(artist=artist)
             sel.target.index = (index, sel.target.index)
+            if (isinstance(artist, PatchCollection)
+                    and sel.dist >= PATCH_PICKRADIUS):
+                sel = None
         return sel
 
 
@@ -538,6 +531,7 @@ def _format_scalarmappable_value(artist, idx):  # matplotlib/matplotlib#12473.
 
 @get_ann_text.register(Line2D)
 @get_ann_text.register(LineCollection)
+@get_ann_text.register(PatchCollection)
 @get_ann_text.register(PathCollection)
 @get_ann_text.register(Patch)
 @_call_with_selection

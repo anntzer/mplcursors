@@ -10,6 +10,8 @@ next
 - Overlapping annotations are now removed one at a time.
 - Re-clicking on an already selected point does not create a new annotation
   (patch suggested by @schneeammer).
+- `PatchCollection`\s are now pickable (on their borders) (patch modified from
+  a PR by @secretyv).
 
 0.2.1
 =====
