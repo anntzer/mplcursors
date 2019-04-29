@@ -252,6 +252,24 @@ def _compute_projection_pick(artist, path, xy):
         return Selection(artist, target, dmin, None, None)
 
 
+def _untransform(orig_xy, screen_xy, ax):
+    """
+    Return data coordinates to place an annotation at screen coordinates
+    *screen_xy* in axes *ax*.
+
+    *orig_xy* are the "original" coordinates as stored by the artist; they are
+    transformed to *screen_xy* by whatever transform the artist uses.  If the
+    artist uses ``ax.transData``, just return *orig_xy*; else, apply
+    ``ax.transData.inverse()`` to *screen_xy*.  (The first case is more
+    accurate than always applying ``ax.transData.inverse()``.)
+    """
+    tr_xy = ax.transData.transform(orig_xy)
+    return (
+        orig_xy
+        if ((tr_xy == screen_xy) | np.isnan(tr_xy) & np.isnan(screen_xy)).all()
+        else ax.transData.inverted().transform(screen_xy))
+
+
 @compute_pick.register(Line2D)
 def _(artist, event):
     # No need to call `line.contains` as we're going to redo the work anyways
@@ -262,10 +280,11 @@ def _(artist, event):
     # transform (e.g., for axvline).
     xy = event.x, event.y
     data_xy = artist.get_xydata()
+    data_screen_xy = artist.get_transform().transform(data_xy)
     sels = []
     # If markers are visible, find the closest vertex.
     if artist.get_marker() not in ["None", "none", " ", "", None]:
-        ds = np.hypot(*(xy - artist.get_transform().transform(data_xy)).T)
+        ds = np.hypot(*(xy - data_screen_xy).T)
         try:
             argmin = np.nanargmin(ds)
             dmin = ds[argmin]
@@ -277,7 +296,10 @@ def _(artist, event):
             pass
         else:
             # More precise than transforming back.
-            target = _with_attrs(artist.get_xydata()[argmin], index=argmin)
+            target = _with_attrs(
+                _untransform(
+                    data_xy[argmin], data_screen_xy[argmin], artist.axes),
+                index=argmin)
             sels.append(Selection(artist, target, dmin, None, None))
     # If lines are visible, find the closest projection.
     if (artist.get_linestyle() not in ["None", "none", " ", "", None]
@@ -320,17 +342,11 @@ def _(artist, event):
         ax = artist.axes
         inds = info["ind"]
         offsets = artist.get_offsets()[inds]
-        offsets_t = artist.get_offset_transform().transform(offsets)
-        ds = np.hypot(*(offsets_t - [event.x, event.y]).T)
+        offsets_screen = artist.get_offset_transform().transform(offsets)
+        ds = np.hypot(*(offsets_screen - [event.x, event.y]).T)
         argmin = ds.argmin()
         target = _with_attrs(
-            # The offsets in Selection should be suitable for being passed to
-            # transData, but if get_offset_transform() is transData, then
-            # applying the transform and its inverse may accumulate floating
-            # point error.
-            offsets[argmin]
-            if artist.get_offset_transform() is artist.axes.transData
-            else artist.axes.transData.inverted().transform(offsets_t[argmin]),
+            _untransform(offsets[argmin], offsets_screen[argmin], artist.axes),
             index=inds[argmin])
         return Selection(artist, target, ds[argmin], None, None)
     else:
@@ -382,14 +398,12 @@ def _(artist, event):
 @compute_pick.register(Quiver)
 def _(artist, event):
     offsets = artist.get_offsets()
-    offsets_t = artist.get_offset_transform().transform(offsets)
-    ds = np.hypot(*(offsets_t - [event.x, event.y]).T)
+    offsets_screen = artist.get_offset_transform().transform(offsets)
+    ds = np.hypot(*(offsets_screen - [event.x, event.y]).T)
     argmin = np.nanargmin(ds)
     if ds[argmin] < artist.get_pickradius():
-        target = _with_attrs(  # See comment in LineCollection picker.
-            offsets[argmin]
-            if artist.get_offset_transform() is artist.axes.transData
-            else artist.axes.transData.inverted().transform(offsets_t[argmin]),
+        target = _with_attrs(
+            _untransform(offsets[argmin], offsets_screen[argmin], artist.axes),
             index=argmin)
         return Selection(artist, target, ds[argmin], None, None)
     else:
@@ -680,14 +694,25 @@ def _move_within_points(sel, xys, *, key):
 @move.register(Line2D)
 @_call_with_selection
 def _(sel, *, key):
-    return _move_within_points(sel, sel.artist.get_xydata(), key=key)
+    data_xy = sel.artist.get_xydata()
+    return _move_within_points(
+        sel,
+        _untransform(data_xy, sel.artist.get_transform().transform(data_xy),
+                     sel.artist.axes),
+        key=key)
 
 
 @move.register(PathCollection)
 @_call_with_selection
 def _(sel, *, key):
     if _is_scatter(sel.artist):
-        return _move_within_points(sel, sel.artist.get_offsets(), key=key)
+        offsets = sel.artist.get_offsets()
+        return _move_within_points(
+            sel,
+            _untransform(
+                offsets, sel.artist.get_offset_transform().transform(offsets),
+                sel.artist.axes),
+            key=key)
     else:
         return sel
 
