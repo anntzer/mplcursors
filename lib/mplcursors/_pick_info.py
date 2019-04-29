@@ -339,7 +339,6 @@ def _(artist, event):
     offsets = artist.get_offsets()
     paths = artist.get_paths()
     if _is_scatter(artist):
-        ax = artist.axes
         inds = info["ind"]
         offsets = artist.get_offsets()[inds]
         offsets_screen = artist.get_offset_transform().transform(offsets)
