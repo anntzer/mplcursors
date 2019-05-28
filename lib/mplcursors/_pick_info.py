@@ -30,7 +30,7 @@ from matplotlib.transforms import Affine2D
 import numpy as np
 
 
-Integral.register(np.integer)  # Back-compatibility for numpy 1.7, 1.8.
+Integral.register(np.integer)  # numpy<1.9 backcompat.
 PATCH_PICKRADIUS = 5  # FIXME Patches do not provide `pickradius`.
 
 
@@ -151,11 +151,15 @@ class Index:
         self.x = x
         self.y = y
 
-    def floor(self):
+    def __floor__(self):
         return self.int
 
-    def ceil(self):
+    def __ceil__(self):
         return self.int if max(self.x, self.y) == 0 else self.int + 1
+
+    # numpy<1.17 backcompat.
+    floor = __floor__
+    ceil = __ceil__
 
     def __format__(self, fmt):
         return "{0.int}.(x={0.x:{1}}, y={0.y:{1}})".format(self, fmt)
