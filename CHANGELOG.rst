@@ -14,6 +14,7 @@ next
   a PR by @secretyv).
 - Support `Collection`\s where `get_offset_transform()` is not `transData`
   (patch suggested by @yt87).
+- Support setting both ``hover`` and ``multiple``.
 
 0.2.1
 =====

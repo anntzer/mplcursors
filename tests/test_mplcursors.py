@@ -610,8 +610,6 @@ def test_convenience(ax):
 
 def test_invalid_args():
     pytest.raises(ValueError, mplcursors.cursor,
-                  multiple=True, hover=True)
-    pytest.raises(ValueError, mplcursors.cursor,
                   bindings={"foo": 42})
     pytest.raises(ValueError, mplcursors.cursor,
                   bindings={"select": 1, "deselect": 1})

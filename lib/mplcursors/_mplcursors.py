@@ -203,8 +203,6 @@ class Cursor:
 
         connect_pairs = [("key_press_event", self._on_key_press)]
         if hover:
-            if multiple:
-                raise ValueError("'hover' and 'multiple' are incompatible")
             connect_pairs += [
                 ("motion_notify_event", self._hover_handler),
                 ("button_press_event", self._hover_handler)]
