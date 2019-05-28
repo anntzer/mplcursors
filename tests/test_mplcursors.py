@@ -55,6 +55,7 @@ def _internal_warnings(record):
 
 
 def _process_event(name, ax, coords, *args):
+    ax.viewLim  # unstale viewLim.
     if name == "__mouse_click__":
         # So that the dragging callbacks don't go crazy.
         _process_event("button_press_event", ax, coords, *args)
