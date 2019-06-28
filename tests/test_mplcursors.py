@@ -61,7 +61,7 @@ def _process_event(name, ax, coords, *args):
         _process_event("button_press_event", ax, coords, *args)
         _process_event("button_release_event", ax, coords, *args)
         return
-    display_coords = tuple(ax.transData.transform_point(coords))
+    display_coords = tuple(ax.transData.transform(coords))  # Py3.4 backcompat.
     if name in ["button_press_event", "button_release_event",
                 "motion_notify_event", "scroll_event"]:
         event = MouseEvent(name, ax.figure.canvas, *(display_coords + args))
@@ -77,7 +77,7 @@ def _get_remove_args(sel):
     # Text bounds are found only upon drawing.
     ax.figure.canvas.draw()
     bbox = sel.annotation.get_window_extent()
-    center = ax.transData.inverted().transform_point(
+    center = ax.transData.inverted().transform(
         ((bbox.x0 + bbox.x1) / 2, (bbox.y0 + bbox.y1) / 2))
     return "__mouse_click__", ax, center, 3
 

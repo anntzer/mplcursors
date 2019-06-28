@@ -92,7 +92,7 @@ def _reassigned_axes_event(event, ax):
     """Reassign *event* to *ax*."""
     event = copy.copy(event)
     event.xdata, event.ydata = (
-        ax.transData.inverted().transform_point((event.x, event.y)))
+        ax.transData.inverted().transform((event.x, event.y)))
     return event
 
 

@@ -249,7 +249,7 @@ def _compute_projection_pick(artist, path, xy):
         return
     else:
         target = AttrArray(
-            artist.axes.transData.inverted().transform_point(projs[argmin]))
+            artist.axes.transData.inverted().transform(projs[argmin]))
         target.index = (
             (argmin + dot[argmin] / ls[argmin])
             / (path._interpolation_steps / tpath._interpolation_steps))
