@@ -61,12 +61,12 @@ def _process_event(name, ax, coords, *args):
         _process_event("button_press_event", ax, coords, *args)
         _process_event("button_release_event", ax, coords, *args)
         return
-    display_coords = tuple(ax.transData.transform(coords))  # Py3.4 backcompat.
+    display_coords = ax.transData.transform(coords)
     if name in ["button_press_event", "button_release_event",
                 "motion_notify_event", "scroll_event"]:
-        event = MouseEvent(name, ax.figure.canvas, *(display_coords + args))
+        event = MouseEvent(name, ax.figure.canvas, *display_coords, *args)
     elif name in ["key_press_event", "key_release_event"]:
-        event = KeyEvent(name, ax.figure.canvas, *(args + display_coords))
+        event = KeyEvent(name, ax.figure.canvas, *args, *display_coords)
     else:
         raise ValueError("Unknown event name {!r}".format(name))
     ax.figure.canvas.callbacks.process(name, event)
@@ -657,15 +657,10 @@ def test_gc(ax):
     assert not f_cursor.alive
 
 
-def _read_text(path):  # Py3.4 backcompat.
-    with path.open() as file:
-        return file.read()
-
-
 @pytest.mark.parametrize(
     "example",
     [path for path in Path("examples").glob("*.py")
-     if "test: skip" not in _read_text(path)])
+     if "test: skip" not in path.read_text()])
 def test_example(example):
     subprocess.check_call(
         [sys.executable, "-mexamples.{}".format(example.with_suffix("").name)],

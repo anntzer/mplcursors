@@ -30,7 +30,6 @@ from matplotlib.transforms import Affine2D
 import numpy as np
 
 
-Integral.register(np.integer)  # numpy<1.9 backcompat.
 PATCH_PICKRADIUS = 5  # FIXME Patches do not provide `pickradius`.
 
 
@@ -116,20 +115,17 @@ Selection = namedtuple("Selection", "artist target dist annotation extras")
 # artists are already non-comparable.
 Selection.__eq__ = lambda self, other: self is other
 Selection.__ne__ = lambda self, other: self is not other
-try:
-    Selection.artist.__doc__ = (
-        "The selected artist.")
-    Selection.target.__doc__ = (
-        "The point picked within the artist, in data coordinates.")
-    Selection.dist.__doc__ = (
-        "The distance from the click to the target, in pixels.")
-    Selection.annotation.__doc__ = (
-        "The instantiated `matplotlib.text.Annotation`.")
-    Selection.extras.__doc__ = (
-        "An additional list of artists (e.g., highlighters) that will be "
-        "cleared at the same time as the annotation.")
-except AttributeError:  # Read-only in Py3.4.
-    pass
+Selection.artist.__doc__ = (
+    "The selected artist.")
+Selection.target.__doc__ = (
+    "The point picked within the artist, in data coordinates.")
+Selection.dist.__doc__ = (
+    "The distance from the click to the target, in pixels.")
+Selection.annotation.__doc__ = (
+    "The instantiated `matplotlib.text.Annotation`.")
+Selection.extras.__doc__ = (
+    "An additional list of artists (e.g., highlighters) that will be cleared "
+    "at the same time as the annotation.")
 
 
 @functools.singledispatch
