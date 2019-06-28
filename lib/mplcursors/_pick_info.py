@@ -82,13 +82,13 @@ class ContainerArtist:
         # the ContainerArtist; as no one else strongly references the
         # ContainerArtist, it will get GC'd whenever the Container is.
         vars(container).setdefault(
-            "_{}__keep_alive".format(__class__.__name__), []).append(self)
+            f"_{__class__.__name__}__keep_alive", []).append(self)
 
     def __str__(self):
-        return "<{}({})>".format(type(self).__name__, self.container)
+        return f"<{type(self).__name__}({self.container})>"
 
     def __repr__(self):
-        return "<{}({!r})>".format(type(self).__name__, self.container)
+        return f"<{type(self).__name__}({self.container!r})>"
 
     figure = property(lambda self: _artist_in_container(self.container).figure)
     axes = property(lambda self: _artist_in_container(self.container).axes)
@@ -138,7 +138,7 @@ def compute_pick(artist, event):
     This is a single-dispatch function; implementations for various artist
     classes follow.
     """
-    warnings.warn("Pick support for {} is missing.".format(type(artist)))
+    warnings.warn(f"Pick support for {type(artist).__name__} is missing.")
 
 
 class Index:
@@ -158,7 +158,7 @@ class Index:
     ceil = __ceil__
 
     def __format__(self, fmt):
-        return "{0.int}.(x={0.x:{1}}, y={0.y:{1}})".format(self, fmt)
+        return f"{self.int}.(x={self.x:{fmt}}, y={self.y:{fmt}})"
 
     def __str__(self):
         return format(self, "")
@@ -528,7 +528,7 @@ def get_ann_text(sel):
     classes follow.
     """
     warnings.warn(
-        "Annotation support for {} is missing".format(type(sel.artist)))
+        f"Annotation support for {type(sel.artist).__name__} is missing")
     return ""
 
 
@@ -552,11 +552,7 @@ def _format_scalarmappable_value(artist, idx):  # matplotlib/matplotlib#12473.
         fmt = artist.colorbar.formatter.format_data_short
         return "[" + _strip_math(fmt(data).strip()) + "]"
     else:
-        text = artist.format_cursor_data(data)
-        # get_cursor_data changed in Matplotlib 3.
-        if not re.match(r"\A\[.*\]\Z", text):
-            text = "[{}]".format(text)
-        return text
+        return artist.format_cursor_data(data)  # Includes brackets.
 
 
 @get_ann_text.register(Line2D)
@@ -576,9 +572,9 @@ def _(sel):
             and artist.get_array() is not None
             and len(artist.get_array()) == len(artist.get_offsets())):
         value = _format_scalarmappable_value(artist, sel.target.index)
-        text = "{}\n{}".format(text, value)
+        text = f"{text}\n{value}"
     if re.match("[^_]", label):
-        text = "{}\n{}".format(label, text)
+        text = f"{label}\n{text}"
     return text
 
 
@@ -591,7 +587,7 @@ def _(sel):
     artist = sel.artist
     text = _format_coord_unspaced(artist.axes, sel.target)
     cursor_text = _format_scalarmappable_value(artist, sel.target.index)
-    return "{}\n{}".format(text, cursor_text)
+    return f"{text}\n{cursor_text}"
 
 
 @get_ann_text.register(Barbs)
@@ -640,17 +636,17 @@ def _(sel):
                 err = (next(err_lcs).get_paths()[sel.target.index].vertices
                        - data_line.get_xydata()[sel.target.index])[:, idx]
                 err_s = [getattr(_artist_in_container(sel.artist).axes,
-                                 "format_{}data".format(dir))(e).rstrip()
+                                 f"format_{dir}data")(e).rstrip()
                          for e in err]
                 # We'd normally want to check err.sum() == 0, but that can run
                 # into fp inaccuracies.
                 if len({s.lstrip("+-") for s in err_s}) == 1:
-                    repl = r"\1=$\2\\pm{}$\3".format(err_s[1])
+                    repl = rf"\1=$\2\\pm{err_s[1]}$\3"
                 else:
                     err_s = [("+" if not s.startswith(("+", "-")) else "") + s
                              for s in err_s]
-                    repl = r"\1=$\2_{{{}}}^{{{}}}$\3".format(*err_s)
-                ann_text = re.sub("({})=(.*)(\n?)".format(dir), repl, ann_text)
+                    repl = r"\1=$\2_{%s}^{%s}$\3" % tuple(err_s)
+                ann_text = re.sub(f"({dir})=(.*)(\n?)", repl, ann_text)
     return ann_text
 
 
@@ -759,7 +755,7 @@ def make_highlight(sel, *, highlight_kwargs):
     classes follow.
     """
     warnings.warn(
-        "Highlight support for {} is missing".format(type(sel.artist)))
+        f"Highlight support for {type(sel.artist).__name__} is missing")
 
 
 def _set_valid_props(artist, kwargs):

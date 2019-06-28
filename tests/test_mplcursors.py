@@ -68,7 +68,7 @@ def _process_event(name, ax, coords, *args):
     elif name in ["key_press_event", "key_release_event"]:
         event = KeyEvent(name, ax.figure.canvas, *args, *display_coords)
     else:
-        raise ValueError("Unknown event name {!r}".format(name))
+        raise ValueError(f"Unknown event name {name!r}")
     ax.figure.canvas.callbacks.process(name, event)
 
 

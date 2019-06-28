@@ -418,7 +418,7 @@ class Cursor:
             lambda sel: sel.draggable(False)
         """
         if event not in self._callbacks:
-            raise ValueError("{!r} is not a valid cursor event".format(event))
+            raise ValueError(f"{event!r} is not a valid cursor event")
         if func is None:
             return partial(self.connect, event)
         self._callbacks[event].append(func)
@@ -434,9 +434,9 @@ class Cursor:
         try:
             self._callbacks[event].remove(cb)
         except KeyError:
-            raise ValueError("{!r} is not a valid cursor event".format(event))
+            raise ValueError(f"{event!r} is not a valid cursor event")
         except ValueError:
-            raise ValueError("Callback {} is not registered".format(event))
+            raise ValueError(f"Callback {cb} is not registered to {event}")
 
     def remove(self):
         """
