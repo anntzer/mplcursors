@@ -516,7 +516,7 @@ def test_remove_multiple_overlapping(ax):
     cursor.add_selection(copy.copy(sel))
     assert len(cursor.selections) == 2
     _process_event(*_get_remove_args(sel))
-    assert list(map(id, cursor.selections)) == [id(sel)]  # To check LIFOness.
+    assert [*map(id, cursor.selections)] == [id(sel)]  # To check LIFOness.
     _process_event(*_get_remove_args(sel))
     assert len(cursor.selections) == 0
 
@@ -629,7 +629,7 @@ def test_multiple_figures(ax):
     assert len(ax1.texts) == 1
     assert len(ax2.texts) == 0
     # Right-clicking on the second axis doesn't remove it.
-    remove_args = list(_get_remove_args(cursor.selections[0]))
+    remove_args = [*_get_remove_args(cursor.selections[0])]
     remove_args[remove_args.index(ax1)] = ax2
     _process_event(*remove_args)
     assert len(cursor.selections) == 1
@@ -664,4 +664,4 @@ def test_gc(ax):
 def test_example(example):
     subprocess.check_call(
         [sys.executable, "-mexamples.{}".format(example.with_suffix("").name)],
-        env=dict(os.environ, MPLBACKEND="Agg"))
+        env={**os.environ, "MPLBACKEND": "Agg"})

@@ -2,7 +2,7 @@
 # have a `format_coord`-like method); PolyCollection (picking is not well
 # defined).
 
-from collections import ChainMap, namedtuple
+from collections import namedtuple
 from contextlib import suppress
 import copy
 import functools
@@ -494,17 +494,12 @@ def _call_with_selection(func):
         extra_kw = {param.name: kwargs.pop(param.name)
                     for param in wrapped_kwonly_params if param.name in kwargs}
         ba = default_sel_sig.bind(*args, **kwargs)
-        # apply_defaults
-        ba.arguments = ChainMap(
-            ba.arguments,
-            {name: param.default
-             for name, param in default_sel_sig.parameters.items()
-             if param.default is not param.empty})
+        ba.apply_defaults()
         sel = Selection(*ba.args, **ba.kwargs)
         return func(sel, **extra_kw)
 
     wrapper.__signature__ = Signature(
-        list(sel_sig.parameters.values()) + wrapped_kwonly_params)
+        [*sel_sig.parameters.values(), *wrapped_kwonly_params])
     return wrapper
 
 

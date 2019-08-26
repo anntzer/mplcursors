@@ -1,4 +1,4 @@
-from collections import ChainMap, Counter
+from collections import Counter
 from collections.abc import Iterable
 from contextlib import suppress
 import copy
@@ -188,7 +188,7 @@ class Cursor:
             Keyword arguments used to create a highlighted artist.
         """
 
-        artists = list(artists)
+        artists = [*artists]
         # Be careful with GC.
         self._artists = [weakref.ref(artist) for artist in artists]
 
@@ -217,14 +217,14 @@ class Cursor:
             for pair in connect_pairs
             for canvas in {artist.figure.canvas for artist in artists}]
 
-        bindings = dict(ChainMap(bindings if bindings is not None else {},
-                                 _default_bindings))
-        unknown_bindings = set(bindings) - set(_default_bindings)
+        bindings = {**_default_bindings,
+                    **(bindings if bindings is not None else {})}
+        unknown_bindings = {*bindings} - {*_default_bindings}
         if unknown_bindings:
             raise ValueError("Unknown binding(s): {}".format(
                 ", ".join(sorted(unknown_bindings))))
         duplicate_bindings = [
-            k for k, v in Counter(list(bindings.values())).items() if v > 1]
+            k for k, v in Counter(bindings.values()).items() if v > 1]
         if duplicate_bindings:
             raise ValueError("Duplicate binding(s): {}".format(
                 ", ".join(sorted(map(str, duplicate_bindings)))))
@@ -385,7 +385,7 @@ class Cursor:
         """
         hl = _pick_info.make_highlight(
             artist, *args,
-            **ChainMap({"highlight_kwargs": self.highlight_kwargs}, kwargs))
+            **{"highlight_kwargs": self.highlight_kwargs, **kwargs})
         if hl:
             artist.axes.add_artist(hl)
             return hl
@@ -590,9 +590,9 @@ def cursor(pickables=None, **kwargs):
                 yield entry
 
     containers = []
-    artists = list(iter_unpack_axes(iter_unpack_figures(pickables)))
+    artists = [*iter_unpack_axes(iter_unpack_figures(pickables))]
     for container in containers:
-        contained = list(filter(None, container.get_children()))
+        contained = [*filter(None, container.get_children())]
         for artist in contained:
             with suppress(ValueError):
                 artists.remove(artist)
