@@ -1,11 +1,19 @@
 Interactive data selection cursors for Matplotlib
 =================================================
 
-|PyPI| |Read the Docs| |Travis| |CodeCov|
+|PyPI| |conda-forge| |Fedora Rawhide|
+
+|Read the Docs| |Travis| |CodeCov|
 
 .. |PyPI|
    image:: https://img.shields.io/pypi/v/mplcursors.svg
    :target: https://pypi.python.org/pypi/mplcursors
+.. |conda-forge|
+   image:: https://img.shields.io/conda/v/conda-forge/mplcursors.svg
+   :target: https://anaconda.org/conda-forge/mplcursors
+.. |Fedora Rawhide|
+   image:: https://repology.org/badge/version-for-repo/fedora_rawhide/python:mplcursors.svg
+   :target: https://apps.fedoraproject.org/packages/python-mplcursors
 .. |Read the Docs|
    image:: https://readthedocs.org/projects/mplcursors/badge/?version=latest
    :target: http://mplcursors.readthedocs.io/en/latest/?badge=latest
@@ -30,12 +38,11 @@ As usual, install using pip:
    $ pip install mplcursors  # from PyPI
    $ pip install git+https://github.com/anntzer/mplcursors  # from Github
 
-On Fedora, the package is also available as python-mplcursors_.
+or your favorite package manager.
 
 Run tests with pytest_\≥3.7.1.
 
 .. _Matplotlib: http://matplotlib.org
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor
 .. _pytest: http://pytest.org
-.. _python-mplcursors: https://apps.fedoraproject.org/packages/python-mplcursors
 .. _readthedocs.org: https://mplcursors.readthedocs.org
