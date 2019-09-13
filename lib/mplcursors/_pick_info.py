@@ -416,10 +416,7 @@ def _(artist, event):
 
 @compute_pick.register(ContainerArtist)
 def _(artist, event):
-    sel = compute_pick(artist.container, event)
-    if sel:
-        sel = sel._replace(artist=artist)
-    return sel
+    return compute_pick(artist.container, event)
 
 
 @compute_pick.register(BarContainer)
@@ -439,7 +436,7 @@ def _(container, event):
         target[1], = (
             y for y in [patch.get_y(), patch.get_y() + patch.get_height()]
             if y not in patch.sticky_edges.y)
-    return Selection(None, target, 0, None, None)
+    return Selection(container, target, 0, None, None)
 
 
 @compute_pick.register(ErrorbarContainer)
@@ -457,7 +454,7 @@ def _(container, event):
             target = _with_attrs(data_line.get_xydata()[idx], index=idx)
         else:  # We can't guess the original data in that case!
             return
-        return Selection(None, target, 0, None, None)
+        return Selection(container, target, 0, None, None)
     else:
         return
 
@@ -475,7 +472,7 @@ def _(container, event):
         idx, _ = idx_sel
         target = _with_attrs(
             container.stemlines[idx].get_xydata()[-1], index=idx)
-        return Selection(None, target, 0, None, None)
+        return Selection(container, target, 0, None, None)
 
 
 def _call_with_selection(func):

@@ -1,6 +1,8 @@
 next
 ====
 
+- Updated dependency to Matplotlib 3.1 (``Annotation.{get,set}_anncoords``),
+  and thus Python 3.6, numpy 1.11.
 - Display value in annotation for colormapped scatter plots.
 - Improve formatting of image values.
 - The add/remove callbacks no longer rely on Matplotlib's `CallbackRegistry`.
@@ -15,8 +17,8 @@ next
 - Support `Collection`\s where `get_offset_transform()` is not `transData`
   (patch suggested by @yt87).
 - Support setting both ``hover`` and ``multiple``.
-- Updated dependency to Matplotlib 3.1 (``Annotation.{get,set}_anncoords``),
-  and thus Python 3.6, numpy 1.11.
+- The ``artist`` attribute of Selections is correctly set to the `Container`
+  when picking a `Container`, rather than to the internally used wrapper.
 
 0.2.1
 =====

@@ -282,6 +282,32 @@ class Cursor:
             sel.annotation.set_visible(value)
             sel.annotation.figure.canvas.draw_idle()
 
+    def _get_figure(self, aoc):
+        """Return the parent figure of artist-or-container *aoc*."""
+        if isinstance(aoc, Container):
+            try:
+                ca, = {artist for artist in (ref() for ref in self._artists)
+                       if isinstance(artist, _pick_info.ContainerArtist)
+                          and artist.container is aoc}
+            except ValueError:
+                raise ValueError(f"Cannot find parent figure of {aoc}")
+            return ca.figure
+        else:
+            return aoc.figure
+
+    def _get_axes(self, aoc):
+        """Return the parent axes of artist-or-container *aoc*."""
+        if isinstance(aoc, Container):
+            try:
+                ca, = {artist for artist in (ref() for ref in self._artists)
+                       if isinstance(artist, _pick_info.ContainerArtist)
+                          and artist.container is aoc}
+            except ValueError:
+                raise ValueError(f"Cannot find parent axes of {aoc}")
+            return ca.axes
+        else:
+            return aoc.axes
+
     def add_selection(self, pi):
         """
         Create an annotation for a `Selection` and register it.
@@ -300,12 +326,12 @@ class Cursor:
         """
         # pi: "pick_info", i.e. an incomplete selection.
         # Pre-fetch the figure and axes, as callbacks may actually unset them.
-        figure = pi.artist.figure
-        axes = pi.artist.axes
+        figure = self._get_figure(pi.artist)
+        axes = self._get_axes(pi.artist)
         if axes.get_renderer_cache() is None:
             figure.canvas.draw()  # Needed by draw_artist below anyways.
-        renderer = pi.artist.axes.get_renderer_cache()
-        ann = pi.artist.axes.annotate(
+        renderer = axes.get_renderer_cache()
+        ann = axes.annotate(
             _pick_info.get_ann_text(*pi), xy=pi.target,
             xytext=(np.nan, np.nan),
             ha=_MarkedStr("center"), va=_MarkedStr("center"),

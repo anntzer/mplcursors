@@ -339,13 +339,14 @@ def test_quiver_and_barbs(ax, plotter):
 @pytest.mark.parametrize("plotter,order",
                          [(Axes.bar, np.s_[:]), (Axes.barh, np.s_[::-1])])
 def test_bar(ax, plotter, order):
-    plotter(ax, range(3), range(1, 4))
+    container = plotter(ax, range(3), range(1, 4))
     cursor = mplcursors.cursor()
     assert len(cursor.artists) == 1
     _process_event("__mouse_click__", ax, (0, 2)[order], 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, .5)[order], 1)
-    cursor.selections[0].target == approx((0, 1)[order])
+    assert cursor.selections[0].artist is container  # not the ContainerArtist.
+    assert cursor.selections[0].target == approx((0, 1)[order])
 
 
 def test_errorbar(ax):
