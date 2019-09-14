@@ -1,5 +1,5 @@
-next
-====
+0.3
+===
 
 - Updated dependency to Matplotlib 3.1 (``Annotation.{get,set}_anncoords``),
   and thus Python 3.6, numpy 1.11.
