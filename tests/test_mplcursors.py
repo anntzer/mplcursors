@@ -404,8 +404,8 @@ def test_misc_artists(ax, plotter, warns):
     assert len(_internal_warnings(record)) == warns
 
 
-def test_indexless_projections():
-    _, ax = plt.subplots(subplot_kw={"projection": "polar"})
+def test_indexless_projections(fig):
+    ax = fig.subplots(subplot_kw={"projection": "polar"})
     ax.plot([1, 2], [3, 4])
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (1, 3), 1)
@@ -413,8 +413,8 @@ def test_indexless_projections():
     _process_event("key_press_event", ax, (.123, .456), "shift+left")
 
 
-def test_cropped_by_axes():
-    _, axs = plt.subplots(2)
+def test_cropped_by_axes(fig):
+    axs = fig.subplots(2)
     axs[0].plot([0, 0], [0, 1])
     # Pan to hide the line behind the second axes.
     axs[0].set(xlim=(-1, 1), ylim=(1, 2))
