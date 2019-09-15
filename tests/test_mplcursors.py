@@ -26,7 +26,9 @@ approx = functools.partial(pytest.approx, abs=1e-2)
 
 @pytest.fixture
 def fig():
-    return plt.figure(1)
+    fig = plt.figure(1)
+    fig.canvas.callbacks.exception_handler = None
+    return fig
 
 
 @pytest.fixture
