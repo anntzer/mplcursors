@@ -667,4 +667,5 @@ def test_gc(ax):
 def test_example(example):
     subprocess.check_call(
         [sys.executable, "-mexamples.{}".format(example.with_suffix("").name)],
-        env={**os.environ, "MPLBACKEND": "Agg"})
+        # Unset $DISPLAY to avoid the non-GUI backend warning.
+        env={**os.environ, "DISPLAY": "", "MPLBACKEND": "Agg"})
