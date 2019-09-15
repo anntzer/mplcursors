@@ -707,7 +707,7 @@ def _(sel, *, key):
 @move.register(AxesImage)
 @_call_with_selection
 def _(sel, *, key):
-    ns = sel.artist.get_array().shape
+    ns = sel.artist.get_array().shape[:2]
     idxs = (np.asarray(sel.target.index)
             + {"left": [0, -1],
                "right": [0, 1],

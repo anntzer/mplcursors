@@ -291,12 +291,16 @@ def test_image(ax, origin):
 
 
 def test_image_rgb(ax):
-    ax.imshow([[[.1, .2, .3]]])
+    ax.imshow([[[.1, .2, .3], [.4, .5, .6]]])
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (0, 0), 1)
     sel, = cursor.selections
     assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0.1, 0.2, 0.3\]")
             == approx((0, 0)))
+    _process_event("key_press_event", ax, (.123, .456), "shift+right")
+    sel, = cursor.selections
+    assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0.4, 0.5, 0.6\]")
+            == approx((1, 0)))
 
 
 def test_image_subclass(ax):
