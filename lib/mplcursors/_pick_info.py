@@ -290,20 +290,14 @@ def _(artist, event):
         ds = np.hypot(*(xy - data_screen_xy).T)
         try:
             argmin = np.nanargmin(ds)
-            dmin = ds[argmin]
-        except (ValueError, IndexError):
-            # numpy 1.7.0's `nanargmin([nan])` returns nan, so
-            # `ds[argmin]` raises IndexError.  In later versions of numpy,
-            # `nanargmin([nan])` raises ValueError (the release notes for 1.8.0
-            # are incorrect on this topic).
+        except ValueError:  # Raised by nanargmin([nan]).
             pass
         else:
-            # More precise than transforming back.
             target = _with_attrs(
-                _untransform(
+                _untransform(  # More precise than transforming back.
                     data_xy[argmin], data_screen_xy[argmin], artist.axes),
                 index=argmin)
-            sels.append(Selection(artist, target, dmin, None, None))
+            sels.append(Selection(artist, target, ds[argmin], None, None))
     # If lines are visible, find the closest projection.
     if (artist.get_linestyle() not in ["None", "none", " ", "", None]
             and len(artist.get_xydata()) > 1):
