@@ -1,3 +1,8 @@
+next
+====
+
+- Invisible artists are now unpickable (patch suggested by @eBardieCT).
+
 0.3
 ===
 

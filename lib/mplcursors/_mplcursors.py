@@ -515,6 +515,7 @@ class Cursor:
         for artist in self.artists:
             if (artist.axes is None  # Removed or figure-level artist.
                     or event.canvas is not artist.figure.canvas
+                    or not artist.get_visible()
                     or not artist.axes.contains(event)[0]):  # Cropped by axes.
                 continue
             pi = _pick_info.compute_pick(artist, per_axes_event[artist.axes])

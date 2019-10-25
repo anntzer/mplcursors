@@ -93,6 +93,9 @@ class ContainerArtist:
     figure = property(lambda self: _artist_in_container(self.container).figure)
     axes = property(lambda self: _artist_in_container(self.container).axes)
 
+    def get_visible(self):
+        return True  # For lack of anything better.
+
 
 class AttrArray(np.ndarray):
     """An array subclass that can store additional attributes."""
