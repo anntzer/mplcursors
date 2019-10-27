@@ -1,10 +1,13 @@
 Interactive data selection cursors for Matplotlib
 =================================================
 
-|PyPI| |conda-forge| |Fedora Rawhide|
+|GitHub| |PyPI| |conda-forge| |Fedora Rawhide|
 
 |Read the Docs| |Travis| |CodeCov|
 
+.. |GitHub|
+   image:: https://img.shields.io/badge/github-anntzer%2Fmplcursors-brightgreen
+   :target: https://github.com/anntzer/mplcursors
 .. |PyPI|
    image:: https://img.shields.io/pypi/v/mplcursors.svg
    :target: https://pypi.python.org/pypi/mplcursors
