@@ -1,4 +1,3 @@
-from collections import Counter
 from collections.abc import Iterable
 from contextlib import suppress
 import copy
@@ -64,6 +63,17 @@ _default_highlight_kwargs = dict(
 
 class _MarkedStr(str):
     """A string subclass solely for marking purposes."""
+
+
+def _mouse_event_matches(event, spec):
+    """
+    Return whether a mouse event "matches" an event spec, which is either a
+    single mouse button, or a mapping matched against ``vars(event)``, e.g.
+    ``{"button": 1, "key": "control"}``.
+    """
+    if isinstance(spec, int):
+        spec = {"button": spec}
+    return all(getattr(event, k) == v for k, v in spec.items())
 
 
 def _get_rounded_intersection_area(bbox_1, bbox_2):
@@ -151,7 +161,7 @@ class Cursor:
             a selection; right clicking on an annotation will still remove it.)
 
         bindings : dict, optional
-            A mapping of button and keybindings to actions.  Valid entries are:
+            A mapping of actions to button and keybindings.  Valid keys are:
 
             ================ ==================================================
             'select'         mouse button to select an artist
@@ -175,7 +185,9 @@ class Cursor:
             ================ ==================================================
 
             Missing entries will be set to the defaults.  In order to not
-            assign any binding to an action, set it to ``None``.
+            assign any binding to an action, set it to ``None``.  Modifier keys
+            (or other event properties) can be set for mouse button bindings by
+            passing them as e.g. ``{"button": 1, "key": "control"}``.
 
         annotation_kwargs : dict, optional
             Keyword argments passed to the `annotate
@@ -223,11 +235,15 @@ class Cursor:
         if unknown_bindings:
             raise ValueError("Unknown binding(s): {}".format(
                 ", ".join(sorted(unknown_bindings))))
-        duplicate_bindings = [
-            k for k, v in Counter(bindings.values()).items() if v > 1]
-        if duplicate_bindings:
-            raise ValueError("Duplicate binding(s): {}".format(
-                ", ".join(sorted(map(str, duplicate_bindings)))))
+        bindings_items = list(bindings.items())
+        for i in range(len(bindings)):
+            action, key = bindings_items[i]
+            for j in range(i):
+                other_action, other_key = bindings_items[j]
+                if key == other_key:
+                    raise ValueError(
+                        f"Duplicate bindings: {key} is used for "
+                        f"{other_action} and for {action}")
         self.bindings = bindings
 
         self.annotation_kwargs = (
@@ -481,9 +497,9 @@ class Cursor:
 
     def _nonhover_handler(self, event):
         if event.name == "button_press_event":
-            if event.button == self.bindings["select"]:
+            if _mouse_event_matches(event, self.bindings["select"]):
                 self._on_select_button_press(event)
-            if event.button == self.bindings["deselect"]:
+            if _mouse_event_matches(event, self.bindings["deselect"]):
                 self._on_deselect_button_press(event)
 
     def _hover_handler(self, event):
@@ -492,7 +508,7 @@ class Cursor:
             # avoid conflicts between hover and draggable.
             self._on_select_button_press(event)
         elif (event.name == "button_press_event"
-              and event.button == self.bindings["deselect"]):
+              and _mouse_event_matches(event, self.bindings["deselect"])):
             # Still allow removing the annotation by right clicking.
             self._on_deselect_button_press(event)
 
