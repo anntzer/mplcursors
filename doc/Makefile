@@ -4,7 +4,6 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = python -msphinx
-SPHINXPROJ    = mplcursors
 SOURCEDIR     = source
 BUILDDIR      = build
 

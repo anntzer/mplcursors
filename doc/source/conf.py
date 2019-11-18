@@ -24,7 +24,7 @@ project = 'mplcursors'
 copyright = '2016–present, Antony Lee'
 author = 'Antony Lee'
 
-# RTD modifies conf.py, making versioneer mark the version as -dirty.
+# RTD modifies conf.py, making setuptools_scm mark the version as -dirty.
 version = release = re.sub(r'\.dirty$', '', mplcursors.__version__)
 
 language = 'en'
