@@ -498,19 +498,19 @@ class Cursor:
     def _nonhover_handler(self, event):
         if event.name == "button_press_event":
             if _mouse_event_matches(event, self.bindings["select"]):
-                self._on_select_button_press(event)
+                self._on_select_event(event)
             if _mouse_event_matches(event, self.bindings["deselect"]):
-                self._on_deselect_button_press(event)
+                self._on_deselect_event(event)
 
     def _hover_handler(self, event):
         if event.name == "motion_notify_event" and event.button is None:
             # Filter away events where the mouse is pressed, in particular to
             # avoid conflicts between hover and draggable.
-            self._on_select_button_press(event)
+            self._on_select_event(event)
         elif (event.name == "button_press_event"
               and _mouse_event_matches(event, self.bindings["deselect"])):
             # Still allow removing the annotation by right clicking.
-            self._on_deselect_button_press(event)
+            self._on_deselect_event(event)
 
     def _filter_mouse_event(self, event):
         # Accept the event iff we are enabled, and either
@@ -521,7 +521,7 @@ class Cursor:
         return (self.enabled
                 and event.canvas.widgetlock.locked() == event.dblclick)
 
-    def _on_select_button_press(self, event):
+    def _on_select_event(self, event):
         if not self._filter_mouse_event(event):
             return
         # Work around lack of support for twinned axes.
@@ -543,7 +543,7 @@ class Cursor:
             return
         self.add_selection(min(pis, key=lambda pi: pi.dist))
 
-    def _on_deselect_button_press(self, event):
+    def _on_deselect_event(self, event):
         if not self._filter_mouse_event(event):
             return
         for sel in self.selections[::-1]:  # LIFO.
