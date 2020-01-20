@@ -629,10 +629,16 @@ def _(sel):
                          for e in err]
                 # We'd normally want to check err.sum() == 0, but that can run
                 # into fp inaccuracies.
-                if len({s.lstrip("+-") for s in err_s}) == 1:
+                signs = "+-\N{MINUS SIGN}"
+                if len({s.lstrip(signs) for s in err_s}) == 1:
                     repl = rf"\1=$\2\\pm{err_s[1]}$\3"
                 else:
-                    err_s = [("+" if not s.startswith(("+", "-")) else "") + s
+                    # Replacing unicode minus by ascii minus don't change the
+                    # rendering as the string is mathtext, but allows keeping
+                    # the same tests across Matplotlib versions that use
+                    # unicode minus and those that don't.
+                    err_s = [("+" if not s.startswith(tuple(signs)) else "")
+                             + s.replace("\N{MINUS SIGN}", "-")
                              for s in err_s]
                     repl = r"\1=$\2_{%s}^{%s}$\3" % tuple(err_s)
                 ann_text = re.sub(f"({dir})=(.*)(\n?)", repl, ann_text)
