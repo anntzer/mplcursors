@@ -2,7 +2,7 @@
 Displaying a custom label for each individual point
 ===================================================
 
-mpldatacursor's ``point_labels`` functionality can be emulated with an event
+mpldatacursor's *point_labels* functionality can be emulated with an event
 handler that sets the annotation text with a label selected from the target
 index.
 """

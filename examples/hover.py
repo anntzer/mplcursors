@@ -2,7 +2,7 @@
 Annotate on hover
 =================
 
-When ``hover`` is set to ``True``, annotations are displayed when the mouse
+When *hover* is set to ``True``, annotations are displayed when the mouse
 hovers over the artist, without the need for clicking.
 """
 
