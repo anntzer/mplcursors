@@ -14,7 +14,10 @@ ax.bar(range(9), range(1, 10), align="center")
 labels = string.ascii_uppercase[:9]
 ax.set(xticks=range(9), xticklabels=labels, title="Hover over a bar")
 
-cursor = mplcursors.cursor(hover=True)
+# With HoverMode.Transient, the annotation is removed as soon as the mouse
+# leaves the artist.  Alternatively, one can use HoverMode.Persistent (or True)
+# which keeps the annotation until another artist gets selected.
+cursor = mplcursors.cursor(hover=mplcursors.HoverMode.Transient)
 @cursor.connect("add")
 def on_add(sel):
     x, y, width, height = sel.artist[sel.target.index].get_bbox().bounds

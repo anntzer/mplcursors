@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import KeyEvent, MouseEvent
 import mplcursors
-from mplcursors import _pick_info, Selection
+from mplcursors import _pick_info, Selection, HoverMode
 import numpy as np
 import pytest
 
@@ -455,14 +455,18 @@ def test_move(ax, plotter):
     assert cursor.selections[0].target.index == 0
 
 
-def test_hover(ax):
+@pytest.mark.parametrize(
+    "hover", [True, HoverMode.Persistent, 2, HoverMode.Transient])
+def test_hover(ax, hover):
     l1, = ax.plot([0, 1])
     l2, = ax.plot([1, 2])
-    cursor = mplcursors.cursor(hover=True)
+    cursor = mplcursors.cursor(hover=hover)
     _process_event("motion_notify_event", ax, (.5, .5), 1)
     assert len(cursor.selections) == 0  # No trigger if mouse button pressed.
     _process_event("motion_notify_event", ax, (.5, .5))
     assert cursor.selections[0].artist == l1
+    _process_event("motion_notify_event", ax, (.5, 1))
+    assert bool(cursor.selections) == (hover == HoverMode.Persistent)
     _process_event("motion_notify_event", ax, (.5, 1.5))
     assert cursor.selections[0].artist == l2
 

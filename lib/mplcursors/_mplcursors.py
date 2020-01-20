@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from contextlib import suppress
 import copy
+from enum import IntEnum
 from functools import partial
 import sys
 import weakref
@@ -109,6 +110,10 @@ def _reassigned_axes_event(event, ax):
     return event
 
 
+class HoverMode(IntEnum):
+    NoHover, Persistent, Transient = range(3)
+
+
 class Cursor:
     """
     A cursor for selecting Matplotlib artists.
@@ -155,10 +160,19 @@ class Cursor:
             "highlighter" artists will be placed as the first item in the
             :attr:`extras` attribute of the `Selection`.
 
-        hover : bool, optional
+        hover : `HoverMode`, optional
             Whether to select artists upon hovering instead of by clicking.
             (Hovering over an artist while a button is pressed will not trigger
             a selection; right clicking on an annotation will still remove it.)
+            Possible values are
+
+            - False, alias `HoverMode.NoHover`: hovering is inactive.
+            - True, alias `HoverMode.Persistent`: hovering is active;
+              annotations remain in place even after the mouse moves away from
+              the artist (until another artist is selected, if *multiple* is
+              False.
+            - 2, alias `HoverMode.Transient`: hovering is active; annotations
+              are removed as soon as the mouse moves away from the artist.
 
         bindings : dict, optional
             A mapping of actions to button and keybindings.  Valid keys are:
@@ -216,6 +230,7 @@ class Cursor:
         self._last_auto_position = None
         self._callbacks = {"add": [], "remove": []}
 
+        self._hover = hover
         connect_pairs = [("key_press_event", self._on_key_press)]
         if hover:
             connect_pairs += [
@@ -535,13 +550,24 @@ class Cursor:
                     or not artist.axes.contains(event)[0]):  # Cropped by axes.
                 continue
             pi = _pick_info.compute_pick(artist, per_axes_event[artist.axes])
-            if pi and not any((pi.artist, tuple(pi.target))
-                              == (other.artist, tuple(other.target))
-                              for other in self._selections):
+            if pi:
                 pis.append(pi)
-        if not pis:
-            return
-        self.add_selection(min(pis, key=lambda pi: pi.dist))
+        # The any() check avoids picking an already selected artist at the same
+        # point, as likely the user is just dragging it.  We check this here
+        # rather than not adding the pick_info to pis at all, because in
+        # transient hover mode, selections should be cleared out only when no
+        # candidate picks (including such duplicates) exist at all.
+        pi = min((pi for pi in pis
+                  if not any((pi.artist, tuple(pi.target))
+                             == (other.artist, tuple(other.target))
+                             for other in self._selections)),
+                 key=lambda pi: pi.dist, default=None)
+        if pi:
+            self.add_selection(pi)
+        elif not pis and self._hover == HoverMode.Transient:
+            for sel in self.selections:
+                if event.canvas is sel.annotation.figure.canvas:
+                    self.remove_selection(sel)
 
     def _on_deselect_event(self, event):
         if not self._filter_mouse_event(event):

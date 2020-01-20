@@ -3,6 +3,7 @@ next
 
 - Invisible artists are now unpickable (patch suggested by @eBardieCT).
 - The ``bindings`` kwarg can require modifier keys for mouse button events.
+- Transient hovering (suggested by @LaurenceMolloy).
 
 0.3
 ===
