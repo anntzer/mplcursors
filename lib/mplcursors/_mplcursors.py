@@ -472,6 +472,14 @@ class Cursor:
 
             # Make label non-draggable:
             lambda sel: sel.draggable(False)
+
+        Note that when a single event causes both the removal of an "old"
+        selection and the addition of a "new" one (typically, clicking on an
+        artist when another one is selected, or hovering -- both assuming that
+        ``multiple=False``), the "add" callback is called *first*.  This allows
+        it, in particular, to "cancel" the addition (by immediately removing
+        the "new" selection) and thus avoid removing the "old" selection.
+        However, this call order may change in a future release.
         """
         if event not in self._callbacks:
             raise ValueError(f"{event!r} is not a valid cursor event")
