@@ -61,6 +61,7 @@ setup(
     license="MIT",
     classifiers=[
         "Development Status :: 4 - Beta",
+        "Framework :: Matplotlib",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
     ],
