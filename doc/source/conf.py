@@ -14,7 +14,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx_gallery.gen_gallery',
 ]
-needs_extensions = {'sphinx_gallery.gen_gallery': '0.1.13'}
+needs_extensions = {'sphinx_gallery.gen_gallery': '0.6.0'}
 
 source_suffix = '.rst'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
@@ -38,7 +38,6 @@ todo_include_todos = False
 # -- Options for HTML output ----------------------------------------------
 
 html_theme = 'alabaster'
-html_sidebars = {'**': ['about.html', 'navigation.html', 'localtoc.html']}
 html_theme_options = {
     'description': 'Interactive data selection cursors for Matplotlib.',
     'github_user': 'anntzer',
@@ -47,6 +46,9 @@ html_theme_options = {
     'github_button': False,
     'code_font_size': '80%',
 }
+html_css_files = ['hide_some_gallery_elements.css']
+html_static_path = ['_static']
+html_sidebars = {'**': ['about.html', 'navigation.html', 'localtoc.html']}
 # html_last_updated_fmt = ''  # bitprophet/alabaster#93
 
 htmlhelp_basename = 'mplcursors_doc'
@@ -102,7 +104,7 @@ from _local_ext import CustomSortKey
 os.environ.pop("DISPLAY", None)  # Don't warn about non-GUI when running s-g.
 
 sphinx_gallery_conf = {
-    'backreferences_dir': False,
+    'backreferences_dir': None,
     'examples_dirs': '../../examples',
     'filename_pattern': r'.*\.py',
     'gallery_dirs': 'examples',
