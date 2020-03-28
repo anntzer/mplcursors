@@ -151,16 +151,15 @@ class Cursor:
         artists : List[Artist]
             A list of artists that can be selected by this cursor.
 
-        multiple : bool, optional
-            Whether multiple artists can be "on" at the same time (defaults to
-            False).
+        multiple : bool, default: False
+            Whether multiple artists can be "on" at the same time.
 
-        highlight : bool, optional
+        highlight : bool, default: False
             Whether to also highlight the selected artist.  If so,
             "highlighter" artists will be placed as the first item in the
             :attr:`extras` attribute of the `Selection`.
 
-        hover : `HoverMode`, optional
+        hover : `HoverMode`, default: False
             Whether to select artists upon hovering instead of by clicking.
             (Hovering over an artist while a button is pressed will not trigger
             a selection; right clicking on an annotation will still remove it.)
@@ -203,14 +202,17 @@ class Cursor:
             (or other event properties) can be set for mouse button bindings by
             passing them as e.g. ``{"button": 1, "key": "control"}``.
 
-        annotation_kwargs : dict, optional
+        annotation_kwargs : dict, default: {}
             Keyword argments passed to the `annotate
             <matplotlib.axes.Axes.annotate>` call.
 
         annotation_positions : List[dict], optional
             List of positions tried by the annotation positioning algorithm.
+            The default is to try four positions, 15 points to the NW, NE, SE,
+            and SW from the selected point; annotations that stay within the
+            axes are preferred.
 
-        highlight_kwargs : dict, optional
+        highlight_kwargs : dict, default: {}
             Keyword arguments used to create a highlighted artist.
         """
 
