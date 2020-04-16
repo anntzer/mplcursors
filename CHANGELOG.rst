@@ -4,6 +4,7 @@ next
 - Invisible artists are now unpickable (patch suggested by @eBardieCT).
 - The ``bindings`` kwarg can require modifier keys for mouse button events.
 - Transient hovering (suggested by @LaurenceMolloy).
+- Switch to supporting only "new-style" (`LineCollection`) `stem` plots.
 
 0.3
 ===
@@ -46,8 +47,8 @@ Miscellaneous bugfixes.
 - Selections on images now have an index as well.
 - Selections created on `scatter` plots, `errorbar` plots, and `polar` plots
   can now be moved.
-- `PathCollection`\s not created by `plt.scatter` are now picked as paths, not
-  as collections of points.
+- `PathCollection`\s not created by `scatter` are now picked as paths, not as
+  collections of points.
 - `Patch`\es now pick on their borders, not their interior.
 - Improved picking of `Container`\s.
 - In hover mode, annotations can still be removed by right-clicking.

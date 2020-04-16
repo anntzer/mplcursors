@@ -461,14 +461,16 @@ def _(container, event):
     sel = compute_pick(container.markerline, event)
     if sel:
         return sel
-    idx_sel = min(filter(lambda idx_sel: idx_sel[1] is not None,
-                         ((idx, compute_pick(line, event))
-                          for idx, line in enumerate(container.stemlines))),
-                  key=lambda idx_sel: idx_sel[1].dist, default=None)
-    if idx_sel:
-        idx, _ = idx_sel
+    if not isinstance(container.stemlines, LineCollection):
+        warnings.warn("Only stem plots created with use_line_collection=True "
+                      "are supported.")
+        return
+    sel = compute_pick(container.stemlines, event)
+    if sel:
+        idx, _ = sel.target.index
         target = _with_attrs(
-            container.stemlines[idx].get_xydata()[-1], index=idx)
+            container.stemlines.get_segments()[idx][-1],
+            index=sel.target.index)
         return Selection(container, target, 0, None, None)
 
 
@@ -517,7 +519,7 @@ def get_ann_text(sel):
     classes follow.
     """
     warnings.warn(
-        f"Annotation support for {type(sel.artist).__name__} is missing")
+        f"Annotation support for {type(sel.artist).__name__} is missing.")
     return ""
 
 
@@ -750,7 +752,7 @@ def make_highlight(sel, *, highlight_kwargs):
     classes follow.
     """
     warnings.warn(
-        f"Highlight support for {type(sel.artist).__name__} is missing")
+        f"Highlight support for {type(sel.artist).__name__} is missing.")
 
 
 def _set_valid_props(artist, kwargs):
