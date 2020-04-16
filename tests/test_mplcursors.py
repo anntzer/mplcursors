@@ -124,8 +124,8 @@ def test_line(ax, plotter):
     # On the line.
     _process_event("__mouse_click__", ax, (.1, .4), 1)
     assert len(cursor.selections) == len(ax.texts) == 1
-    assert (_parse_annotation(cursor.selections[0], "foo\nx=(.*)\ny=(.*)")
-            == approx((.1, .4)))
+    assert _parse_annotation(
+        cursor.selections[0], "foo\nx=(.*)\ny=(.*)") == approx((.1, .4))
     # Not removing it.
     _process_event("__mouse_click__", ax, (0, 1), 3)
     assert len(cursor.selections) == len(ax.texts) == 1
@@ -133,8 +133,8 @@ def test_line(ax, plotter):
     artist.set_label(None)
     _process_event("__mouse_click__", ax, (.6, .9), 1)
     assert len(cursor.selections) == len(ax.texts) == 2
-    assert (_parse_annotation(cursor.selections[1], "x=(.*)\ny=(.*)")
-            == approx((.6, .9)))
+    assert _parse_annotation(
+        cursor.selections[1], "x=(.*)\ny=(.*)") == approx((.6, .9))
     # Remove both of them (first removing the second one, to test
     # `Selection.__eq__` -- otherwise it is bypassed as `list.remove`
     # checks identity first).
@@ -163,7 +163,8 @@ def test_scatter_text(ax):
     ax.scatter([0, 1], [0, 1], c=[2, 3])
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (0, 0), 1)
-    assert cursor.selections[0].annotation.get_text() == "x=0\ny=0\n[2]"
+    assert _parse_annotation(
+        cursor.selections[0], "x=(.*)\ny=(.*)\n\[(.*)\]") == (0, 0, 2)
 
 
 def test_steps_index():
@@ -260,25 +261,25 @@ def test_image(ax, origin):
     # Annotation text includes image value.
     _process_event("__mouse_click__", ax, (.25, .25), 1)
     sel, = cursor.selections
-    assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0\]")
-            == approx((.25, .25)))
+    assert _parse_annotation(
+        sel, r"x=(.*)\ny=(.*)\n\[0\]") == approx((.25, .25))
     # Moving around.
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     sel, = cursor.selections
-    assert sel.annotation.get_text() == "x=1\ny=0\n[1]"
+    assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[1\]") == (1, 0)
     assert array[sel.target.index] == 1
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     sel, = cursor.selections
-    assert sel.annotation.get_text() == "x=0\ny=0\n[0]"
+    assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0\]") == (0, 0)
     assert array[sel.target.index] == 0
     _process_event("key_press_event", ax, (.123, .456), "shift+up")
     sel, = cursor.selections
-    assert (sel.annotation.get_text()
-            == {"upper": "x=0\ny=2\n[4]", "lower": "x=0\ny=1\n[2]"}[origin])
+    assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[(.*)\]")
+            == {"upper": (0, 2, 4), "lower": (0, 1, 2)}[origin])
     assert array[sel.target.index] == {"upper": 4, "lower": 2}[origin]
     _process_event("key_press_event", ax, (.123, .456), "shift+down")
     sel, = cursor.selections
-    assert sel.annotation.get_text() == "x=0\ny=0\n[0]"
+    assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0\]") == (0, 0)
     assert array[sel.target.index] == 0
 
     cursor = mplcursors.cursor()
@@ -295,12 +296,12 @@ def test_image_rgb(ax):
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (0, 0), 1)
     sel, = cursor.selections
-    assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0.1, 0.2, 0.3\]")
-            == approx((0, 0)))
+    assert _parse_annotation(
+        sel, r"x=(.*)\ny=(.*)\n\[0.1, 0.2, 0.3\]") == approx((0, 0))
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     sel, = cursor.selections
-    assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0.4, 0.5, 0.6\]")
-            == approx((1, 0)))
+    assert _parse_annotation(
+        sel, r"x=(.*)\ny=(.*)\n\[0.4, 0.5, 0.6\]") == approx((1, 0))
 
 
 def test_image_subclass(ax):
@@ -339,7 +340,8 @@ def test_quiver_and_barbs(ax, plotter):
     _process_event("__mouse_click__", ax, (.5, 0), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (1, 0), 1)
-    assert cursor.selections[0].annotation.get_text() == "x=1\ny=0\n(1, 1)"
+    assert _parse_annotation(
+        cursor.selections[0], r"x=(.*)\ny=(.*)\n\(1, 1\)") == (1, 0)
 
 
 @pytest.mark.parametrize("plotter,order",
@@ -363,14 +365,17 @@ def test_errorbar(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert cursor.selections[0].target == approx((.5, .5))
-    assert (_parse_annotation(cursor.selections[0], "x=(.*)\ny=(.*)")
-            == approx((.5, .5)))
+    assert _parse_annotation(
+        cursor.selections[0], "x=(.*)\ny=(.*)") == approx((.5, .5))
     _process_event("__mouse_click__", ax, (0, 1), 1)
     assert cursor.selections[0].target == approx((0, 0))
-    assert cursor.selections[0].annotation.get_text() == "x=0\ny=$0\\pm1$"
+    assert _parse_annotation(
+        cursor.selections[0], r"x=(.*)\ny=\$(.*)\\pm(.*)\$") == (0, 0, 1)
     _process_event("__mouse_click__", ax, (1, 2), 1)
-    assert cursor.selections[0].target == approx((1, 1))
-    assert cursor.selections[0].annotation.get_text() == "x=1\ny=$1_{-1}^{+2}$"
+    sel, = cursor.selections
+    assert sel.target == approx((1, 1))
+    assert _parse_annotation(
+        sel, r"x=(.*)\ny=\$(.*)_\{(.*)\}\^\{(.*)\}\$") == (1, 1, -1, 2)
 
 
 def test_dataless_errorbar(ax):
