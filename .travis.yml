@@ -17,6 +17,13 @@ matrix:
       PYTEST_VERSION=
       NUMPY_VERSION=
       MATPLOTLIB_VERSION=
+  - python: "3.8"
+    env: |
+      PYTEST_VERSION=
+      NUMPY_VERSION=
+      MATPLOTLIB_VERSION=
+      PIP_INSTALL_PRE=1
+      PIP_FIND_LINKS=https://nightly.matplotlib.org
   - python: "nightly"
     env: |
       PYTEST_VERSION=
@@ -25,7 +32,7 @@ matrix:
       PIP_INSTALL_PRE=1
       PIP_FIND_LINKS=https://nightly.matplotlib.org
   allow_failures:
-  - python: "nightly"
+  - if: env(PIP_INSTALL_PRE) = 1
 install: |
   pip install --upgrade pip pytest"$PYTEST_VERSION" pytest-cov codecov &&
   # Force install of numpy before matplotlib.
