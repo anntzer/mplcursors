@@ -41,13 +41,13 @@ _default_annotation_kwargs = dict(
 )
 _default_annotation_positions = [
     dict(position=(-15, 15), anncoords="offset points",
-         ha="right", va="bottom"),
+         horizontalalignment="right", verticalalignment="bottom"),
     dict(position=(15, 15), anncoords="offset points",
-         ha="left", va="bottom"),
+         horizontalalignment="left", verticalalignment="bottom"),
     dict(position=(15, -15), anncoords="offset points",
-         ha="left", va="top"),
+         horizontalalignment="left", verticalalignment="top"),
     dict(position=(-15, -15), anncoords="offset points",
-         ha="right", va="top"),
+         horizontalalignment="right", verticalalignment="top"),
 ]
 _default_highlight_kwargs = dict(
     # Only the kwargs corresponding to properties of the artist will be passed.
@@ -367,7 +367,8 @@ class Cursor:
         ann = axes.annotate(
             _pick_info.get_ann_text(*pi), xy=pi.target,
             xytext=(np.nan, np.nan),
-            ha=_MarkedStr("center"), va=_MarkedStr("center"),
+            horizontalalignment=_MarkedStr("center"),
+            verticalalignment=_MarkedStr("center"),
             visible=self.visible,
             **self.annotation_kwargs)
         ann.draggable(use_blit=not self._multiple)
@@ -404,12 +405,14 @@ class Cursor:
             ann.set(**self.annotation_positions[auto_position])
             self._last_auto_position = auto_position
         else:
-            if isinstance(ann.get_ha(), _MarkedStr):
-                ann.set_ha({-1: "right", 0: "center", 1: "left"}[
-                    np.sign(np.nan_to_num(ann.xyann[0]))])
-            if isinstance(ann.get_va(), _MarkedStr):
-                ann.set_va({-1: "top", 0: "center", 1: "bottom"}[
-                    np.sign(np.nan_to_num(ann.xyann[1]))])
+            if isinstance(ann.get_horizontalalignment(), _MarkedStr):
+                ann.set_horizontalalignment(
+                    {-1: "right", 0: "center", 1: "left"}[
+                        np.sign(np.nan_to_num(ann.xyann[0]))])
+            if isinstance(ann.get_verticalalignment(), _MarkedStr):
+                ann.set_verticalalignment(
+                    {-1: "top", 0: "center", 1: "bottom"}[
+                        np.sign(np.nan_to_num(ann.xyann[1]))])
 
         if (extras
                 or len(self.selections) > 1 and not self._multiple
