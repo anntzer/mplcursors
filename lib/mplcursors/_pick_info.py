@@ -329,13 +329,15 @@ def _(artist, event):
 @compute_pick.register(PatchCollection)
 @compute_pick.register(PathCollection)
 def _(artist, event):
-    # Use the C implementation to prune the list of segments.
-    contains, info = artist.contains(event)
-    if not contains:
-        return
     offsets = artist.get_offsets()
     paths = artist.get_paths()
     if _is_scatter(artist):
+        # Use the C implementation to prune the list of segments -- but only
+        # for scatter plots as that implementation is inconsistent with Line2D
+        # for segment-like collections (matplotlib/matplotlib#17279).
+        contains, info = artist.contains(event)
+        if not contains:
+            return
         inds = info["ind"]
         offsets = artist.get_offsets()[inds]
         offsets_screen = artist.get_offset_transform().transform(offsets)
@@ -347,23 +349,21 @@ def _(artist, event):
         return Selection(artist, target, ds[argmin], None, None)
     else:
         # Note that this won't select implicitly closed paths.
-        sels = [
+        sels = [*filter(None, [
             _compute_projection_pick(
                 artist,
                 Affine2D().translate(*offsets[ind % len(offsets)])
                 .transform_path(paths[ind % len(paths)]),
                 (event.x, event.y))
-            for ind in info["ind"]]
-        sel, index = min(
-            ((sel, info["ind"][idx]) for idx, sel in enumerate(sels) if sel),
-            key=lambda sel_idx: sel_idx[0].dist,
-            default=(None, None))
-        if sel:
-            sel = sel._replace(artist=artist)
-            sel.target.index = (index, sel.target.index)
-            if (isinstance(artist, PatchCollection)
-                    and sel.dist >= PATCH_PICKRADIUS):
-                sel = None
+            for ind in range(max(len(offsets), len(paths)))])]
+        if not sels:
+            return None
+        idx = min(range(len(sels)), key=lambda idx: sels[idx].dist)
+        sel = sels[idx]
+        if sel.dist >= artist.get_pickradius():
+            return None
+        sel = sel._replace(artist=artist)
+        sel.target.index = (idx, sel.target.index)
         return sel
 
 

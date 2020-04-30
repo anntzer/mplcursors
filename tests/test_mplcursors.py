@@ -316,7 +316,8 @@ def test_image_subclass(ax):
 def test_linecollection(ax):
     ax.eventplot([0, 1])
     cursor = mplcursors.cursor()
-    _process_event("__mouse_click__", ax, (0, .5), 1)
+    _process_event("__mouse_click__", ax, (0, 0), 1)
+    _process_event("__mouse_click__", ax, (.5, 1), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, 1), 1)
     assert cursor.selections[0].target.index == approx((0, .5))
