@@ -266,6 +266,17 @@ visibility status, and try to later restore them; but this would fail for
 :class:`~matplotlib.animation.ArtistAnimation`\s which themselves fiddle with
 artist visibility).
 
+Users
+-----
+
+Some users of mplcursors (please let me know if you find this package useful!):
+
+- `reliability <https://reliability.readthedocs.io/>`_: A Python library for
+  reliability engineering.
+- `RepoDash <https://laurencemolloy.github.io/RepoDash/>`_:
+  Performance metrics for Github repositories.
+- `topplot <https://gitlab.com/eBardie/topplot>`_: Munge top logs in to graphs.
+
 Indices and tables
 ==================
 

@@ -51,11 +51,3 @@ Run tests with pytest_\≥3.7.1.
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor
 .. _pytest: http://pytest.org
 .. _readthedocs.org: https://mplcursors.readthedocs.org
-
------
-
-Some users (please let me know if you find mplcursors useful!):
-
-- `RepoDash <https://github.com/LaurenceMolloy/RepoDash>`_:
-  Performance metrics for Github repositories.
-- `topplot <https://gitlab.com/eBardie/topplot>`_: Munge top logs in to graphs.
