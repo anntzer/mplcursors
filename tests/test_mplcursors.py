@@ -38,11 +38,12 @@ def ax(fig):
 
 @pytest.fixture(autouse=True)
 def cleanup():
-    try:
-        yield
-    finally:
-        mplcursors.__warningregistry__ = {}
-        plt.close("all")
+    with mpl.rc_context({"axes.unicode_minus": False}):
+        try:
+            yield
+        finally:
+            mplcursors.__warningregistry__ = {}
+            plt.close("all")
 
 
 def _internal_warnings(record):
