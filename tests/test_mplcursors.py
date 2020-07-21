@@ -38,16 +38,11 @@ def ax(fig):
 
 @pytest.fixture(autouse=True)
 def cleanup():
-    for fig in map(plt.figure, plt.get_fignums()):
-        fig.clf()
-
-
-@pytest.fixture(autouse=True)
-def cleanup_warnings():
     try:
         yield
     finally:
         mplcursors.__warningregistry__ = {}
+        plt.close("all")
 
 
 def _internal_warnings(record):
