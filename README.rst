@@ -2,16 +2,16 @@ Interactive data selection cursors for Matplotlib
 =================================================
 
 | |GitHub| |PyPI| |conda-forge| |Debian| |Fedora| |openSUSE|
-| |Read the Docs| |Travis| |CodeCov|
+| |Read the Docs| |Build| |CodeCov|
 
 .. |GitHub|
    image:: https://img.shields.io/badge/github-anntzer%2Fmplcursors-brightgreen
    :target: https://github.com/anntzer/mplcursors
 .. |PyPI|
-   image:: https://img.shields.io/pypi/v/mplcursors.svg
+   image:: https://img.shields.io/pypi/v/mplcursors.svg?color=brightgreen
    :target: https://pypi.python.org/pypi/mplcursors
 .. |conda-forge|
-   image:: https://img.shields.io/conda/v/conda-forge/mplcursors.svg?label=conda-forge
+   image:: https://img.shields.io/conda/v/conda-forge/mplcursors.svg?label=conda-forge&color=brightgreen
    :target: https://anaconda.org/conda-forge/mplcursors
 .. |Debian|
    image:: https://repology.org/badge/version-for-repo/debian_testing/mplcursors.svg?header=Debian
@@ -23,13 +23,13 @@ Interactive data selection cursors for Matplotlib
    image:: https://repology.org/badge/version-for-repo/opensuse_tumbleweed/python:mplcursors.svg?header=openSUSE
    :target: https://software.opensuse.org/package/python3-mplcursors
 .. |Read the Docs|
-   image:: https://readthedocs.org/projects/mplcursors/badge/?version=latest
+   image:: https://img.shields.io/readthedocs/mplcursors
    :target: http://mplcursors.readthedocs.io/en/latest/?badge=latest
-.. |Travis|
-   image:: https://travis-ci.org/anntzer/mplcursors.svg?branch=master
-   :target: https://travis-ci.org/anntzer/mplcursors
+.. |Build|
+   image:: https://img.shields.io/github/workflow/status/anntzer/mplcursors/build
+   :target: https://github.com/anntzer/mplcursors/actions
 .. |CodeCov|
-   image:: https://codecov.io/gh/anntzer/mplcursors/master.svg
+   image:: https://img.shields.io/codecov/c/github/anntzer/mplcursors
    :target: https://codecov.io/gh/anntzer/mplcursors
 
 mplcursors provides interactive data selection cursors for Matplotlib_.  It is

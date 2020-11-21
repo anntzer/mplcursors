@@ -1,0 +1,38 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+        oldest: [0]
+        include:
+        - python-version: 3.6
+          oldest: 1
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install
+      run: |
+        if [[ '${{ matrix.oldest }}' = 1 ]]; then
+          PYTEST_VERSION='==3.7.1'
+          PYTEST_COV_VERSION='==2.9.0'
+          NUMPY_VERSION='==1.11.*'
+          MATPLOTLIB_VERSION='==3.1.0'
+        fi &&
+        pip install --upgrade pip wheel pytest"$PYTEST_VERSION" pytest-cov"$PYTEST_COV_VERSION" codecov &&
+        # Force install of numpy before matplotlib.
+        pip install --upgrade --upgrade-strategy=only-if-needed --only-binary=:all: numpy"$NUMPY_VERSION" &&
+        pip install --upgrade --upgrade-strategy=only-if-needed matplotlib"$MATPLOTLIB_VERSION" &&
+        pip install . &&
+        pip list
+    - name: Test
+      run: |
+        python -mpytest --cov --cov-branch --cov-report=xml
+    - name: Codecov
+      uses: codecov/codecov-action@v1
