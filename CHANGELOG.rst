@@ -1,5 +1,5 @@
-next
-====
+0.4
+===
 
 - Invisible artists are now unpickable (patch suggested by @eBardieCT).
 - The ``bindings`` kwarg can require modifier keys for mouse button events.
