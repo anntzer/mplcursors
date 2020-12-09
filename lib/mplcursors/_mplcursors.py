@@ -370,6 +370,7 @@ class Cursor:
             horizontalalignment=_MarkedStr("center"),
             verticalalignment=_MarkedStr("center"),
             visible=self.visible,
+            zorder=np.inf,
             **self.annotation_kwargs)
         ann.draggable(use_blit=not self._multiple)
         extras = []

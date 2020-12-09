@@ -5,6 +5,7 @@ next
 - The ``bindings`` kwarg can require modifier keys for mouse button events.
 - Transient hovering (suggested by @LaurenceMolloy).
 - Switch to supporting only "new-style" (`LineCollection`) `stem` plots.
+- Cursors are drawn with ``zorder=np.inf``.
 
 0.3
 ===
