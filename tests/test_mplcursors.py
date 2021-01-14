@@ -310,6 +310,7 @@ def test_image_subclass(ax):
 
 
 def test_linecollection(ax):
+    ax.eventplot([])  # This must not raise a division by len([]) == 0.
     ax.eventplot([0, 1])
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (0, 0), 1)

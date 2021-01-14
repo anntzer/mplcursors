@@ -347,7 +347,7 @@ def _(artist, event):
             _untransform(offsets[argmin], offsets_screen[argmin], artist.axes),
             index=inds[argmin])
         return Selection(artist, target, ds[argmin], None, None)
-    else:
+    elif len(paths) and len(offsets):
         # Note that this won't select implicitly closed paths.
         sels = [*filter(None, [
             _compute_projection_pick(
