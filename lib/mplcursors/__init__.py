@@ -5,8 +5,9 @@ except ImportError:
 
 
 from ._mplcursors import Cursor, HoverMode, cursor
-from ._pick_info import Selection, compute_pick, get_ann_text, make_highlight
+from ._pick_info import (
+    Selection, compute_pick, get_ann_text, move, make_highlight)
 
 
 __all__ = ["Cursor", "HoverMode", "cursor", "Selection",
-           "compute_pick", "get_ann_text", "make_highlight"]
+           "compute_pick", "get_ann_text", "move", "make_highlight"]

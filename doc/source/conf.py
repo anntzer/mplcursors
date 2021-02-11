@@ -35,21 +35,16 @@ pygments_style = 'sphinx'
 
 todo_include_todos = False
 
+python_use_unqualified_type_names = True
+
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = 'alabaster'
+html_theme = 'pydata_sphinx_theme'
 html_theme_options = {
-    'description': 'Interactive data selection cursors for Matplotlib.',
-    'github_user': 'anntzer',
-    'github_repo': 'mplcursors',
-    'github_banner': True,
-    'github_button': False,
-    'code_font_size': '80%',
+    'github_url': 'https://github.com/anntzer/mplcursors',
 }
 html_css_files = ['hide_some_gallery_elements.css']
 html_static_path = ['_static']
-html_sidebars = {'**': ['about.html', 'navigation.html', 'localtoc.html']}
-# html_last_updated_fmt = ''  # bitprophet/alabaster#93
 
 htmlhelp_basename = 'mplcursors_doc'
 

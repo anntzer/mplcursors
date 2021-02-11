@@ -474,8 +474,12 @@ def _(container, event):
         return Selection(container, target, 0, None, None)
 
 
-def _call_with_selection(func):
+def _call_with_selection(func=None, *, argname="artist"):
     """Decorator that passes a `Selection` built from the non-kwonly args."""
+
+    if func is None:
+        return functools.partial(_call_with_selection, argname=argname)
+
     wrapped_kwonly_params = [
         param for param in inspect.signature(func).parameters.values()
         if param.kind == param.KEYWORD_ONLY]
@@ -494,8 +498,9 @@ def _call_with_selection(func):
         sel = Selection(*ba.args, **ba.kwargs)
         return func(sel, **extra_kw)
 
-    wrapper.__signature__ = Signature(
-        [*sel_sig.parameters.values(), *wrapped_kwonly_params])
+    params = [*sel_sig.parameters.values(), *wrapped_kwonly_params]
+    params[0] = params[0].replace(name=argname)
+    wrapper.__signature__ = Signature(params)
     return wrapper
 
 
@@ -513,7 +518,7 @@ def _format_coord_unspaced(ax, xy):
 @_call_with_selection
 def get_ann_text(sel):
     """
-    Compute an annotating text for a `Selection` (passed **unpacked**).
+    Compute an annotating text for an (unpacked) `Selection`.
 
     This is a single-dispatch function; implementations for various artist
     classes follow.
@@ -608,14 +613,14 @@ def _(sel):
 
 
 @get_ann_text.register(BarContainer)
-@_call_with_selection
+@_call_with_selection(argname="container")
 def _(sel):
     return _format_coord_unspaced(
         _artist_in_container(sel.artist).axes, sel.target)
 
 
 @get_ann_text.register(ErrorbarContainer)
-@_call_with_selection
+@_call_with_selection(argname="container")
 def _(sel):
     data_line, cap_lines, err_lcs = sel.artist
     ann_text = get_ann_text(*sel._replace(artist=data_line))
@@ -648,7 +653,7 @@ def _(sel):
 
 
 @get_ann_text.register(StemContainer)
-@_call_with_selection
+@_call_with_selection(argname="container")
 def _(sel):
     return get_ann_text(*sel._replace(artist=sel.artist.markerline))
 
@@ -657,7 +662,7 @@ def _(sel):
 @_call_with_selection
 def move(sel, *, key):
     """
-    Move a `Selection` (passed **unpacked**) following a keypress.
+    Move an (unpacked) `Selection` following a keypress.
 
     This function is used to implement annotation displacement through the
     keyboard.
@@ -736,7 +741,7 @@ def _(sel, *, key):
 
 
 @move.register(ErrorbarContainer)
-@_call_with_selection
+@_call_with_selection(argname="container")
 def _(sel, *, key):
     data_line, cap_lines, err_lcs = sel.artist
     return _move_within_points(sel, data_line.get_xydata(), key=key)
@@ -746,7 +751,7 @@ def _(sel, *, key):
 @_call_with_selection
 def make_highlight(sel, *, highlight_kwargs):
     """
-    Create a highlight for a `Selection`.
+    Create a highlight for an (unpacked) `Selection`.
 
     This is a single-dispatch function; implementations for various artist
     classes follow.
