@@ -92,7 +92,7 @@ autodoc_member_order = 'bysource'
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
-    'matplotlib': ('https://matplotlib.org', None),
+    'matplotlib': ('https://matplotlib.org/stable', None),
     'pandas': ('http://pandas.pydata.org/pandas-docs/stable', None),
 }
 
