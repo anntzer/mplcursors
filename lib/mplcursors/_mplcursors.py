@@ -5,7 +5,7 @@ from enum import IntEnum
 from functools import partial
 import sys
 import weakref
-from weakref import WeakKeyDictionary
+from weakref import WeakKeyDictionary, WeakSet
 
 from matplotlib.axes import Axes
 from matplotlib.container import Container
@@ -231,16 +231,22 @@ class Cursor:
         self._selections = []
         self._last_auto_position = None
         self._callbacks = {"add": [], "remove": []}
-
         self._hover = hover
-        connect_pairs = [("key_press_event", self._on_key_press)]
+
+        self._suppressed_events = WeakSet()
+        connect_pairs = [
+            ("pick_event", self._on_pick),
+            ("key_press_event", self._on_key_press),
+        ]
         if hover:
             connect_pairs += [
-                ("motion_notify_event", self._hover_handler),
-                ("button_press_event", self._hover_handler)]
+                ("motion_notify_event", self._on_hover_motion_notify),
+                ("button_press_event", self._on_hover_button_press),
+            ]
         else:
             connect_pairs += [
-                ("button_press_event", self._nonhover_handler)]
+                ("button_press_event", self._on_nonhover_button_press),
+            ]
         self._disconnectors = [
             partial(canvas.mpl_disconnect, canvas.mpl_connect(*pair))
             for pair in connect_pairs
@@ -523,34 +529,47 @@ class Cursor:
             with suppress(KeyError):
                 s.remove(self)
 
-    def _nonhover_handler(self, event):
-        if event.name == "button_press_event":
-            if _mouse_event_matches(event, self.bindings["select"]):
-                self._on_select_event(event)
-            if _mouse_event_matches(event, self.bindings["deselect"]):
-                self._on_deselect_event(event)
+    def _on_pick(self, event):
+        # Avoid creating a new annotation when dragging a preexisting
+        # annotation (if multiple = True).  To do so, rely on the fact that
+        # pick_events (which are used to implement dragging) trigger first (via
+        # Figure's button_press_event, which is registered first); when one of
+        # our annotations is picked, registed the corresponding mouse event as
+        # "suppressed".  This can be done via a WeakSet as Matplotlib will keep
+        # the event alive while being propagated through the callbacks.
+        if any(event.artist is sel.annotation for sel in self._selections):
+            self._suppressed_events.add(event.mouseevent)
 
-    def _hover_handler(self, event):
-        if event.name == "motion_notify_event" and event.button is None:
+    def _on_nonhover_button_press(self, event):
+        if _mouse_event_matches(event, self.bindings["select"]):
+            self._on_select_event(event)
+        if _mouse_event_matches(event, self.bindings["deselect"]):
+            self._on_deselect_event(event)
+
+    def _on_hover_motion_notify(self, event):
+        if event.button is None:
             # Filter away events where the mouse is pressed, in particular to
             # avoid conflicts between hover and draggable.
             self._on_select_event(event)
-        elif (event.name == "button_press_event"
-              and _mouse_event_matches(event, self.bindings["deselect"])):
+
+    def _on_hover_button_press(self, event):
+        if _mouse_event_matches(event, self.bindings["deselect"]):
             # Still allow removing the annotation by right clicking.
             self._on_deselect_event(event)
 
     def _filter_mouse_event(self, event):
         # Accept the event iff we are enabled, and either
-        #   - no other widget is active, and this is not the second click of a
-        #     double click (to prevent double selection), or
-        #   - another widget is active, and this is a double click (to bypass
-        #     the widget lock).
+        # - no other widget is active, and this is not the second click of a
+        #   double click (to prevent double selection), or
+        # - another widget is active, and this is a double click (to bypass
+        #   the widget lock).
         return (self.enabled
                 and event.canvas.widgetlock.locked() == event.dblclick)
 
     def _on_select_event(self, event):
-        if not self._filter_mouse_event(event):
+        if (not self._filter_mouse_event(event)
+                # See _on_pick.  (We only suppress selects, not deselects.)
+                or event in self._suppressed_events):
             return
         # Work around lack of support for twinned axes.
         per_axes_event = {ax: _reassigned_axes_event(event, ax)

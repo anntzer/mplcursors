@@ -1,3 +1,9 @@
+next
+====
+
+- Additional annotations are no longer created when dragging a ``multiple``
+  cursor.
+
 0.4
 ===
 
