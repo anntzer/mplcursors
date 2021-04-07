@@ -626,7 +626,7 @@ class Cursor:
             self.enabled = not self.enabled
         elif event.key == self.bindings["toggle_visible"]:
             self.visible = not self.visible
-        if not self._selections:
+        if not self._selections or not self.enabled:
             return
         sel = self._selection_stack[-1]
         for key in ["left", "right", "up", "down"]:

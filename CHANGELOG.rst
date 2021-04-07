@@ -5,6 +5,7 @@ next
   cursor.
 - Clicking on an annotation also updates the "current" selection for keyboard
   motion purposes.
+- Disabling a cursor also makes it unresponsive to motion keys.
 
 0.4
 ===

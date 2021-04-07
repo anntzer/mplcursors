@@ -609,6 +609,11 @@ def test_keys(ax):
     ax.figure.canvas.draw()
     _process_event(*_get_remove_args(cursor.selections[0]))
     assert len(cursor.selections) == 1
+    # (Moving becomes inactive.)
+    old_target = cursor.selections[0].target
+    _process_event("key_press_event", ax, (.123, .456), "shift+left")
+    new_target = cursor.selections[0].target
+    assert (old_target == new_target).all()
     # Reenable it.
     _process_event("key_press_event", ax, (.123, .456), "e")
     assert cursor.enabled
