@@ -478,11 +478,15 @@ def test_hover(ax, hover):
 def test_highlight(ax, plotter):
     plotter(ax, [0, 1], [0, 1])
     ax.set(xlim=(-1, 2), ylim=(-1, 2))
+    base_children = {*ax.artists, *ax.lines, *ax.collections}
     cursor = mplcursors.cursor(highlight=True)
     _process_event("__mouse_click__", ax, (0, 0), 1)
-    assert ax.artists == cursor.selections[0].extras != []
+    # On Matplotlib<=3.4, the highlight went to ax.artists.  On >=3.5, it goes
+    # to its type-specific container.  The construct below handles both cases.
+    assert [*{*ax.artists, *ax.lines, *ax.collections} - base_children] \
+        == cursor.selections[0].extras != []
     _process_event(*_get_remove_args(cursor.selections[0]))
-    assert len(ax.artists) == 0
+    assert len({*ax.artists, *ax.lines, *ax.collections} - base_children) == 0
 
 
 def test_misc_artists_highlight(ax):
