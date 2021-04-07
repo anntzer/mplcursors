@@ -3,6 +3,8 @@ next
 
 - Additional annotations are no longer created when dragging a ``multiple``
   cursor.
+- Clicking on an annotation also updates the "current" selection for keyboard
+  motion purposes.
 
 0.4
 ===

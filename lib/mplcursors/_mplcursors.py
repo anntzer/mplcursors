@@ -229,6 +229,7 @@ class Cursor:
         self._visible = True
         self._enabled = True
         self._selections = []
+        self._selection_stack = []
         self._last_auto_position = None
         self._callbacks = {"add": [], "remove": []}
         self._hover = hover
@@ -386,6 +387,7 @@ class Cursor:
                 extras.append(hl)
         sel = pi._replace(annotation=ann, extras=extras)
         self._selections.append(sel)
+        self._selection_stack.append(sel)
         for cb in self._callbacks["add"]:
             cb(sel)
 
@@ -537,8 +539,14 @@ class Cursor:
         # our annotations is picked, registed the corresponding mouse event as
         # "suppressed".  This can be done via a WeakSet as Matplotlib will keep
         # the event alive while being propagated through the callbacks.
-        if any(event.artist is sel.annotation for sel in self._selections):
-            self._suppressed_events.add(event.mouseevent)
+        # Additionally, also rely on this mechanism to update the "current"
+        # selection.
+        for sel in self._selections:
+            if event.artist is sel.annotation:
+                self._suppressed_events.add(event.mouseevent)
+                self._selection_stack.remove(sel)
+                self._selection_stack.append(sel)
+                break
 
     def _on_nonhover_button_press(self, event):
         if _mouse_event_matches(event, self.bindings["select"]):
@@ -618,10 +626,9 @@ class Cursor:
             self.enabled = not self.enabled
         elif event.key == self.bindings["toggle_visible"]:
             self.visible = not self.visible
-        try:
-            sel = self.selections[-1]
-        except IndexError:
+        if not self._selections:
             return
+        sel = self._selection_stack[-1]
         for key in ["left", "right", "up", "down"]:
             if event.key == self.bindings[key]:
                 self.remove_selection(sel)
@@ -631,6 +638,7 @@ class Cursor:
     def remove_selection(self, sel):
         """Remove a `Selection`."""
         self._selections.remove(sel)
+        self._selection_stack.remove(sel)
         # <artist>.figure will be unset so we save them first.
         figures = {artist.figure for artist in [sel.annotation] + sel.extras}
         # ValueError is raised if the artist has already been removed.
