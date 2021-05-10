@@ -24,7 +24,7 @@ Interactive data selection cursors for Matplotlib
    :target: https://software.opensuse.org/package/python3-mplcursors
 .. |Read the Docs|
    image:: https://img.shields.io/readthedocs/mplcursors
-   :target: http://mplcursors.readthedocs.io/en/latest/?badge=latest
+   :target: https://mplcursors.readthedocs.io/en/latest/?badge=latest
 .. |Build|
    image:: https://img.shields.io/github/workflow/status/anntzer/mplcursors/build
    :target: https://github.com/anntzer/mplcursors/actions
@@ -50,7 +50,7 @@ or your favorite package manager.
 
 Run tests with pytest_\≥3.7.1.
 
-.. _Matplotlib: http://matplotlib.org
+.. _Matplotlib: https://matplotlib.org
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor
-.. _pytest: http://pytest.org
+.. _pytest: https://pytest.org
 .. _readthedocs.org: https://mplcursors.readthedocs.org
