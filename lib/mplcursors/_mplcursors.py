@@ -570,9 +570,12 @@ class Cursor:
         # - no other widget is active, and this is not the second click of a
         #   double click (to prevent double selection), or
         # - another widget is active, and this is a double click (to bypass
-        #   the widget lock).
+        #   the widget lock), or
+        # - hovering is active (in which case this is a motion_notify_event
+        #   anyways).
         return (self.enabled
-                and event.canvas.widgetlock.locked() == event.dblclick)
+                and (event.canvas.widgetlock.locked() == event.dblclick
+                     or self._hover))
 
     def _on_select_event(self, event):
         if (not self._filter_mouse_event(event)

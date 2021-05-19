@@ -6,6 +6,8 @@ next
 - Clicking on an annotation also updates the "current" selection for keyboard
   motion purposes.
 - Disabling a cursor also makes it unresponsive to motion keys.
+- Hovering is still active when the pan or zoom buttons are pressed (but not if
+  there's a pan or zoom currently being selected).
 
 0.4
 ===
