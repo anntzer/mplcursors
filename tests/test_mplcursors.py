@@ -116,31 +116,31 @@ def test_line(ax, plotter):
     cursor = mplcursors.cursor(multiple=True)
     # Far, far away.
     _process_event("__mouse_click__", ax, (0, 1), 1)
-    assert len(cursor.selections) == len(ax.texts) == 0
+    assert len(cursor.selections) == len(ax.figure.artists) == 0
     # On the line.
     _process_event("__mouse_click__", ax, (.1, .4), 1)
-    assert len(cursor.selections) == len(ax.texts) == 1
+    assert len(cursor.selections) == len(ax.figure.artists) == 1
     assert _parse_annotation(
         cursor.selections[0], "foo\nx=(.*)\ny=(.*)") == approx((.1, .4))
     # Not removing it.
     _process_event("__mouse_click__", ax, (0, 1), 3)
-    assert len(cursor.selections) == len(ax.texts) == 1
+    assert len(cursor.selections) == len(ax.figure.artists) == 1
     # Remove the text label; add another annotation.
     artist.set_label(None)
     _process_event("__mouse_click__", ax, (.6, .9), 1)
-    assert len(cursor.selections) == len(ax.texts) == 2
+    assert len(cursor.selections) == len(ax.figure.artists) == 2
     assert _parse_annotation(
         cursor.selections[1], "x=(.*)\ny=(.*)") == approx((.6, .9))
     # Remove both of them (first removing the second one, to test
     # `Selection.__eq__` -- otherwise it is bypassed as `list.remove`
     # checks identity first).
     _process_event(*_get_remove_args(cursor.selections[1]))
-    assert len(cursor.selections) == len(ax.texts) == 1
+    assert len(cursor.selections) == len(ax.figure.artists) == 1
     _process_event(*_get_remove_args(cursor.selections[0]))
-    assert len(cursor.selections) == len(ax.texts) == 0
+    assert len(cursor.selections) == len(ax.figure.artists) == 0
     # Will project on the vertex at (.2, .8).
     _process_event("__mouse_click__", ax, (.2 - .001, .8 + .001), 1)
-    assert len(cursor.selections) == len(ax.texts) == 1
+    assert len(cursor.selections) == len(ax.figure.artists) == 1
 
 
 @pytest.mark.parametrize("plotter",
@@ -150,9 +150,9 @@ def test_scatter(ax, plotter):
     plotter(ax, [0, .5, 1], [0, .5, 1])
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (.2, .2), 1)
-    assert len(cursor.selections) == len(ax.texts) == 0
+    assert len(cursor.selections) == len(ax.figure.artists) == 0
     _process_event("__mouse_click__", ax, (.5, .5), 1)
-    assert len(cursor.selections) == len(ax.texts) == 1
+    assert len(cursor.selections) == len(ax.figure.artists) == 1
 
 
 def test_scatter_text(ax):
@@ -222,7 +222,7 @@ def test_line_single_point(ax, ls):
     ax.set(xlim=(-1, 1), ylim=(-1, 1))
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (.001, .001), 1)
-    assert len(cursor.selections) == len(ax.texts) == (ls == "o")
+    assert len(cursor.selections) == len(ax.figure.artists) == (ls == "o")
     if cursor.selections:
         assert tuple(cursor.selections[0].target) == (0, 0)
 
@@ -235,7 +235,7 @@ def test_nan(ax, plot_args, click, targets):
     ax.plot(*plot_args)
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, click, 1)
-    assert len(cursor.selections) == len(ax.texts) == len(targets)
+    assert len(cursor.selections) == len(ax.figure.artists) == len(targets)
     for sel, target in zip(cursor.selections, targets):
         assert sel.target == approx(target)
 
@@ -576,18 +576,18 @@ def test_removed_artist(ax):
     cursor = mplcursors.cursor()
     l.remove()
     _process_event("__mouse_click__", ax, (.5, .5), 1)
-    assert len(cursor.selections) == len(ax.texts) == 0
+    assert len(cursor.selections) == len(ax.figure.artists) == 0
 
 
 def test_remove_cursor(ax):
     ax.plot([0, 1])
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (.5, .5), 1)
-    assert len(cursor.selections) == len(ax.texts) == 1
+    assert len(cursor.selections) == len(ax.figure.artists) == 1
     cursor.remove()
-    assert len(cursor.selections) == len(ax.texts) == 0
+    assert len(cursor.selections) == len(ax.figure.artists) == 0
     _process_event("__mouse_click__", ax, (.5, .5), 1)
-    assert len(cursor.selections) == len(ax.texts) == 0
+    assert len(cursor.selections) == len(ax.figure.artists) == 0
 
 
 def test_keys(ax):
@@ -649,21 +649,21 @@ def test_multiple_figures(ax):
     # Add something on the first axes.
     _process_event("__mouse_click__", ax1, (.5, .5), 1)
     assert len(cursor.selections) == 1
-    assert len(ax1.texts) == 1
-    assert len(ax2.texts) == 0
+    assert len(ax1.figure.artists) == 1
+    assert len(ax2.figure.artists) == 0
     # Right-clicking on the second axis doesn't remove it.
     remove_args = [*_get_remove_args(cursor.selections[0])]
     remove_args[remove_args.index(ax1)] = ax2
     _process_event(*remove_args)
     assert len(cursor.selections) == 1
-    assert len(ax1.texts) == 1
-    assert len(ax2.texts) == 0
+    assert len(ax1.figure.artists) == 1
+    assert len(ax2.figure.artists) == 0
     # Remove it, add something on the second.
     _process_event(*_get_remove_args(cursor.selections[0]))
     _process_event("__mouse_click__", ax2, (.5, .5), 1)
     assert len(cursor.selections) == 1
-    assert len(ax1.texts) == 0
-    assert len(ax2.texts) == 1
+    assert len(ax1.figure.artists) == 0
+    assert len(ax2.figure.artists) == 1
 
 
 def test_gc(ax):

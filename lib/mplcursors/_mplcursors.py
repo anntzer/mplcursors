@@ -379,6 +379,12 @@ class Cursor:
             visible=self.visible,
             zorder=np.inf,
             **self.annotation_kwargs)
+        # Move the Annotation's ownership from the Axes to the Figure, so that
+        # it gets drawn even above twinned axes.  But ann.axes must stay set,
+        # so that e.g. unit converters get correctly applied.
+        ann.remove()
+        ann.axes = axes
+        figure.add_artist(ann)
         ann.draggable(use_blit=not self._multiple)
         extras = []
         if self._highlight:

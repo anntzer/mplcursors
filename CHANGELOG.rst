@@ -8,6 +8,8 @@ next
 - Disabling a cursor also makes it unresponsive to motion keys.
 - Hovering is still active when the pan or zoom buttons are pressed (but not if
   there's a pan or zoom currently being selected).
+- Annotations are now `Figure`-level artists, rather than Axes-level ones (so
+  as to be drawn on top of twinned axes, if present).
 
 0.4
 ===
