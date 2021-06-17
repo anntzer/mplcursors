@@ -713,12 +713,12 @@ def _(sel, *, key):
 @_call_with_selection
 def _(sel, *, key):
     ns = sel.artist.get_array().shape[:2]
-    idxs = (np.asarray(sel.target.index)
-            + {"left": [0, -1],
-               "right": [0, 1],
-               "up": {"lower": [1, 0], "upper": [-1, 0]}[sel.artist.origin],
-               "down": {"lower": [-1, 0], "upper": [1, 0]}[sel.artist.origin]}[
-                   key]) % ns
+    delta = (
+        {"left": [0, -1], "right": [0, +1], "down": [-1, 0], "up": [+1, 0]}[
+            key]
+        * np.array([-1 if sel.artist.axes.yaxis.get_inverted() else +1,
+                    -1 if sel.artist.axes.xaxis.get_inverted() else +1]))
+    idxs = (sel.target.index + delta) % ns
     xmin, xmax, ymin, ymax = sel.artist.get_extent()
     if sel.artist.origin == "upper":
         ymin, ymax = ymax, ymin
