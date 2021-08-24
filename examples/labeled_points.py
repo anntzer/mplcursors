@@ -17,6 +17,6 @@ x = np.array([0, 1, 2, 3, 4])
 fig, ax = plt.subplots()
 line, = ax.plot(x, x, "ro")
 mplcursors.cursor(ax).connect(
-    "add", lambda sel: sel.annotation.set_text(labels[sel.target.index]))
+    "add", lambda sel: sel.annotation.set_text(labels[sel.index]))
 
 plt.show()

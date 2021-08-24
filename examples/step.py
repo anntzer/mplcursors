@@ -3,7 +3,7 @@ Step plots
 ==========
 
 A selection on a step plot holds precise information on the x and y position
-in the ``sel.target.index`` sub-attribute.
+in the ``sel.index`` attribute.
 """
 
 from matplotlib import pyplot as plt
@@ -24,6 +24,5 @@ for ax in axs:
     ax.label_outer()
 
 mplcursors.cursor().connect(
-    "add",
-    lambda sel: sel.annotation.set_text(format(sel.target.index, ".2f")))
+    "add", lambda sel: sel.annotation.set_text(format(sel.index, ".2f")))
 plt.show()

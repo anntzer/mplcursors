@@ -127,38 +127,65 @@ Customization
 -------------
 
 Instead of providing a host of keyword arguments in `Cursor`’s constructor,
-:mod:`mplcursors` represents selections as `Selection` objects (essentially,
-namedtuples) and lets you hook into their addition and removal.
+:mod:`mplcursors` represents selections as `Selection` objects and lets you
+hook into their addition and removal.
 
 Specifically, a `Selection` has the following fields:
 
 - :attr:`.artist`: the selected artist,
-- :attr:`.target`: the point picked within the artist; if a point is
-  picked on a :class:`~matplotlib.lines.Line2D`, the index of the point is
-  available as the :attr:`target.index` sub-attribute (for more details, see
-  `selection-indices`).
+
+- :attr:`.target`: the ``(x, y)`` coordinates of the point picked within the
+  artist.
+
+- :attr:`.index`: an index of the selected point, within the artist data, as
+  detailed below.
+
 - :attr:`.dist`: the distance from the point clicked to the :attr:`.target`
   (mostly used to decide which artist to select).
+
 - :attr:`.annotation`: a Matplotlib :class:`~matplotlib.text.Annotation`
   object.
+
 - :attr:`.extras`: an additional list of artists, that will be removed whenever
   the main :attr:`.annotation` is deselected.
 
-For certain classes of artists, additional information about the picked point
-is available in the :attr:`target.index` sub-attribute:
+The exact meaning of :attr:`.index` depends on the selected artist:
 
-- For :class:`~matplotlib.lines.Line2D`\s, it contains the index of the
-  selected point (see `selection-indices` for more details, especially
-  regarding step plots).
-- For :class:`~matplotlib.image.AxesImage`\s, it contains the ``(y, x)``
-  indices of the selected point (such that ``data[y, x]`` in that order is the
-  value at that point; note that this means that the indices are not in the
-  same order as the target coordinates!).
-- For :class:`~matplotlib.container.Container`\s, it contains the index of the
-  selected sub-artist.
+- For :class:`~matplotlib.lines.Line2D`\s, the integer part of :attr:`.index`
+  is the index of segment where the selection is, and its fractional part
+  indicates where the selection is within that segment.
+
+  For step plots (i.e., created by `plt.step <matplotlib.pyplot.step>` or
+  `plt.plot <matplotlib.pyplot.plot>`\ ``(..., drawstyle="steps-...")``, we
+  return a special :class:`Index` object, with attributes :attr:`int` (the
+  segment index), :attr:`x` (how far the point has advanced in the ``x``
+  direction) and :attr:`y` (how far the point has advanced in the ``y``
+  direction).  See `/examples/step` for an example.
+
+  On polar plots, lines can be either drawn with a "straight" connection
+  between two points (in screen space), or "curved" (i.e., using linear
+  interpolation in data space).  In the first case, the fractional part of the
+  index is defined as for cartesian plots.  In the second case, the index in
+  computed first on the interpolated path, then divided by the interpolation
+  factor (i.e., pretending that each interpolated segment advances the same
+  index by the same amount).
+
+- For :class:`~matplotlib.image.AxesImage`\s, :attr:`.index` are the ``(y, x)``
+  indices of the selected point, such that ``data[y, x]`` is the value at that
+  point (note that the indices are thus in reverse order compared to the ``(x,
+  y)`` target coordinates!).
+
+- For :class:`~matplotlib.container.Container`\s, :attr:`.index` is the index
+  of the selected sub-artist.
+
 - For :class:`~matplotlib.collections.LineCollection`\s and
-  :class:`~matplotlib.collections.PathCollection`\s, it contains a pair: the
-  index of the selected line, and the index within the line, as defined above.
+  :class:`~matplotlib.collections.PathCollection`\s, :attr:`.index` is a pair:
+  the index of the selected line, and the index within the line, as defined
+  above.
+
+(Note that although `Selection` is implemented as a namedtuple, only the field
+names should be considered stable API.  The number and order of fields is
+subject to change with no notice.)
 
 Thus, in order to customize, e.g., the annotation text, one can call::
 
@@ -166,7 +193,7 @@ Thus, in order to customize, e.g., the annotation text, one can call::
    labels = ["a", "b", "c"]
    cursor = mplcursors.cursor(lines)
    cursor.connect(
-       "add", lambda sel: sel.annotation.set_text(labels[sel.target.index]))
+       "add", lambda sel: sel.annotation.set_text(labels[sel.index]))
 
 Whenever a point is selected (resp. deselected), the ``"add"`` (resp.
 ``"remove"``) event is triggered and the registered callbacks are executed,
@@ -212,29 +239,6 @@ clear it during "normal" mouse motion, e.g.::
        "add",
        lambda sel: fig.canvas.toolbar.set_message(
            sel.annotation.get_text().replace("\n", "; ")))
-
-.. _selection-indices:
-
-Selection indices
------------------
-
-When picking a point on a "normal" line, the target index has an integer part
-equal to the index of segment it is on, and a fractional part that indicates
-where the point is within that segment.
-
-For step plots (i.e., created by `plt.step <matplotlib.pyplot.step>` or
-`plt.plot <matplotlib.pyplot.plot>`\ ``(..., drawstyle="steps-...")``, we
-return a special :class:`Index` object, with attributes :attr:`int` (the
-segment index), :attr:`x` (how far the point has advanced in the ``x``
-direction) and :attr:`y` (how far the point has advanced in the ``y``
-direction).  See `/examples/step` for an example.
-
-On polar plots, lines can be either drawn with a "straight" connection between
-two points (in screen space), or "curved" (i.e., using linear interpolation in
-data space).  In the first case, the fractional part of the index is defined as
-for cartesian plots.  In the second case, the index in computed first on the
-interpolated path, then divided by the interpolation factor (i.e., pretending
-that each interpolated segment advances the same index by the same amount).
 
 .. _complex-plots:
 
@@ -293,3 +297,4 @@ Indices and tables
    Main page <self>
    API <mplcursors>
    Examples <examples/index>
+   Changelog <changelog>

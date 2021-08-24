@@ -96,6 +96,7 @@ def test_containerartist(ax):
 def test_selection_identity_comparison():
     sel0, sel1 = [Selection(artist=None,
                             target=np.array([0, 0]),
+                            index=None,
                             dist=0,
                             annotation=None,
                             extras=[])
@@ -176,10 +177,10 @@ def test_steps_pre(ax):
     _process_event("__mouse_click__", ax, (1, 0), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, .5), 1)
-    index = cursor.selections[0].target.index
+    index = cursor.selections[0].index
     assert (index.int, index.x, index.y) == approx((0, 0, .5))
     _process_event("__mouse_click__", ax, (.5, 1), 1)
-    index = cursor.selections[0].target.index
+    index = cursor.selections[0].index
     assert (index.int, index.x, index.y) == approx((0, .5, 1))
 
 
@@ -192,13 +193,13 @@ def test_steps_mid(ax):
     _process_event("__mouse_click__", ax, (1, 0), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.25, 0), 1)
-    index = cursor.selections[0].target.index
+    index = cursor.selections[0].index
     assert (index.int, index.x, index.y) == approx((0, .25, 0))
     _process_event("__mouse_click__", ax, (.5, .5), 1)
-    index = cursor.selections[0].target.index
+    index = cursor.selections[0].index
     assert (index.int, index.x, index.y) == approx((0, .5, .5))
     _process_event("__mouse_click__", ax, (.75, 1), 1)
-    index = cursor.selections[0].target.index
+    index = cursor.selections[0].index
     assert (index.int, index.x, index.y) == approx((0, .75, 1))
 
 
@@ -209,10 +210,10 @@ def test_steps_post(ax):
     _process_event("__mouse_click__", ax, (0, 1), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.5, 0), 1)
-    index = cursor.selections[0].target.index
+    index = cursor.selections[0].index
     assert (index.int, index.x, index.y) == approx((0, .5, 0))
     _process_event("__mouse_click__", ax, (1, .5), 1)
-    index = cursor.selections[0].target.index
+    index = cursor.selections[0].index
     assert (index.int, index.x, index.y) == approx((0, 1, .5))
 
 
@@ -263,20 +264,20 @@ def test_image(ax, origin):
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     sel, = cursor.selections
     assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[1\]") == (1, 0)
-    assert array[sel.target.index] == 1
+    assert array[sel.index] == 1
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     sel, = cursor.selections
     assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0\]") == (0, 0)
-    assert array[sel.target.index] == 0
+    assert array[sel.index] == 0
     _process_event("key_press_event", ax, (.123, .456), "shift+up")
     sel, = cursor.selections
     assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[(.*)\]")
             == {"upper": (0, 2, 4), "lower": (0, 1, 2)}[origin])
-    assert array[sel.target.index] == {"upper": 4, "lower": 2}[origin]
+    assert array[sel.index] == {"upper": 4, "lower": 2}[origin]
     _process_event("key_press_event", ax, (.123, .456), "shift+down")
     sel, = cursor.selections
     assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0\]") == (0, 0)
-    assert array[sel.target.index] == 0
+    assert array[sel.index] == 0
 
     cursor = mplcursors.cursor()
     # Not picking out-of-axes or of image.
@@ -317,7 +318,7 @@ def test_linecollection(ax):
     _process_event("__mouse_click__", ax, (.5, 1), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, 1), 1)
-    assert cursor.selections[0].target.index == approx((0, .5))
+    assert cursor.selections[0].index == approx((0, .5))
 
 
 def test_patchcollection(ax):
@@ -328,7 +329,7 @@ def test_patchcollection(ax):
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.6, .6), 1)
     # The precision is really bad :(
-    assert cursor.selections[0].target.index == approx((1, 2), abs=2e-2)
+    assert cursor.selections[0].index == approx((1, 2), abs=2e-2)
 
 
 @pytest.mark.parametrize("plotter", [Axes.quiver, Axes.barbs])
@@ -448,14 +449,14 @@ def test_move(ax, plotter):
         _process_event("__mouse_click__", ax, (0, 0), 1)
         _process_event("key_press_event", ax, (.123, .456), "shift+up")
     assert tuple(cursor.selections[0].target) == (0, 0)
-    assert cursor.selections[0].target.index == 0
+    assert cursor.selections[0].index == 0
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     assert tuple(cursor.selections[0].target) == (1, 1)
-    assert cursor.selections[0].target.index == 1
+    assert cursor.selections[0].index == 1
     # Skip through nan.
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     assert tuple(cursor.selections[0].target) == (0, 0)
-    assert cursor.selections[0].target.index == 0
+    assert cursor.selections[0].index == 0
 
 
 @pytest.mark.parametrize(

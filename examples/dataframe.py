@@ -21,7 +21,7 @@ df = DataFrame(
 
 df.plot.scatter("height", "weight")
 mplcursors.cursor().connect(
-    "add", lambda sel: sel.annotation.set_text(df["name"][sel.target.index]))
+    "add", lambda sel: sel.annotation.set_text(df["name"][sel.index]))
 plt.show()
 
 # test: skip

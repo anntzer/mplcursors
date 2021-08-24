@@ -487,7 +487,7 @@ class Cursor:
 
             # Change the annotation text and alignment:
             lambda sel: sel.annotation.set(
-                text=sel.artist.get_label(),  # or use e.g. sel.target.index
+                text=sel.artist.get_label(),  # or use e.g. sel.index
                 ha="center", va="bottom")
 
             # Make label non-draggable:
