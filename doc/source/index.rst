@@ -60,7 +60,7 @@ Basic examples work similarly to mpldatacursor_::
    ax.set_title("Click somewhere on a line.\nRight-click to deselect.\n"
                 "Annotations can be dragged.")
 
-   mplcursors.cursor(lines) # or just mplcursors.cursor()
+   mplcursors.cursor(lines)  # or just mplcursors.cursor()
 
    plt.show()
 
