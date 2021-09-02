@@ -1,4 +1,4 @@
-from setupext import find_packages, setup
+from setupext import find_namespace_packages, setup
 
 
 # We cannot directly import matplotlib if `MPLCURSORS` is set because
@@ -65,7 +65,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
     ],
-    packages=find_packages("lib"),
+    packages=find_namespace_packages("lib"),
     package_dir={"": "lib"},
     python_requires=">=3.6",
     setup_requires=["setuptools_scm"],
