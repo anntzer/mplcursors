@@ -95,7 +95,7 @@ def test_containerartist(ax):
 
 def test_selection_identity_comparison():
     sel0, sel1 = [Selection(artist=None,
-                            target=np.array([0, 0]),
+                            target_=np.array([0, 0]),
                             index=None,
                             dist=0,
                             annotation=None,

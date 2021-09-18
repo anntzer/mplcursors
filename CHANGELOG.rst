@@ -5,7 +5,8 @@ next
 ----
 
 - **Breaking change**: ``index`` is now a direct attribute of the `Selection`,
-  rather than a sub-attribute via ``target``.
+  rather than a sub-attribute via ``target``.  (``Selection.target.index`` has
+  been deprecated and will be removed in the future.)
 - Additional annotations are no longer created when dragging a ``multiple``
   cursor.
 - Clicking on an annotation also updates the "current" selection for keyboard
