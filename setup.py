@@ -56,6 +56,7 @@ setup(
     name="mplcursors",
     description="Interactive data selection cursors for Matplotlib.",
     long_description=open("README.rst", encoding="utf-8").read(),
+    long_description_content_type="text/x-rst",
     author="Antony Lee",
     url="https://github.com/anntzer/mplcursors",
     license="MIT",
