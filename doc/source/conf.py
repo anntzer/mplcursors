@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import re
 import sys
 import mplcursors
@@ -14,7 +15,13 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx_gallery.gen_gallery',
 ]
-needs_extensions = {'sphinx_gallery.gen_gallery': '0.6.0'}
+_req_path = Path('../../.doc-requirements.txt')
+needs_extensions = {
+    'sphinx_gallery.gen_gallery':
+    dict(line.split('==') for line in _req_path.read_text().splitlines())[
+        'sphinx-gallery']
+
+}
 
 source_suffix = '.rst'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
