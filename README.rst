@@ -14,7 +14,7 @@ Interactive data selection cursors for Matplotlib
    image:: https://img.shields.io/conda/v/conda-forge/mplcursors.svg?label=conda-forge&color=brightgreen
    :target: https://anaconda.org/conda-forge/mplcursors
 .. |Debian|
-   image:: https://repology.org/badge/version-for-repo/debian_testing/mplcursors.svg?header=Debian
+   image:: https://repology.org/badge/version-for-repo/debian_unstable/mplcursors.svg?header=Debian
    :target: https://packages.debian.org/sid/main/python3-mplcursors
 .. |Fedora|
    image:: https://repology.org/badge/version-for-repo/fedora_rawhide/python:mplcursors.svg?header=Fedora
