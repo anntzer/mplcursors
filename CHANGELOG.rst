@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.5
+---
 
 - **Breaking change**: ``index`` is now a direct attribute of the `Selection`,
   rather than a sub-attribute via ``target``.  (``Selection.target.index`` has
