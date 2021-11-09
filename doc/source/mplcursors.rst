@@ -1,6 +1,8 @@
 The mplcursors API
 ==================
 
+.. module:: mplcursors
+
 |
 
 .. autosummary::
