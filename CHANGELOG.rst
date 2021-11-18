@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.5.1
+-----
+
+No new features; minor changes to docs.
+
 0.5
 ---
 
