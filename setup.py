@@ -78,4 +78,12 @@ setup(
     install_requires=[
         "matplotlib>=3.1",
     ],
+    extras_require={
+        "docs": [
+            "pandas",
+            "pydata_sphinx_theme",
+            "sphinx",
+            "sphinx-gallery",
+        ],
+    },
 )

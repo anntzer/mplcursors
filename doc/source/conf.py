@@ -19,8 +19,7 @@ _req_path = Path('../../.doc-requirements.txt')
 needs_extensions = {
     'sphinx_gallery.gen_gallery':
     dict(line.split('==') for line in _req_path.read_text().splitlines())[
-        'sphinx-gallery']
-
+        'sphinx-gallery'],
 }
 
 source_suffix = '.rst'
