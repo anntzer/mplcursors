@@ -15,13 +15,6 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx_gallery.gen_gallery',
 ]
-_req_path = Path('../../.doc-requirements.txt')
-needs_extensions = {
-    'sphinx_gallery.gen_gallery':
-    dict(line.split('==') for line in _req_path.read_text().splitlines())[
-        'sphinx-gallery']
-
-}
 
 source_suffix = '.rst'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
