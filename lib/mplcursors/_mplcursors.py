@@ -152,7 +152,9 @@ class Cursor:
             A list of artists that can be selected by this cursor.
 
         multiple : bool, default: False
-            Whether multiple artists can be "on" at the same time.
+            Whether multiple artists can be "on" at the same time.  If on,
+            cursor dragging is disabled (so that one does not end up with many
+            cursors on top of one another).
 
         highlight : bool, default: False
             Whether to also highlight the selected artist.  If so,
@@ -169,7 +171,7 @@ class Cursor:
             - True, alias `HoverMode.Persistent`: hovering is active;
               annotations remain in place even after the mouse moves away from
               the artist (until another artist is selected, if *multiple* is
-              False.
+              False).
             - 2, alias `HoverMode.Transient`: hovering is active; annotations
               are removed as soon as the mouse moves away from the artist.
 
@@ -248,6 +250,9 @@ class Cursor:
             connect_pairs += [
                 ("button_press_event", self._on_nonhover_button_press),
             ]
+            if not self._multiple:
+                connect_pairs.append(
+                    ("motion_notify_event", self._on_nonhover_button_press))
         self._disconnectors = [
             partial(canvas.mpl_disconnect, canvas.mpl_connect(*pair))
             for pair in connect_pairs

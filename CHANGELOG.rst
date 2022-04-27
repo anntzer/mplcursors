@@ -1,6 +1,11 @@
 Changelog
 =========
 
+next
+----
+
+- Non-multiple cursors can now be dragged.
+
 0.5.1
 -----
 
