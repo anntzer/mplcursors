@@ -373,9 +373,14 @@ class Cursor:
         # Pre-fetch the figure and axes, as callbacks may actually unset them.
         figure = self._get_figure(pi.artist)
         axes = self._get_axes(pi.artist)
-        if axes.get_renderer_cache() is None:
-            figure.canvas.draw()  # Needed by draw_artist below anyways.
-        renderer = axes.get_renderer_cache()
+        get_cached_renderer = (
+            figure.canvas.get_renderer
+            if hasattr(figure.canvas, "get_renderer")
+            else axes.get_renderer_cache)  # matplotlib <3.6.
+        renderer = get_cached_renderer()
+        if renderer is None:
+            figure.canvas.draw()  # Needed below anyways.
+            renderer = get_cached_renderer()
         ann = axes.annotate(
             _pick_info.get_ann_text(*pi), xy=pi.target,
             xytext=(np.nan, np.nan),
@@ -445,7 +450,7 @@ class Cursor:
         elif ann.axes:
             # Fast path, only needed if the annotation has not been immediately
             # removed.
-            figure.draw_artist(ann)
+            ann.draw(renderer)
             figure.canvas.blit()
         # Removal comes after addition so that the fast blitting path works.
         if not self._multiple:
