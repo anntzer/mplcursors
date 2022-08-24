@@ -149,13 +149,6 @@ Selection.target = property(
     _Target, doc="The point picked within the artist, in data coordinates.")
 
 
-def _with_attrs(array, **kwargs):
-    array = AttrArray(array)
-    for k, v in kwargs.items():
-        setattr(array, k, v)
-    return array
-
-
 @functools.singledispatch
 def compute_pick(artist, event):
     """
