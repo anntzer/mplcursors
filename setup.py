@@ -81,7 +81,7 @@ setup(
     extras_require={
         "docs": [
             "pandas",
-            "pydata_sphinx_theme",
+            "pydata_sphinx_theme!=0.10.1",
             "sphinx",
             "sphinx-gallery",
         ],
