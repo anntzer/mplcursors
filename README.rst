@@ -2,7 +2,7 @@ Interactive data selection cursors for Matplotlib
 =================================================
 
 | |GitHub| |PyPI| |conda-forge| |Debian| |Fedora| |openSUSE|
-| |Read the Docs| |Build| |CodeCov|
+| |Read the Docs| |Build|
 
 .. |GitHub|
    image:: https://img.shields.io/badge/github-anntzer%2Fmplcursors-brightgreen
