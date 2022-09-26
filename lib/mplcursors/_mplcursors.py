@@ -691,6 +691,12 @@ def cursor(pickables=None, **kwargs):
         Keyword arguments are passed to the `Cursor` constructor.
     """
 
+    # Explicit check to avoid a confusing
+    # "TypeError: Cursor.__init__() got multiple values for argument 'artists'"
+    if "artists" in kwargs:
+        raise TypeError(
+            "cursor() got an unexpected keyword argument 'artists'")
+
     if pickables is None:
         # Do not import pyplot ourselves to avoid forcing the backend.
         plt = sys.modules.get("matplotlib.pyplot")
