@@ -1,9 +1,7 @@
 """setuptools helpers."""
 
-import functools
-import inspect
 from pathlib import Path
-import re
+import tokenize
 
 import setuptools
 # find_namespace_packages itself bounds support to setuptools>=40.1.
@@ -13,24 +11,14 @@ from setuptools import Distribution, Extension, find_namespace_packages
 __all__ = ["Extension", "find_namespace_packages", "setup"]
 
 
-def register_pth_hook(fname, func=None):
+def register_pth_hook(source_path, pth_name):
     """
     ::
-        # Add a pth hook.
-        @setup.register_pth_hook("hook_name.pth")
-        def _hook():
-            '''hook contents.'''
+        setup.register_pth_hook("hook_source.py", "hook_name.pth")  # Add hook.
     """
-    if func is None:
-        return functools.partial(register_pth_hook, fname)
-    source = inspect.getsource(func)
-    if not re.match(
-            rf"@setup\.register_pth_hook.*\ndef {re.escape(func.__name__)}\(",
-            source):
-        raise SyntaxError("register_pth_hook must be used as a toplevel "
-                          "decorator to a function")
-    _, source = source.split("\n", 1)
-    _pth_hook_mixin._pth_hooks.append((fname, func.__name__, source))
+    with tokenize.open(source_path) as file:
+        source = file.read()
+    _pth_hook_mixin._pth_hooks.append((pth_name, source))
 
 
 class _pth_hook_mixin:
@@ -38,14 +26,14 @@ class _pth_hook_mixin:
 
     def run(self):
         super().run()
-        for fname, name, source in self._pth_hooks:
-            with Path(self.install_dir, fname).open("w") as file:
-                file.write(f"import os; exec({source!r}); {name}()")
+        for pth_name, source in self._pth_hooks:
+            with Path(self.install_dir, pth_name).open("w") as file:
+                file.write(f"import os; exec({source!r})")
 
     def get_outputs(self):
         return (super().get_outputs()
-                + [str(Path(self.install_dir, fname))
-                   for fname, _, _ in self._pth_hooks])
+                + [str(Path(self.install_dir, pth_name))
+                   for pth_name, _ in self._pth_hooks])
 
 
 def _prepare_pth_hook(kwargs):
