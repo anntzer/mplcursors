@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.5.2
+-----
 
 - Fix compatibility with Matplotlib 3.6 and with PEP517 builds.
 - Non-multiple cursors can now be dragged.
