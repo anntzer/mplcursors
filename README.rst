@@ -26,7 +26,7 @@ Interactive data selection cursors for Matplotlib
    image:: https://img.shields.io/readthedocs/mplcursors
    :target: https://mplcursors.readthedocs.io/en/latest/?badge=latest
 .. |Build|
-   image:: https://img.shields.io/github/workflow/status/anntzer/mplcursors/build
+   image:: https://img.shields.io/github/actions/workflow/status/anntzer/mplcursors/build.yml?branch=main
    :target: https://github.com/anntzer/mplcursors/actions
 
 mplcursors provides interactive data selection cursors for Matplotlib_.  It is
