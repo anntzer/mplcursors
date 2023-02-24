@@ -243,7 +243,9 @@ def _compute_projection_pick(artist, path, xy):
     #     assert np.in1d(codes[1:-1], [path.LINETO, path.CLOSEPOLY]).all()
     vertices = tpath.vertices[:-1]
     codes = tpath.codes[:-1]
-    vertices[codes == tpath.CLOSEPOLY] = vertices[0]
+    mt_idxs, = (codes == tpath.MOVETO).nonzero()
+    cp_idxs, = (codes == tpath.CLOSEPOLY).nonzero()
+    vertices[cp_idxs] = vertices[mt_idxs[mt_idxs.searchsorted(cp_idxs) - 1]]
     # Unit vectors for each segment.
     us = vertices[1:] - vertices[:-1]
     ls = np.hypot(*us.T)
@@ -261,14 +263,13 @@ def _compute_projection_pick(artist, path, xy):
     ds = np.hypot(*(xy - projs).T, out=vs[:, 1])
     try:
         argmin = np.nanargmin(ds)
-        dmin = ds[argmin]
-    except (ValueError, IndexError):  # See above re: exceptions caught.
+    except ValueError:  # Raised by nanargmin([nan]).
         return
     else:
         target = artist.axes.transData.inverted().transform(projs[argmin])
         index = ((argmin + dot[argmin] / ls[argmin])
                  / (path._interpolation_steps / tpath._interpolation_steps))
-        return Selection(artist, target, index, dmin, None, None)
+        return Selection(artist, target, index, ds[argmin], None, None)
 
 
 def _untransform(orig_xy, screen_xy, ax):
