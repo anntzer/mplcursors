@@ -28,7 +28,7 @@ setup(
         "write_to": "lib/mplcursors/_version.py",
     },
     install_requires=[
-        "matplotlib>=3.1",
+        "matplotlib>=3.1,!=3.7.1",
     ],
     extras_require={
         "docs": [
