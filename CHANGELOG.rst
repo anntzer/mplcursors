@@ -1,6 +1,11 @@
 Changelog
 =========
 
+next
+----
+
+- Mark Matplotlib 3.7.1 as incompatible.
+
 0.5.2
 -----
 
