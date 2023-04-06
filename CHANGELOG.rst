@@ -1,6 +1,12 @@
 Changelog
 =========
 
+next
+----
+
+- Highlights can be removed by right-clicking anywhere on the highlighting
+  artist, not only on the annotation.
+
 0.5.2
 -----
 

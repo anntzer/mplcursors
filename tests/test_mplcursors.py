@@ -476,7 +476,8 @@ def test_hover(ax, hover):
 
 
 @pytest.mark.parametrize("plotter", [Axes.plot, Axes.scatter])
-def test_highlight(ax, plotter):
+@pytest.mark.parametrize("remove_click_on_annotation", [True, False])
+def test_highlight(ax, plotter, remove_click_on_annotation):
     plotter(ax, [0, 1], [0, 1])
     ax.set(xlim=(-1, 2), ylim=(-1, 2))
     base_children = {*ax.artists, *ax.lines, *ax.collections}
@@ -486,8 +487,12 @@ def test_highlight(ax, plotter):
     # to its type-specific container.  The construct below handles both cases.
     assert [*{*ax.artists, *ax.lines, *ax.collections} - base_children] \
         == cursor.selections[0].extras != []
-    _process_event(*_get_remove_args(cursor.selections[0]))
-    assert len({*ax.artists, *ax.lines, *ax.collections} - base_children) == 0
+    if remove_click_on_annotation:
+        _process_event(*_get_remove_args(cursor.selections[0]))
+    else:
+        _process_event("__mouse_click__", ax, (1, 1), 3)
+    assert len({*ax.artists, *ax.lines, *ax.collections} - base_children) == (
+        1 if plotter is Axes.scatter and not remove_click_on_annotation else 0)
 
 
 def test_misc_artists_highlight(ax):
