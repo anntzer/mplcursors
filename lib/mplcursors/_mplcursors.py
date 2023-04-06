@@ -180,9 +180,9 @@ class Cursor:
 
             ================ ==================================================
             'select'         mouse button to select an artist
-                             (default: 1)
+                             (default: :data:`.MouseButton.LEFT`)
             'deselect'       mouse button to deselect an artist
-                             (default: 3)
+                             (default: :data:`.MouseButton.RIGHT`)
             'left'           move to the previous point in the selected path,
                              or to the left in the selected image
                              (default: shift+left)
@@ -635,10 +635,15 @@ class Cursor:
             ann = sel.annotation
             if event.canvas is not ann.figure.canvas:
                 continue
-            contained, _ = ann.contains(event)
-            if contained:
+            if ann.contains(event)[0]:
                 self.remove_selection(sel)
                 break
+        else:
+            if self._highlight:
+                for sel in self.selections[::-1]:
+                    if any(extra.contains(event)[0] for extra in sel.extras):
+                        self.remove_selection(sel)
+                        break
 
     def _on_key_press(self, event):
         if event.key == self.bindings["toggle_enabled"]:
