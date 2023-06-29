@@ -122,7 +122,7 @@ def test_line(ax, plotter):
     _process_event("__mouse_click__", ax, (.1, .4), 1)
     assert len(cursor.selections) == len(ax.figure.artists) == 1
     assert _parse_annotation(
-        cursor.selections[0], "foo\nx=(.*)\ny=(.*)") == approx((.1, .4))
+        cursor.selections[0], r"foo\nx=(.*)\ny=(.*)") == approx((.1, .4))
     # Not removing it.
     _process_event("__mouse_click__", ax, (0, 1), 3)
     assert len(cursor.selections) == len(ax.figure.artists) == 1
@@ -131,7 +131,7 @@ def test_line(ax, plotter):
     _process_event("__mouse_click__", ax, (.6, .9), 1)
     assert len(cursor.selections) == len(ax.figure.artists) == 2
     assert _parse_annotation(
-        cursor.selections[1], "x=(.*)\ny=(.*)") == approx((.6, .9))
+        cursor.selections[1], r"x=(.*)\ny=(.*)") == approx((.6, .9))
     # Remove both of them (first removing the second one, to test
     # `Selection.__eq__` -- otherwise it is bypassed as `list.remove`
     # checks identity first).
@@ -161,7 +161,7 @@ def test_scatter_text(ax):
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (0, 0), 1)
     assert _parse_annotation(
-        cursor.selections[0], "x=(.*)\ny=(.*)\n\[(.*)\]") == (0, 0, 2)
+        cursor.selections[0], r"x=(.*)\ny=(.*)\n\[(.*)\]") == (0, 0, 2)
 
 
 def test_steps_index():
@@ -365,7 +365,7 @@ def test_errorbar(ax):
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert cursor.selections[0].target == approx((.5, .5))
     assert _parse_annotation(
-        cursor.selections[0], "x=(.*)\ny=(.*)") == approx((.5, .5))
+        cursor.selections[0], r"x=(.*)\ny=(.*)") == approx((.5, .5))
     _process_event("__mouse_click__", ax, (0, 1), 1)
     assert cursor.selections[0].target == approx((0, 0))
     assert _parse_annotation(
