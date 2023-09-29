@@ -422,6 +422,21 @@ def test_stem(ax):
     assert cursor.selections[0].target == approx((0, 1))
 
 
+def test_annotationbbox(ax):
+    ax.set(xlim=(0, 1), ylim=(0, 1))
+    data = np.arange(9).reshape((3, 3))
+    ax.add_artist(
+        mpl.offsetbox.AnnotationBbox(
+            mpl.offsetbox.OffsetImage(data, zoom=10, axes=ax),
+            (.5, .5)))
+    ax.figure.canvas.draw()
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    sel, = cursor.selections
+    assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[(.*)\]")
+            == approx((.5, .5, 4)))
+
+
 @pytest.mark.parametrize(
     "plotter,warns",
     [(lambda ax: ax.text(.5, .5, "foo"), False),

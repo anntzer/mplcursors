@@ -8,7 +8,9 @@ next
 - Require registration in ``mpl.rcParams["figure.hooks"]`` for the
   :envvar:`MPLCURSORS` environment variable.
 - Support new-style (Matplotlib≥3.8) contour plots.
-- Support :class:`~matplotlib.image.BboxImage`.
+- Support :class:`~matplotlib.offsetbox.AnnotationBbox`,
+  :class:`~matplotlib.image.BboxImage`,
+  :class:`~matplotlib.offsetbox.OffsetBox`.
 
 0.6
 ---

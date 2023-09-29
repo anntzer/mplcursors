@@ -25,6 +25,7 @@ from matplotlib.contour import ContourSet
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage, BboxImage
 from matplotlib.lines import Line2D
+from matplotlib.offsetbox import AnnotationBbox, OffsetBox
 from matplotlib.patches import Patch, PathPatch, Polygon, Rectangle
 from matplotlib.quiver import Barbs, Quiver
 from matplotlib.text import Text
@@ -481,6 +482,21 @@ def _(container, event):
         idx, _ = sel.index
         target = container.stemlines.get_segments()[idx][-1]
         return Selection(container, target, sel.index, 0, None, None)
+
+
+@compute_pick.register(OffsetBox)
+def _(artist, event):
+    # Pass-through: actually picks a child artist.
+    return min(
+        filter(None, [compute_pick(child, event)
+                      for child in artist.get_children()]),
+        key=lambda sel: sel.dist, default=None)
+
+
+@compute_pick.register(AnnotationBbox)
+def _(artist, event):
+    # Pass-through: actually picks a child artist.
+    return compute_pick(artist.offsetbox, event)
 
 
 def _call_with_selection(func=None, *, argname="artist"):
