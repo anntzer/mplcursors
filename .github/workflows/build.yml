@@ -7,12 +7,12 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
         flag: [""]
         include:
-        - python-version: "3.6"
+        - python-version: "3.7"
           flag: "oldest"
-        - python-version: "3.11"
+        - python-version: "3.12"
           flag: "pre"
     steps:
     - uses: actions/checkout@v3
@@ -23,16 +23,14 @@ jobs:
       run: |
         case '${{ matrix.flag }}' in
         oldest)
-          PYTEST_VERSION='==3.7.1'
-          PYTEST_COV_VERSION='==2.9.0'
-          NUMPY_VERSION='==1.11.*'
+          NUMPY_VERSION='==1.14.*'
           MATPLOTLIB_VERSION='==3.1.0'
           ;;
         pre)
           PIP_INSTALL_PRE=true
           ;;
         esac &&
-        pip install --upgrade pip setuptools wheel pytest"$PYTEST_VERSION" pytest-cov"$PYTEST_COV_VERSION" &&
+        pip install --upgrade pip setuptools wheel pytest pytest-cov coverage[toml] &&
         # Force install of numpy before matplotlib.
         pip install --upgrade --upgrade-strategy=only-if-needed --only-binary=:all: numpy"$NUMPY_VERSION" &&
         pip install --upgrade --upgrade-strategy=only-if-needed matplotlib"$MATPLOTLIB_VERSION" &&

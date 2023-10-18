@@ -1,41 +1,44 @@
-from setupext import find_namespace_packages, setup
+from pathlib import Path
+import tokenize
+
+import setuptools
+from setuptools import Distribution
 
 
-setup.register_pth_hook("setup_mplcursors_pth.py", "mplcursors.pth")
+def register_pth_hook(source_path, pth_name):
+    """
+    ::
+        setup.register_pth_hook("hook_source.py", "hook_name.pth")  # Add hook.
+    """
+    with tokenize.open(source_path) as file:
+        source = file.read()
+    _pth_hook_mixin._pth_hooks.append((pth_name, source))
 
 
-setup(
-    name="mplcursors",
-    description="Interactive data selection cursors for Matplotlib.",
-    long_description=open("README.rst", encoding="utf-8").read(),
-    long_description_content_type="text/x-rst",
-    author="Antony Lee",
-    url="https://github.com/anntzer/mplcursors",
-    license="zlib",
-    classifiers=[
-        "Development Status :: 4 - Beta",
-        "Framework :: Matplotlib",
-        "License :: OSI Approved :: zlib/libpng License",
-        "Programming Language :: Python :: 3",
-    ],
-    packages=find_namespace_packages("lib"),
-    package_dir={"": "lib"},
-    python_requires=">=3.6",
-    setup_requires=["setuptools_scm"],
-    use_scm_version=lambda: {  # xref __init__.py
-        "version_scheme": "post-release",
-        "local_scheme": "node-and-date",
-        "write_to": "lib/mplcursors/_version.py",
-    },
-    install_requires=[
-        "matplotlib>=3.1,!=3.7.1",
-    ],
-    extras_require={
-        "docs": [
-            "pandas",
-            "pydata_sphinx_theme!=0.10.1",
-            "sphinx",
-            "sphinx-gallery",
-        ],
-    },
-)
+class _pth_hook_mixin:
+    _pth_hooks = []
+
+    def run(self):
+        super().run()
+        for pth_name, source in self._pth_hooks:
+            with Path(self.install_dir, pth_name).open("w") as file:
+                file.write(f"import os; exec({source!r})")
+
+    def get_outputs(self):
+        return (super().get_outputs()
+                + [str(Path(self.install_dir, pth_name))
+                   for pth_name, _ in self._pth_hooks])
+
+
+def setup(**kwargs):
+    cmdclass = kwargs.setdefault("cmdclass", {})
+    get = Distribution({"cmdclass": cmdclass}).get_command_class
+    cmdclass["develop"] = type(
+        "develop_with_pth_hook", (_pth_hook_mixin, get("develop")), {})
+    cmdclass["install_lib"] = type(
+        "install_lib_with_pth_hook", (_pth_hook_mixin, get("install_lib")), {})
+    setuptools.setup(**kwargs)
+
+
+register_pth_hook("setup_mplcursors_pth.py", "mplcursors.pth")
+setup()

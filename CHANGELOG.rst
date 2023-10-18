@@ -4,7 +4,8 @@ Changelog
 next
 ----
 
-- Mark Matplotlib 3.7.1 as incompatible.
+- Require Python 3.7 (due to setuptools support ranges); mark Matplotlib 3.7.1
+  as incompatible.
 - Highlights can be removed by right-clicking anywhere on the highlighting
   artist, not only on the annotation.
 

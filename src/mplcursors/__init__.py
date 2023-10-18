@@ -1,7 +1,11 @@
 try:
-    from ._version import version as __version__
+    import importlib.metadata as _im
 except ImportError:
-    __version__ = "(unknown version)"
+    import importlib_metadata as _im
+try:
+    __version__ = _im.version("mplcursors")
+except ImportError:
+    __version__ = "0+unknown"
 
 
 from ._mplcursors import Cursor, HoverMode, cursor

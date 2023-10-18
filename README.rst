@@ -45,7 +45,7 @@ As usual, install using pip:
 
 or your favorite package manager.
 
-Run tests with pytest_\≥3.7.1.
+Run tests with pytest_.
 
 .. _Matplotlib: https://matplotlib.org
 .. _mpldatacursor: https://github.com/joferkington/mpldatacursor
