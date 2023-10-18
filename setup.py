@@ -11,11 +11,11 @@ setup(
     long_description_content_type="text/x-rst",
     author="Antony Lee",
     url="https://github.com/anntzer/mplcursors",
-    license="MIT",
+    license="zlib",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Framework :: Matplotlib",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: zlib/libpng License",
         "Programming Language :: Python :: 3",
     ],
     packages=find_namespace_packages("lib"),
