@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.5.3
+-----
 
 - Require Python 3.7 (due to setuptools support ranges); mark Matplotlib 3.7.1
   as incompatible.
