@@ -525,7 +525,10 @@ def _format_coord_unspaced(ax, pos):
         return ""
     else:
         x, y = pos
-        return f"x={ax.format_xdata(x)}\ny={ax.format_ydata(y)}"
+        # In mpl<3.3 (before #16776) format_x/ydata included trailing
+        # spaces, hence the rstrip() calls.
+        return (f"x={ax.format_xdata(x).rstrip()}\n"
+                f"y={ax.format_ydata(y).rstrip()}")
 
 
 @functools.singledispatch
@@ -540,29 +543,6 @@ def get_ann_text(sel):
     warnings.warn(
         f"Annotation support for {type(sel.artist).__name__} is missing.")
     return ""
-
-
-def _strip_math(s):
-    return cbook.strip_math(s) if len(s) >= 2 and s[0] == s[-1] == "$" else s
-
-
-def _format_scalarmappable_value(artist, idx):  # matplotlib/matplotlib#12473.
-    data = artist.get_array()[idx]
-    if np.ndim(data) == 0:
-        if not artist.colorbar:
-            fig = Figure()
-            ax = fig.subplots()
-            artist.colorbar = Colorbar(ax, artist)
-            # This hack updates the ticks without actually paying the cost of
-            # drawing (RendererBase.draw_path raises NotImplementedError).
-            try:
-                ax.yaxis.draw(RendererBase())
-            except NotImplementedError:
-                pass
-        fmt = artist.colorbar.formatter.format_data_short
-        return "[" + _strip_math(fmt(data).strip()) + "]"
-    else:
-        return artist.format_cursor_data(data)  # Includes brackets.
 
 
 @get_ann_text.register(Line2D)
@@ -581,7 +561,7 @@ def _(sel):
             # to involve an arbitrary scaling).
             and artist.get_array() is not None
             and len(artist.get_array()) == len(artist.get_offsets())):
-        value = _format_scalarmappable_value(artist, sel.index)
+        value = artist.format_cursor_data(artist.get_array()[sel.index])
         text = f"{text}\n{value}"
     if re.match("[^_]", label):
         text = f"{label}\n{text}"
@@ -596,7 +576,7 @@ _Event = namedtuple("_Event", "xdata ydata")
 def _(sel):
     artist = sel.artist
     text = _format_coord_unspaced(artist.axes, sel.target)
-    cursor_text = _format_scalarmappable_value(artist, sel.index)
+    cursor_text = artist.format_cursor_data(artist.get_array()[sel.index])
     return f"{text}\n{cursor_text}"
 
 

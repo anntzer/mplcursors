@@ -251,16 +251,16 @@ def test_image(ax, origin):
     # Annotation text includes image value.
     _process_event("__mouse_click__", ax, (.25, .25), 1)
     sel, = cursor.selections
-    assert _parse_annotation(
-        sel, r"x=(.*)\ny=(.*)\n\[0\]") == approx((.25, .25))
+    assert _parse_annotation(  # Since mpl3.5 the value repr has extra zeros.
+        sel, r"x=(.*)\ny=(.*)\n\[0(?:\.00)?\]") == approx((.25, .25))
     # Moving around.
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     sel, = cursor.selections
-    assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[1\]") == (1, 0)
+    assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[1(?:\.00)?\]") == (1, 0)
     assert array[sel.index] == 1
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     sel, = cursor.selections
-    assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0\]") == (0, 0)
+    assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0(?:\.00)?\]") == (0, 0)
     assert array[sel.index] == 0
     _process_event("key_press_event", ax, (.123, .456), "shift+up")
     sel, = cursor.selections
@@ -269,7 +269,7 @@ def test_image(ax, origin):
     assert array[sel.index] == {"upper": 4, "lower": 2}[origin]
     _process_event("key_press_event", ax, (.123, .456), "shift+down")
     sel, = cursor.selections
-    assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0\]") == (0, 0)
+    assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0(?:\.00)?\]") == (0, 0)
     assert array[sel.index] == 0
 
     cursor = mplcursors.cursor()
