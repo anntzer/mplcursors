@@ -376,7 +376,7 @@ class Cursor:
         get_cached_renderer = (
             figure.canvas.get_renderer
             if hasattr(figure.canvas, "get_renderer")
-            else axes.get_renderer_cache)  # matplotlib <3.6.
+            else axes.get_renderer_cache)  # mpl<3.6.
         renderer = get_cached_renderer()
         if renderer is None:
             figure.canvas.draw()  # Needed below anyways.
