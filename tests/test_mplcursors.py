@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 import copy
 import functools
 import gc
@@ -44,12 +45,6 @@ def cleanup():
         finally:
             mplcursors.__warningregistry__ = {}
             plt.close("all")
-
-
-def _internal_warnings(record):
-    return [
-        warning for warning in record
-        if Path(mplcursors.__file__).parent in Path(warning.filename).parents]
 
 
 def _process_event(name, ax, coords, *args):
@@ -244,9 +239,7 @@ def test_nan(ax, plot_args, click, targets):
 def test_repeated_point(ax):
     ax.plot([0, 1, 1, 2], [0, 1, 1, 2])
     cursor = mplcursors.cursor()
-    with pytest.warns(None) as record:
-        _process_event("__mouse_click__", ax, (.5, .5), 1)
-    assert not _internal_warnings(record)
+    _process_event("__mouse_click__", ax, (.5, .5), 1)  # Should not warn.
 
 
 @pytest.mark.parametrize("origin", ["lower", "upper"])
@@ -388,8 +381,7 @@ def test_dataless_errorbar(ax):
 
 def test_stem(ax):
     try:  # stem use_line_collection API change.
-        with pytest.warns(None):
-            ax.stem([1, 2, 3], use_line_collection=True)
+        ax.stem([1, 2, 3], use_line_collection=True)
     except TypeError:
         ax.stem([1, 2, 3])
     cursor = mplcursors.cursor()
@@ -409,10 +401,9 @@ def test_stem(ax):
 def test_misc_artists(ax, plotter, warns):
     plotter(ax)
     cursor = mplcursors.cursor()
-    with pytest.warns(None) as record:
+    with pytest.warns(UserWarning) if warns else ExitStack():
         _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert len(cursor.selections) == 0
-    assert len(_internal_warnings(record)) == warns
 
 
 def test_indexless_projections(fig):

@@ -1,6 +1,11 @@
 Changelog
 =========
 
+next
+----
+
+- Fix compatibility with Matplotlib 3.9.
+
 0.5.3
 -----
 

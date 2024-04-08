@@ -19,6 +19,7 @@ from matplotlib.axes import Axes
 from matplotlib.backend_bases import RendererBase
 from matplotlib.collections import (
     LineCollection, PatchCollection, PathCollection)
+from matplotlib.colorbar import Colorbar
 from matplotlib.container import BarContainer, ErrorbarContainer, StemContainer
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
@@ -513,14 +514,18 @@ def _call_with_selection(func=None, *, argname="artist"):
     return wrapper
 
 
-def _format_coord_unspaced(ax, xy):
-    # Un-space-pad, remove empty coordinates from the output of
-    # `format_{x,y}data`, and rejoin with newlines.
-    return "\n".join(
-        line for line, empty in zip(
-            re.split(",? +", ax.format_coord(*xy)),
-            itertools.chain(["x=", "y=", "z="], itertools.repeat(None)))
-        if line != empty).rstrip()
+def _format_coord_unspaced(ax, pos):
+    # This used to directly post-process the output of format_coord(), but got
+    # switched to handling special projections separately due to the change in
+    # formatting for rectilinear coordinates.
+    if ax.name == "polar":
+        return ax.format_coord(*pos).replace(", ", "\n")
+    elif ax.name == "3d":  # Need to retrieve the actual line data coordinates.
+        warnings.warn("3d coordinates not supported yet")
+        return ""
+    else:
+        x, y = pos
+        return f"x={ax.format_xdata(x)}\ny={ax.format_ydata(y)}"
 
 
 @functools.singledispatch
@@ -547,7 +552,7 @@ def _format_scalarmappable_value(artist, idx):  # matplotlib/matplotlib#12473.
         if not artist.colorbar:
             fig = Figure()
             ax = fig.subplots()
-            artist.colorbar = fig.colorbar(artist, cax=ax)
+            artist.colorbar = Colorbar(ax, artist)
             # This hack updates the ticks without actually paying the cost of
             # drawing (RendererBase.draw_path raises NotImplementedError).
             try:

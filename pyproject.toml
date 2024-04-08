@@ -44,7 +44,7 @@ source = ["src/", "/**/python*/site-packages/"]
 
 [tool.pytest.ini_options]
 filterwarnings = [
-    "error",
+    "error",  # Required!  Some tests check that no warnings are being emitted.
     "ignore::DeprecationWarning",
     "error::DeprecationWarning:mplcursors",
 ]
