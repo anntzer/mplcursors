@@ -636,6 +636,7 @@ def test_invalid_args():
                   bindings={"foo": 42})
     pytest.raises(ValueError, mplcursors.cursor,
                   bindings={"select": 1, "deselect": 1})
+    mplcursors.cursor(bindings={"select": None, "deselect": None})
     pytest.raises(ValueError, mplcursors.cursor().connect,
                   "foo")
 
