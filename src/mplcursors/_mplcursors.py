@@ -269,7 +269,7 @@ class Cursor:
             action, key = bindings_items[i]
             for j in range(i):
                 other_action, other_key = bindings_items[j]
-                if key == other_key:
+                if key == other_key and key is not None:
                     raise ValueError(
                         f"Duplicate bindings: {key} is used for "
                         f"{other_action} and for {action}")

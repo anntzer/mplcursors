@@ -5,6 +5,7 @@ next
 ----
 
 - Fix compatibility with Matplotlib 3.9.
+- Fix disabling multiple key bindings.
 
 0.5.3
 -----
