@@ -6,6 +6,7 @@ next
 
 - Fix compatibility with Matplotlib 3.9.
 - Fix disabling multiple key bindings.
+- Remove the deprecated ``Selection.target.index``.
 
 0.5.3
 -----
