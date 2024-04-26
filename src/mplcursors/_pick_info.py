@@ -99,7 +99,7 @@ class ContainerArtist:
 
 
 Selection = namedtuple(
-    "Selection", "artist target_ index dist annotation extras")
+    "Selection", "artist target index dist annotation extras")
 Selection.__doc__ = """
     A selection.
 
@@ -116,11 +116,8 @@ Selection.__eq__ = lambda self, other: self is other
 Selection.__ne__ = lambda self, other: self is not other
 Selection.artist.__doc__ = (
     "The selected artist.")
-Selection.target_.__doc__ = """
-The point picked within the artist, in data coordinates.
-
-:meta private:
-"""
+Selection.target.__doc__ = (
+    "The point picked within the artist, in data coordinates.")
 Selection.index.__doc__ = (
     "The index of the selected point, within the artist data.")
 Selection.dist.__doc__ = (
@@ -130,24 +127,6 @@ Selection.annotation.__doc__ = (
 Selection.extras.__doc__ = (
     "An additional list of artists (e.g., highlighters) that will be cleared "
     "at the same time as the annotation.")
-
-
-class _Target(np.ndarray):
-    def __new__(cls, sel):
-        obj = np.asarray(sel.target_).view(cls)
-        obj._sel = sel
-        return obj
-
-    @property
-    def index(self):
-        warnings.warn(
-            "Selection.target.index is deprecated and will be removed in the "
-            "future; use Selection.index instead.")
-        return self._sel.index
-
-
-Selection.target = property(
-    _Target, doc="The point picked within the artist, in data coordinates.")
 
 
 @functools.singledispatch
@@ -676,7 +655,7 @@ def _move_within_points(sel, xys, *, key):
             new_idx = int(np.floor(sel.index) + 1) % len(xys)
         else:
             return sel
-        sel = sel._replace(target_=xys[new_idx], index=new_idx, dist=0)
+        sel = sel._replace(target=xys[new_idx], index=new_idx, dist=0)
         if np.isfinite(sel.target).all():
             return sel
 
@@ -722,7 +701,7 @@ def _(sel, *, key):
         ymin, ymax = ymax, ymin
     low, high = np.array([[xmin, ymin], [xmax, ymax]])
     target = ((idxs + .5) / ns)[::-1] * (high - low) + low
-    return sel._replace(target_=target, index=tuple(idxs))
+    return sel._replace(target=target, index=tuple(idxs))
 
 
 @move.register(ContainerArtist)
