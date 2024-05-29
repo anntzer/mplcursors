@@ -539,8 +539,8 @@ class Cursor:
         Remove all `Selection`\\s, disconnect all callbacks, and allow the
         cursor to be garbage collected.
         """
-        for disconnectors in self._disconnectors:
-            disconnectors()
+        for disconnector in self._disconnectors:
+            disconnector()
         for sel in self.selections:
             self.remove_selection(sel)
         for s in type(self)._keep_alive.values():
