@@ -563,9 +563,9 @@ def _(sel):
 @_call_with_selection
 def _(sel):
     artist = sel.artist
-    text = "{}\n{}".format(
+    text = "{}\n({!s}, {!s})".format(
         _format_coord_unspaced(artist.axes, sel.target),
-        (artist.u[sel.index], artist.v[sel.index]))
+        artist.u[sel.index], artist.v[sel.index])
     return text
 
 
@@ -573,9 +573,9 @@ def _(sel):
 @_call_with_selection
 def _(sel):
     artist = sel.artist
-    text = "{}\n{}".format(
+    text = "{}\n({!s}, {!s})".format(
         _format_coord_unspaced(artist.axes, sel.target),
-        (artist.U[sel.index], artist.V[sel.index]))
+        artist.U[sel.index], artist.V[sel.index])
     return text
 
 
