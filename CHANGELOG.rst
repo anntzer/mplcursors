@@ -4,7 +4,7 @@ Changelog
 next
 ----
 
-- Fix compatibility with Matplotlib 3.9.
+- Fix compatibility with Matplotlib 3.9 and numpy 2.
 - Fix disabling multiple key bindings.
 - Remove the deprecated ``Selection.target.index``.
 
