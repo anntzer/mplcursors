@@ -220,7 +220,7 @@ def _compute_projection_pick(artist, path, xy):
     # following are `LINETO` or `CLOSEPOLY`, and the last one is `STOP`, i.e.
     #     codes = path.codes
     #     assert (codes[0], codes[-1]) == (path.MOVETO, path.STOP)
-    #     assert np.in1d(codes[1:-1], [path.LINETO, path.CLOSEPOLY]).all()
+    #     assert np.isin(codes[1:-1], [path.LINETO, path.CLOSEPOLY]).all()
     vertices = tpath.vertices[:-1]
     codes = tpath.codes[:-1]
     mt_idxs, = (codes == tpath.MOVETO).nonzero()
