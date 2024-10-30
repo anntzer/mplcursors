@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.6
+---
 
 - Fix compatibility with Matplotlib 3.9 and numpy 2.
 - Fix disabling multiple key bindings.
