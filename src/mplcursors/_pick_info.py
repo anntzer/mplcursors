@@ -21,6 +21,7 @@ from matplotlib.collections import (
     LineCollection, PatchCollection, PathCollection)
 from matplotlib.colorbar import Colorbar
 from matplotlib.container import BarContainer, ErrorbarContainer, StemContainer
+from matplotlib.contour import ContourSet
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 from matplotlib.lines import Line2D
@@ -129,6 +130,11 @@ Selection.extras.__doc__ = (
     "at the same time as the annotation.")
 
 
+def _gen_warning_text(kind, tp):
+    return "{} support for {} (MRO: {}) is missing.".format(
+        kind, tp.__name__, ", ".join(cls.__name__ for cls in tp.__mro__))
+
+
 @functools.singledispatch
 def compute_pick(artist, event):
     """
@@ -139,7 +145,7 @@ def compute_pick(artist, event):
     This is a single-dispatch function; implementations for various artist
     classes follow.
     """
-    warnings.warn(f"Pick support for {type(artist).__name__} is missing.")
+    warnings.warn(_gen_warning_text("Pick", type(artist)))
 
 
 class Index:
@@ -241,6 +247,7 @@ def _compute_projection_pick(artist, path, xy):
     # Projections.
     projs = vertices[:-1] + dot[:, None] * us
     ds = np.hypot(*(xy - projs).T, out=vs[:, 1])
+    ds[mt_idxs[1:] - 1] = np.nan
     try:
         argmin = np.nanargmin(ds)
     except ValueError:  # Raised by nanargmin([nan]).
@@ -344,20 +351,32 @@ def _(artist, event):
         return Selection(artist, target, inds[argmin], ds[argmin], None, None)
     elif len(paths) and len(offsets):
         # Note that this won't select implicitly closed paths.
-        sels = [*filter(None, [
+        sels = [
             _compute_projection_pick(
                 artist,
                 Affine2D().translate(*offsets[ind % len(offsets)])
                 .transform_path(paths[ind % len(paths)]),
                 (event.x, event.y))
-            for ind in range(max(len(offsets), len(paths)))])]
-        if not sels:
+            for ind in range(max(len(offsets), len(paths)))]
+        if not any(sels):
             return None
-        idx = min(range(len(sels)), key=lambda idx: sels[idx].dist)
+        idx = min(range(len(sels)),
+                  key=lambda idx: sels[idx].dist if sels[idx] else np.inf)
         sel = sels[idx]
         if sel.dist >= artist.get_pickradius():
             return None
         return sel._replace(artist=artist, index=(idx, sel.index))
+
+
+# This registration has no effect on mpl<3.8, where ContourSets are not artists
+# and thus do not appear in the draw tree.
+# Filled contours are picked identically to unfilled ones, in particular
+# because Path.contains_point does not handle holes in paths correctly; thus we
+# cannot determine which contour, among many nested ones, actually contains the
+# a point between two layers.
+@compute_pick.register(ContourSet)
+def _(artist, event):
+    return compute_pick.dispatch(LineCollection)(artist, event)
 
 
 @compute_pick.register(AxesImage)
@@ -521,8 +540,7 @@ def get_ann_text(sel):
     This is a single-dispatch function; implementations for various artist
     classes follow.
     """
-    warnings.warn(
-        f"Annotation support for {type(sel.artist).__name__} is missing.")
+    warnings.warn(_gen_warning_text("Annotation", type(sel.artist)))
     return ""
 
 
@@ -549,7 +567,12 @@ def _(sel):
     return text
 
 
-_Event = namedtuple("_Event", "xdata ydata")
+@get_ann_text.register(ContourSet)
+@_call_with_selection
+def _(sel):
+    artist = sel.artist
+    return "{}\n{}".format(_format_coord_unspaced(artist.axes, sel.target),
+                           sel.artist.levels[sel.index[0] + sel.artist.filled])
 
 
 @get_ann_text.register(AxesImage)
@@ -729,8 +752,7 @@ def make_highlight(sel, *, highlight_kwargs):
     This is a single-dispatch function; implementations for various artist
     classes follow.
     """
-    warnings.warn(
-        f"Highlight support for {type(sel.artist).__name__} is missing.")
+    warnings.warn(_gen_warning_text("Highlight", type(sel.artist)))
 
 
 def _set_valid_props(artist, kwargs):
