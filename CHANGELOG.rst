@@ -1,6 +1,11 @@
 Changelog
 =========
 
+next
+----
+
+- Support new-style (Matplotlib≥3.8) contour plots.
+
 0.6
 ---
 

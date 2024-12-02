@@ -325,6 +325,19 @@ def test_patchcollection(ax):
     assert cursor.selections[0].index == approx((1, 2), abs=2e-2)
 
 
+@pytest.mark.skipif(getattr(mpl, "__version_info__", ()) < (3, 8),
+                    reason="No support for old-style contours.")
+def test_contour(ax):
+    ax.contour([[0, 1], [0, 1]], levels=[.5])
+    cursor = mplcursors.cursor()
+    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    sel, = cursor.selections
+    x, y, v = _parse_annotation(sel, r"x=(.*)\ny=(.*)\n(.*)")
+    # The precision is really bad :(
+    assert (x, y) == approx((.5, .5), abs=2e-2)
+    assert v == .5
+
+
 @pytest.mark.parametrize("plotter", [Axes.quiver, Axes.barbs])
 def test_quiver_and_barbs(ax, plotter):
     plotter(ax, range(3), range(3))
@@ -557,9 +570,6 @@ def test_autoalign(ax):
             and sel.annotation.get_va() == "bottom")
 
 
-@pytest.mark.xfail(
-    int(mpl.__version__.split(".")[0]) < 3,
-    reason="Matplotlib fails to disconnect dragging callbacks.")
 def test_drag(ax, capsys):
     l, = ax.plot([0, 1])
     cursor = mplcursors.cursor()
