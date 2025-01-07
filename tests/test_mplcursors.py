@@ -681,6 +681,16 @@ def test_gc(ax):
     assert not f_cursor.alive
 
 
+def test_fixed_ticks_nonstr_labels(ax):
+    ax.set_xticks([0])
+    ax.set_xticklabels([0])  # The formatter will return the label as an int.
+    ax.plot(0, 0, ".")
+    cursor = mplcursors.cursor(ax)
+    _process_event("__mouse_click__", ax, (0, 0), 1)
+    # Just check that this does not error out, but don't check the annotation
+    # text (it starts with "x=0" since #17266 but with "x=" before that).
+
+
 @pytest.mark.parametrize(
     "example",
     [path for path in Path("examples").glob("*.py")
