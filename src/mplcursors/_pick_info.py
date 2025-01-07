@@ -506,8 +506,8 @@ def _format_coord_unspaced(ax, pos):
         x, y = pos
         # In mpl<3.3 (before #16776) format_x/ydata included trailing
         # spaces, hence the rstrip() calls.
-        return (f"x={ax.format_xdata(x).rstrip()}\n"
-                f"y={ax.format_ydata(y).rstrip()}")
+        return (f"x={str(ax.format_xdata(x)).rstrip()}\n"
+                f"y={str(ax.format_ydata(y)).rstrip()}")
 
 
 @functools.singledispatch
