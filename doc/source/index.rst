@@ -78,12 +78,12 @@ the `Cursor`’s behavior; please refer to that class' documentation.
 Activation by environment variable
 ----------------------------------
 
-It is possible to use :mod:`mplcursors` without modifying *any* source code:
-setting the :envvar:`MPLCURSORS` environment variable to a JSON-encoded dict
-will patch `Figure.draw <matplotlib.figure.Figure.draw>` to automatically
-call `cursor` (with the passed keyword arguments, if any) after the figure is
-drawn for the first time (more precisely, after the first draw that includes a
-selectable artist). Typical settings include::
+To globally configure the use of :mod:`mplcursors`, set the
+:envvar:`MPLCURSORS` environment variable to a JSON-encoded dict, and add
+``"mplcursors:install"`` to ``mpl.rcParams["figure.hooks"]`` (this requires
+Matplotlib≥3.7).  This hook arranges for a cursor to be registered on
+each figure the first time it is drawn, passing the options specified in
+:envvar:`MPLCURSORS` to `cursor`.
 
    $ MPLCURSORS={} python foo.py
 
@@ -91,11 +91,13 @@ and::
 
    $ MPLCURSORS='{"hover": 1}' python foo.py
 
-Note that this will only work if :mod:`mplcursors` has been installed, not if
-it is simply added to the :envvar:`PYTHONPATH`.
-
 Note that this will not pick up artists added to the figure after the first
-draw, e.g. through interactive callbacks.
+draw, e.g. when working interactively or when artists are added through
+interactive callbacks.
+
+In earlier versions, registration in ``mpl.rcParams["figure.hooks"]`` was not
+needed; the behavior has changed because that implementation led to complex
+interactions with setuptools and the import machinery.
 
 .. _default-ui:
 
