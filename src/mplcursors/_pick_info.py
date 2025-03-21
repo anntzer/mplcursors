@@ -23,12 +23,13 @@ from matplotlib.colorbar import Colorbar
 from matplotlib.container import BarContainer, ErrorbarContainer, StemContainer
 from matplotlib.contour import ContourSet
 from matplotlib.figure import Figure
-from matplotlib.image import AxesImage
+from matplotlib.image import AxesImage, BboxImage
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, PathPatch, Polygon, Rectangle
 from matplotlib.quiver import Barbs, Quiver
 from matplotlib.text import Text
-from matplotlib.transforms import Affine2D
+from matplotlib.transforms import (
+    Affine2D, Bbox, BboxTransformFrom, BboxTransformTo)
 import numpy as np
 
 
@@ -380,8 +381,9 @@ def _(artist, event):
 
 
 @compute_pick.register(AxesImage)
+@compute_pick.register(BboxImage)
 def _(artist, event):
-    if type(artist) != AxesImage:
+    if type(artist) not in compute_pick.registry:
         # Skip and warn on subclasses (`NonUniformImage`, `PcolorImage`) as
         # they do not implement `contains` correctly.  Even if they did, they
         # would not support moving as we do not know where a given index maps
@@ -391,14 +393,13 @@ def _(artist, event):
     if not contains:
         return
     ns = np.asarray(artist.get_array().shape[:2])[::-1]  # (y, x) -> (x, y)
-    xy = np.array([event.xdata, event.ydata])
-    xmin, xmax, ymin, ymax = artist.get_extent()
-    # Handling of "upper" origin copied from AxesImage.get_cursor_data.
+    xf, yf = BboxTransformFrom(
+        artist.get_window_extent()).transform([event.x, event.y])
     if artist.origin == "upper":
-        ymin, ymax = ymax, ymin
-    low, high = np.array([[xmin, ymin], [xmax, ymax]])
-    idxs = ((xy - low) / (high - low) * ns).astype(int)[::-1]
-    return Selection(artist, xy, tuple(idxs), 0, None, None)
+        yf = 1 - yf
+    idxs = np.minimum(((xf, yf) * ns).astype(int), ns - 1)[::-1]
+    return Selection(artist, (event.xdata, event.ydata),
+                     tuple(idxs), 0, None, None)
 
 
 @compute_pick.register(Barbs)
@@ -576,6 +577,7 @@ def _(sel):
 
 
 @get_ann_text.register(AxesImage)
+@get_ann_text.register(BboxImage)
 @_call_with_selection
 def _(sel):
     artist = sel.artist
@@ -712,20 +714,26 @@ def _(sel, *, key):
 
 
 @move.register(AxesImage)
+@move.register(BboxImage)
 @_call_with_selection
 def _(sel, *, key):
     ns = sel.artist.get_array().shape[:2]
-    delta = (
+    delta = np.array(
         {"left": [0, -1], "right": [0, +1], "down": [-1, 0], "up": [+1, 0]}[
-            key]
-        * np.array([-1 if sel.artist.axes.yaxis.get_inverted() else +1,
-                    -1 if sel.artist.axes.xaxis.get_inverted() else +1]))
-    idxs = (sel.index + delta) % ns
-    xmin, xmax, ymin, ymax = sel.artist.get_extent()
+            key])
     if sel.artist.origin == "upper":
-        ymin, ymax = ymax, ymin
-    low, high = np.array([[xmin, ymin], [xmax, ymax]])
-    target = ((idxs + .5) / ns)[::-1] * (high - low) + low
+        delta[0] *= -1
+    idxs = (sel.index + delta) % ns
+    yf, xf = (idxs + .5) / ns
+    if sel.artist.origin == "upper":
+        yf = 1 - yf
+    if isinstance(sel.artist, AxesImage):  # Same as below, but more accurate.
+        x0, x1, y0, y1 = sel.artist.get_extent()
+        trf = BboxTransformTo(Bbox.from_extents([x0, y0, x1, y1]))
+    elif isinstance(sel.artist, BboxImage):
+        trf = (BboxTransformTo(sel.artist.get_window_extent())
+               - sel.artist.axes.transData)
+    target = trf.transform([xf, yf])
     return sel._replace(target=target, index=tuple(idxs))
 
 

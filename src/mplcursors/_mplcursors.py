@@ -92,6 +92,7 @@ def _iter_axes_subartists(ax):
     yield from ax.lines
     yield from ax.patches
     yield from ax.texts
+    yield from ax.artists
 
 
 def _is_alive(artist):

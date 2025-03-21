@@ -243,9 +243,22 @@ def test_repeated_point(ax):
 
 
 @pytest.mark.parametrize("origin", ["lower", "upper"])
-def test_image(ax, origin):
+@pytest.mark.parametrize("kind", ["AxesImage", "BboxImage"])
+def test_image(ax, origin, kind):
     array = np.arange(6).reshape((3, 2))
-    ax.imshow(array, origin=origin)
+    im = ax.imshow(array, origin=origin)  # Always set limits & orientation.
+
+    if kind == "AxesImage":
+        xzero = 0
+    elif kind == "BboxImage":
+        im.remove()
+        ax.add_artist(
+            mpl.image.BboxImage(
+                mpl.transforms.TransformedBbox(
+                    mpl.transforms.Bbox([[-.5, -.5], [1.5, 2.5]]), ax.transData),
+                data=array, origin=origin))
+        ax.figure.canvas.draw()  # Force image autonorm.
+        xzero = approx(0)
 
     cursor = mplcursors.cursor()
     # Annotation text includes image value.
@@ -260,20 +273,22 @@ def test_image(ax, origin):
     assert array[sel.index] == 1
     _process_event("key_press_event", ax, (.123, .456), "shift+right")
     sel, = cursor.selections
-    assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0(?:\.00)?\]") == (0, 0)
+    assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0(?:\.00)?\]")
+            == (xzero, 0))
     assert array[sel.index] == 0
     _process_event("key_press_event", ax, (.123, .456), "shift+up")
     sel, = cursor.selections
     assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[(.*)\]")
-            == {"upper": (0, 2, 4), "lower": (0, 1, 2)}[origin])
+            == {"upper": (xzero, 2, 4), "lower": (0, 1, 2)}[origin])
     assert array[sel.index] == {"upper": 4, "lower": 2}[origin]
     _process_event("key_press_event", ax, (.123, .456), "shift+down")
     sel, = cursor.selections
-    assert _parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0(?:\.00)?\]") == (0, 0)
+    assert (_parse_annotation(sel, r"x=(.*)\ny=(.*)\n\[0(?:\.00)?\]")
+            == (xzero, 0))
     assert array[sel.index] == 0
 
     cursor = mplcursors.cursor()
-    # Not picking out-of-axes or of image.
+    # Not picking out of axes or out of image.
     _process_event("__mouse_click__", ax, (-1, -1), 1)
     assert len(cursor.selections) == 0
     ax.set(xlim=(-1, None), ylim=(-1, None))
