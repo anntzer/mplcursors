@@ -238,15 +238,15 @@ def _compute_projection_pick(artist, path, xy):
     with np.errstate(invalid="ignore"):
         # Results in 0/0 for repeated consecutive points.
         us /= ls[:, None]
-    # Vectors from each vertex to the event (overwritten below).
+    # Vectors from each vertex to the event.
     vs = xy - vertices[:-1]
     # Clipped dot products -- `einsum` cannot be done in place, `clip` can.
     # `clip` can trigger invalid comparisons if there are nan points.
     with np.errstate(invalid="ignore"):
-        dot = np.clip(np.einsum("ij,ij->i", vs, us), 0, ls, out=vs[:, 0])
+        dot = np.clip(np.einsum("ij,ij->i", vs, us), 0, ls)
     # Projections.
     projs = vertices[:-1] + dot[:, None] * us
-    ds = np.hypot(*(xy - projs).T, out=vs[:, 1])
+    ds = np.hypot(*(xy - projs).T)
     ds[mt_idxs[1:] - 1] = np.nan
     try:
         argmin = np.nanargmin(ds)
