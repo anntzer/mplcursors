@@ -7,6 +7,8 @@ next
 - Mark Matplotlib 3.10.3 as incompatible.
 - Require registration in ``mpl.rcParams["figure.hooks"]`` for the
   :envvar:`MPLCURSORS` environment variable.
+- Added `Cursor.select_at` to trigger a selection at a given position.  This
+  API is experimental and subject to future changes.
 - Support new-style (Matplotlib≥3.8) contour plots.
 - Support :class:`~matplotlib.offsetbox.AnnotationBbox`,
   :class:`~matplotlib.image.BboxImage`,

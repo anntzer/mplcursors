@@ -668,6 +668,20 @@ def test_keys(ax):
     assert len(cursor.selections) == 0
 
 
+def test_select_at(ax):
+    l1, = ax.plot([0, 1])
+    l2, = ax.plot([1, 0])
+    cursor = mplcursors.cursor([l1])
+    assert cursor.select_at(l1, (.5, .5)) is not None
+    assert len(cursor.selections) == 1
+    cursor.remove_selection(cursor.selections[0])
+    assert len(cursor.selections) == 0
+    assert cursor.select_at(ax, (.2, .2)) is not None
+    assert len(cursor.selections) == 1
+    with pytest.raises(ValueError):
+        cursor.select_at(l2, (.5, .5))
+
+
 def test_convenience(ax):
     l, = ax.plot([1, 2])
     assert len(mplcursors.cursor().artists) == 1

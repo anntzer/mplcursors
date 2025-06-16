@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from contextlib import suppress
 import copy
 from enum import IntEnum
+import functools
 from functools import partial
 import sys
 import weakref
@@ -9,6 +10,7 @@ from weakref import WeakKeyDictionary, WeakSet
 
 import matplotlib as mpl
 from matplotlib.axes import Axes
+from matplotlib.backend_bases import MouseEvent
 from matplotlib.container import Container
 from matplotlib.figure import Figure
 import numpy as np
@@ -434,8 +436,8 @@ class Cursor:
             fig.canvas.blit()
         # Removal comes after addition so that the fast blitting path works.
         if not self._multiple:
-            for sel in self.selections[:-1]:
-                self.remove_selection(sel)
+            for other in self.selections[:-1]:
+                self.remove_selection(other)
         return sel
 
     def add_highlight(self, artist, *args, **kwargs):
@@ -573,17 +575,9 @@ class Cursor:
                 and (event.canvas.widgetlock.locked() == event.dblclick
                      or self._hover))
 
-    def _on_select_event(self, event):
-        if (not self._filter_mouse_event(event)
-                # See _on_pick.  (We only suppress selects, not deselects.)
-                or event in self._suppressed_events):
-            return
-        # Work around lack of support for twinned axes.
-        per_axes_event = {ax: _reassigned_axes_event(event, ax)
-                          for ax in {artist.axes for artist in self.artists}}
-        seen_pi = False
-        duplicates = {(other.artist, tuple(other.target))
-                      for other in self._selections}
+    def _gen_sorted_candidates(self, event):
+        per_axes_event = functools.lru_cache(None)(
+            partial(_reassigned_axes_event, event))  # Fix twin axes support.
         pifas = []
         for artist in self.artists:
             if (artist.axes is None  # Removed or figure-level artist.
@@ -591,18 +585,27 @@ class Cursor:
                     or not artist.get_visible()
                     or not artist.axes.contains(event)[0]):  # Cropped by axes.
                 continue
-            pi = _pick_info.compute_pick(artist, per_axes_event[artist.axes])
+            pi = _pick_info.compute_pick(artist, per_axes_event(artist.axes))
             if pi:
-                seen_pi = True
-                # If the pick corresponds to an already selected artist at the
-                # same point, the user is likely just dragging it.
-                if (pi.artist, tuple(pi.target)) not in duplicates:
-                    pifas.append((pi, artist.figure, artist.axes))
-        pifa = min(pifas, key=lambda pifa: pifa[0].dist, default=None)
-        if pifa:
-            pi, fig, ax = pifa
-            self.add_selection(pi, fig, ax)
-        elif not seen_pi and self._hover == HoverMode.Transient:
+                pifas.append((pi, artist.figure, artist.axes))
+        return sorted(pifas, key=lambda pifa: pifa[0].dist)
+
+    def _on_select_event(self, event):
+        if (not self._filter_mouse_event(event)
+                # See _on_pick.  (We only suppress selects, not deselects.)
+                or event in self._suppressed_events):
+            return
+        candidates = self._gen_sorted_candidates(event)
+        # If the pick corresponds to an already selected artist at the same
+        # point, the user is likely just dragging it.
+        duplicates = {(other.artist, tuple(other.target))
+                      for other in self._selections}
+        candidates_nodupe = [
+            (pi, fig, ax) for pi, fig, ax in candidates
+            if (pi.artist, tuple(pi.target)) not in duplicates]
+        if candidates_nodupe:
+            return self.add_selection(*candidates_nodupe[0])
+        elif not candidates and self._hover == HoverMode.Transient:
             # In transient hover mode, selections should be cleared if no
             # candidate picks *including duplicates* have been seen.
             for sel in self.selections:
@@ -642,6 +645,33 @@ class Cursor:
                 if self._multiple:  # Else, already removed.
                     self.remove_selection(sel)  # Also unsets .figure, .axes.
                 break
+
+    def select_at(self, target, xy):
+        """
+        Trigger and return a selection on *target* at data coordinates *xy*.
+
+        *target* can be an axes or an artist.  The selection is guaranteed to
+        be, in the first case, on a child artist; in the second case, on that
+        specific artist.  If a click at *xy* does not result in a valid
+        selection, then None is returned.
+
+        Note
+        ----
+        This API is experimental and subject to future adjustments.
+        """
+        if isinstance(target, Axes):
+            ax = target
+        elif target in self.artists:
+            ax = target.axes
+        else:
+            raise ValueError(f"Not a valid target: {target}")
+        event = MouseEvent("button_press_event", ax.figure.canvas,
+                           *ax.transData.transform(xy))
+        candidates = [
+            (pi, fig, ax) for pi, fig, ax in self._gen_sorted_candidates(event)
+            if target in [pi.artist, ax]]
+        if candidates:
+            return self.add_selection(*candidates[0])
 
     def remove_selection(self, sel):
         """Remove a `Selection`."""
