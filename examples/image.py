@@ -17,7 +17,7 @@ axs[0].imshow(data, origin="lower")
 axs[1].imshow(data, origin="upper", extent=[2, 3, 4, 5])
 
 axs[1].set(xlim=(2, 4), ylim=(4, 6))
-axs[1].add_artist(AnnotationBbox(OffsetImage(data, axes=axs[1]), (3.5, 5.5)))
+axs[1].add_artist(AnnotationBbox(OffsetImage(data), (3.5, 5.5)))
 
 mplcursors.cursor()
 

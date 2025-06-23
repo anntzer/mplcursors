@@ -570,7 +570,7 @@ def get_ann_text(sel):
 def _(sel):
     artist = sel.artist
     label = artist.get_label() or ""
-    text = _format_coord_unspaced(artist.axes, sel.target)
+    text = _format_coord_unspaced(sel.annotation.axes, sel.target)
     if (_is_scatter(artist)
             # Heuristic: is the artist colormapped?
             # Note that this doesn't handle size-mapping (which is more likely
@@ -588,8 +588,9 @@ def _(sel):
 @_call_with_selection
 def _(sel):
     artist = sel.artist
-    return "{}\n{}".format(_format_coord_unspaced(artist.axes, sel.target),
-                           sel.artist.levels[sel.index[0] + sel.artist.filled])
+    return "{}\n{}".format(
+        _format_coord_unspaced(sel.annotation.axes, sel.target),
+        sel.artist.levels[sel.index[0] + sel.artist.filled])
 
 
 @get_ann_text.register(AxesImage)
@@ -597,7 +598,7 @@ def _(sel):
 @_call_with_selection
 def _(sel):
     artist = sel.artist
-    text = _format_coord_unspaced(artist.axes, sel.target)
+    text = _format_coord_unspaced(sel.annotation.axes, sel.target)
     cursor_text = artist.format_cursor_data(artist.get_array()[sel.index])
     return f"{text}\n{cursor_text}"
 
@@ -607,7 +608,7 @@ def _(sel):
 def _(sel):
     artist = sel.artist
     text = "{}\n({!s}, {!s})".format(
-        _format_coord_unspaced(artist.axes, sel.target),
+        _format_coord_unspaced(sel.annotation.axes, sel.target),
         artist.u[sel.index], artist.v[sel.index])
     return text
 
@@ -617,7 +618,7 @@ def _(sel):
 def _(sel):
     artist = sel.artist
     text = "{}\n({!s}, {!s})".format(
-        _format_coord_unspaced(artist.axes, sel.target),
+        _format_coord_unspaced(sel.annotation.axes, sel.target),
         artist.U[sel.index], artist.V[sel.index])
     return text
 
@@ -631,8 +632,7 @@ def _(sel):
 @get_ann_text.register(BarContainer)
 @_call_with_selection(argname="container")
 def _(sel):
-    return _format_coord_unspaced(
-        _artist_in_container(sel.artist).axes, sel.target)
+    return _format_coord_unspaced(sel.annotation.axes, sel.target)
 
 
 @get_ann_text.register(ErrorbarContainer)
@@ -647,8 +647,8 @@ def _(sel):
             if has:
                 err = (next(err_lcs).get_paths()[sel.index].vertices
                        - data_line.get_xydata()[sel.index])[:, idx]
-                err_s = [getattr(_artist_in_container(sel.artist).axes,
-                                 f"format_{dir}data")(e).rstrip()
+                err_s = [getattr(sel.annotation.axes, f"format_{dir}data")(e)
+                         .rstrip()
                          for e in err]
                 # We'd normally want to check err.sum() == 0, but that can run
                 # into fp inaccuracies.
@@ -710,7 +710,7 @@ def _(sel, *, key):
     return _move_within_points(
         sel,
         _untransform(data_xy, sel.artist.get_transform().transform(data_xy),
-                     sel.artist.axes),
+                     sel.annotation.axes),
         key=key)
 
 
@@ -723,7 +723,7 @@ def _(sel, *, key):
             sel,
             _untransform(
                 offsets, sel.artist.get_offset_transform().transform(offsets),
-                sel.artist.axes),
+                sel.annotation.axes),
             key=key)
     else:
         return sel
@@ -748,7 +748,7 @@ def _(sel, *, key):
         trf = BboxTransformTo(Bbox.from_extents([x0, y0, x1, y1]))
     elif isinstance(sel.artist, BboxImage):
         trf = (BboxTransformTo(sel.artist.get_window_extent())
-               - sel.artist.axes.transData)
+               - sel.annotation.axes.transData)
     target = trf.transform([xf, yf])
     return sel._replace(target=target, index=tuple(idxs))
 
