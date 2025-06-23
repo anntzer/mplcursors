@@ -8,21 +8,16 @@ import copy
 import functools
 import inspect
 from inspect import Signature
-import itertools
 from numbers import Integral
 import re
 import warnings
 from weakref import WeakSet
 
-from matplotlib import cbook
 from matplotlib.axes import Axes
-from matplotlib.backend_bases import RendererBase
 from matplotlib.collections import (
     LineCollection, PatchCollection, PathCollection)
-from matplotlib.colorbar import Colorbar
 from matplotlib.container import BarContainer, ErrorbarContainer, StemContainer
 from matplotlib.contour import ContourSet
-from matplotlib.figure import Figure
 from matplotlib.image import AxesImage, BboxImage
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnnotationBbox, OffsetBox
@@ -590,7 +585,7 @@ def _(sel):
     artist = sel.artist
     return "{}\n{}".format(
         _format_coord_unspaced(sel.annotation.axes, sel.target),
-        sel.artist.levels[sel.index[0] + sel.artist.filled])
+        artist.levels[sel.index[0] + artist.filled])
 
 
 @get_ann_text.register(AxesImage)
