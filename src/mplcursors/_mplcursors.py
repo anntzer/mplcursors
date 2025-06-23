@@ -375,17 +375,17 @@ class Cursor:
         """
         # pi: "pick_info", i.e. an incomplete selection.
         # Pre-fetch the figure and axes, as callbacks may actually unset them.
-        figure = self._get_figure(pi.artist)
-        axes = self._get_axes(pi.artist)
+        fig = self._get_figure(pi.artist)
+        ax = self._get_axes(pi.artist)
         get_cached_renderer = (
-            figure.canvas.get_renderer
-            if hasattr(figure.canvas, "get_renderer")
-            else axes.get_renderer_cache)  # mpl<3.6.
+            fig.canvas.get_renderer
+            if hasattr(fig.canvas, "get_renderer")
+            else ax.get_renderer_cache)  # mpl<3.6.
         renderer = get_cached_renderer()
         if renderer is None:
-            figure.canvas.draw()  # Needed below anyways.
+            fig.canvas.draw()  # Needed below anyways.
             renderer = get_cached_renderer()
-        ann = axes.annotate(
+        ann = ax.annotate(
             _pick_info.get_ann_text(*pi), xy=pi.target,
             xytext=(np.nan, np.nan),
             horizontalalignment=_MarkedStr("center"),
@@ -397,8 +397,8 @@ class Cursor:
         # it gets drawn even above twinned axes.  But ann.axes must stay set,
         # so that e.g. unit converters get correctly applied.
         ann.remove()
-        ann.axes = axes
-        figure.add_artist(ann)
+        ann.axes = ax
+        fig.add_artist(ann)
         ann.draggable(use_blit=not self._multiple)
         extras = []
         if self._highlight:
@@ -414,8 +414,8 @@ class Cursor:
         # Check that `ann.axes` is still set, as callbacks may have removed the
         # annotation.
         if ann.axes and ann.xyann == (np.nan, np.nan):
-            fig_bbox = figure.get_window_extent()
-            ax_bbox = axes.get_window_extent()
+            fig_bbox = fig.get_window_extent()
+            ax_bbox = ax.get_window_extent()
             overlaps = []
             for idx, annotation_position in enumerate(
                     self.annotation_positions):
@@ -445,17 +445,17 @@ class Cursor:
 
         if (extras
                 or len(self.selections) > 1 and not self._multiple
-                or not figure.canvas.supports_blit):
+                or not fig.canvas.supports_blit):
             # Either:
             #  - there may be more things to draw, or
             #  - annotation removal will make a full redraw necessary, or
             #  - blitting is not (yet) supported.
-            figure.canvas.draw_idle()
+            fig.canvas.draw_idle()
         elif ann.axes:
             # Fast path, only needed if the annotation has not been immediately
             # removed.
             ann.draw(renderer)
-            figure.canvas.blit()
+            fig.canvas.blit()
         # Removal comes after addition so that the fast blitting path works.
         if not self._multiple:
             for sel in self.selections[:-1]:
@@ -668,7 +668,7 @@ class Cursor:
         self._selections.remove(sel)
         self._selection_stack.remove(sel)
         # <artist>.figure will be unset so we save them first.
-        figures = {artist.figure for artist in [sel.annotation] + sel.extras}
+        figs = {artist.figure for artist in [sel.annotation] + sel.extras}
         # ValueError is raised if the artist has already been removed.
         with suppress(ValueError):
             sel.annotation.remove()
@@ -677,8 +677,8 @@ class Cursor:
                 artist.remove()
         for cb in self._callbacks["remove"]:
             cb(sel)
-        for figure in figures:
-            figure.canvas.draw_idle()
+        for fig in figs:
+            fig.canvas.draw_idle()
 
 
 def cursor(pickables=None, **kwargs):
