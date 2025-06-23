@@ -425,10 +425,8 @@ def test_stem(ax):
 def test_annotationbbox(ax):
     ax.set(xlim=(0, 1), ylim=(0, 1))
     data = np.arange(9).reshape((3, 3))
-    ax.add_artist(
-        mpl.offsetbox.AnnotationBbox(
-            mpl.offsetbox.OffsetImage(data, zoom=10, axes=ax),
-            (.5, .5)))
+    ax.add_artist(mpl.offsetbox.AnnotationBbox(
+        mpl.offsetbox.OffsetImage(data, zoom=10), (.5, .5)))
     ax.figure.canvas.draw()
     cursor = mplcursors.cursor()
     _process_event("__mouse_click__", ax, (.5, .5), 1)
@@ -574,7 +572,8 @@ def test_remove_multiple_overlapping(ax):
     cursor = mplcursors.cursor(multiple=True)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     sel, = cursor.selections
-    cursor.add_selection(copy.copy(sel))
+    cursor.add_selection(
+        copy.copy(sel), sel.annotation.figure, sel.annotation.axes)
     assert len(cursor.selections) == 2
     _process_event(*_get_remove_args(sel))
     assert [*map(id, cursor.selections)] == [id(sel)]  # To check LIFOness.

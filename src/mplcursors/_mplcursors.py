@@ -331,33 +331,7 @@ class Cursor:
             sel.annotation.set_visible(value)
             sel.annotation.figure.canvas.draw_idle()
 
-    def _get_figure(self, aoc):
-        """Return the parent figure of artist-or-container *aoc*."""
-        if isinstance(aoc, Container):
-            try:
-                ca, = {artist for artist in (ref() for ref in self._artists)
-                       if isinstance(artist, _pick_info.ContainerArtist)
-                          and artist.container is aoc}
-            except ValueError:
-                raise ValueError(f"Cannot find parent figure of {aoc}")
-            return ca.figure
-        else:
-            return aoc.figure
-
-    def _get_axes(self, aoc):
-        """Return the parent axes of artist-or-container *aoc*."""
-        if isinstance(aoc, Container):
-            try:
-                ca, = {artist for artist in (ref() for ref in self._artists)
-                       if isinstance(artist, _pick_info.ContainerArtist)
-                          and artist.container is aoc}
-            except ValueError:
-                raise ValueError(f"Cannot find parent axes of {aoc}")
-            return ca.axes
-        else:
-            return aoc.axes
-
-    def add_selection(self, pi):
+    def add_selection(self, pi, fig, ax):
         """
         Create an annotation for a `Selection` and register it.
 
@@ -373,10 +347,9 @@ class Cursor:
         Likewise, if the text alignment is not explicitly set but the position
         is, then a suitable alignment will be automatically computed.
         """
+        # This method takes fig & ax as additional parameters to be robust when
+        # picking a Container/sub-artist which may be missing .figure/.axes.
         # pi: "pick_info", i.e. an incomplete selection.
-        # Pre-fetch the figure and axes, as callbacks may actually unset them.
-        fig = self._get_figure(pi.artist)
-        ax = self._get_axes(pi.artist)
         get_cached_renderer = (
             fig.canvas.get_renderer
             if hasattr(fig.canvas, "get_renderer")
@@ -386,8 +359,7 @@ class Cursor:
             fig.canvas.draw()  # Needed below anyways.
             renderer = get_cached_renderer()
         ann = ax.annotate(
-            _pick_info.get_ann_text(*pi), xy=pi.target,
-            xytext=(np.nan, np.nan),
+            "", xy=pi.target, xytext=(np.nan, np.nan),
             horizontalalignment=_MarkedStr("center"),
             verticalalignment=_MarkedStr("center"),
             visible=self.visible,
@@ -406,6 +378,10 @@ class Cursor:
             if hl:
                 extras.append(hl)
         sel = pi._replace(annotation=ann, extras=extras)
+        # Update the text after setting the annotation on the Selection, so
+        # that get_ann_text can safely access sel.annotation.axes even if
+        # artist.axes itself is unset (Containers/sub-artist picks).
+        ann.set_text(_pick_info.get_ann_text(*sel))
         self._selections.append(sel)
         self._selection_stack.append(sel)
         for cb in self._callbacks["add"]:
@@ -605,7 +581,10 @@ class Cursor:
         # Work around lack of support for twinned axes.
         per_axes_event = {ax: _reassigned_axes_event(event, ax)
                           for ax in {artist.axes for artist in self.artists}}
-        pis = []
+        seen_pi = False
+        duplicates = {(other.artist, tuple(other.target))
+                      for other in self._selections}
+        pifas = []
         for artist in self.artists:
             if (artist.axes is None  # Removed or figure-level artist.
                     or event.canvas is not artist.figure.canvas
@@ -614,20 +593,18 @@ class Cursor:
                 continue
             pi = _pick_info.compute_pick(artist, per_axes_event[artist.axes])
             if pi:
-                pis.append(pi)
-        # The any() check avoids picking an already selected artist at the same
-        # point, as likely the user is just dragging it.  We check this here
-        # rather than not adding the pick_info to pis at all, because in
-        # transient hover mode, selections should be cleared out only when no
-        # candidate picks (including such duplicates) exist at all.
-        pi = min((pi for pi in pis
-                  if not any((pi.artist, tuple(pi.target))
-                             == (other.artist, tuple(other.target))
-                             for other in self._selections)),
-                 key=lambda pi: pi.dist, default=None)
-        if pi:
-            self.add_selection(pi)
-        elif not pis and self._hover == HoverMode.Transient:
+                seen_pi = True
+                # If the pick corresponds to an already selected artist at the
+                # same point, the user is likely just dragging it.
+                if (pi.artist, tuple(pi.target)) not in duplicates:
+                    pifas.append((pi, artist.figure, artist.axes))
+        pifa = min(pifas, key=lambda pifa: pifa[0].dist, default=None)
+        if pifa:
+            pi, fig, ax = pifa
+            self.add_selection(pi, fig, ax)
+        elif not seen_pi and self._hover == HoverMode.Transient:
+            # In transient hover mode, selections should be cleared if no
+            # candidate picks *including duplicates* have been seen.
             for sel in self.selections:
                 if event.canvas is sel.annotation.figure.canvas:
                     self.remove_selection(sel)
@@ -659,8 +636,11 @@ class Cursor:
         sel = self._selection_stack[-1]
         for key in ["left", "right", "up", "down"]:
             if event.key == self.bindings[key]:
-                self.remove_selection(sel)
-                self.add_selection(_pick_info.move(*sel, key=key))
+                self.add_selection(
+                    _pick_info.move(*sel, key=key),
+                    sel.annotation.figure, sel.annotation.axes)
+                if self._multiple:  # Else, already removed.
+                    self.remove_selection(sel)  # Also unsets .figure, .axes.
                 break
 
     def remove_selection(self, sel):

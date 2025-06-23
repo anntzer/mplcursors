@@ -11,6 +11,8 @@ next
 - Support :class:`~matplotlib.offsetbox.AnnotationBbox`,
   :class:`~matplotlib.image.BboxImage`,
   :class:`~matplotlib.offsetbox.OffsetBox`.
+- Modified the (semi-internal) signature of `Cursor.add_selection` to be more
+  robust against sub-artists without a ``.axes`` attribute.
 
 0.6
 ---
