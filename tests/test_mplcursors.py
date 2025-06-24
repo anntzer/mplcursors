@@ -540,16 +540,24 @@ def test_misc_artists_highlight(ax):
 
 def test_callback(ax):
     ax.plot([0, 1])
-    calls = []
+    add_calls = []
+    remove_calls = []
     cursor = mplcursors.cursor()
-    @cursor.connect("add")
-    def on_add(sel):
-        calls.append(sel)
-    _process_event("__mouse_click__", ax, (.5, .5), 1)
-    assert len(calls) == 1
+    on_add = cursor.connect("add")(lambda sel: add_calls.append(sel))
+    on_remove = cursor.connect("remove")(lambda sel: remove_calls.append(sel))
+    _process_event("__mouse_click__", ax, (.3, .3), 1)
+    assert len(add_calls) == 1
+    assert len(remove_calls) == 0
+    _process_event("__mouse_click__", ax, (.7, .7), 1)
+    assert len(add_calls) == 2
+    assert len(remove_calls) == 1
     cursor.disconnect("add", on_add)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
-    assert len(calls) == 1
+    assert len(add_calls) == 2
+    with pytest.raises(ValueError):
+        cursor.disconnect("add", lambda sel: None)
+    with pytest.raises(ValueError):
+        cursor.connect("foo", lambda sel: None)
 
 
 def test_remove_while_adding(ax):
@@ -668,6 +676,23 @@ def test_convenience(ax):
     assert len(mplcursors.cursor([l]).artists) == 1
     bc = ax.bar(range(3), range(3))
     assert len(mplcursors.cursor(bc).artists) == 1
+
+
+@pytest.mark.skipif("figure.hooks" not in mpl.rcParams,
+                    reason="Matplotlib version without figure.hooks.")
+@pytest.mark.parametrize("envopt", ["", '{"hover": 1}'])
+def test_figurehook(monkeypatch, envopt):
+    monkeypatch.setenv("MPLCURSORS", envopt)
+    with mpl.rc_context({"figure.hooks": ["mplcursors:install"]}):
+        fig = plt.figure()
+        try:
+            ax = fig.add_subplot()
+            ax.plot([0, 1])
+            fig.canvas.draw()
+            _process_event("motion_notify_event", ax, (.5, .5))
+            assert len(fig.artists) == bool(envopt)  # The annotation.
+        finally:
+            plt.close(fig)
 
 
 def test_invalid_args():
