@@ -618,10 +618,8 @@ def _(sel):
     return text
 
 
-@get_ann_text.register(ContainerArtist)
-@_call_with_selection
-def _(sel):
-    return get_ann_text(*sel._replace(artist=sel.artist.container))
+# NOTE: There is no get_ann_text(ContainerArtist) as the selection directly
+# refers to the Container itself.
 
 
 @get_ann_text.register(BarContainer)
@@ -748,11 +746,8 @@ def _(sel, *, key):
     return sel._replace(target=target, index=tuple(idxs))
 
 
-@move.register(ContainerArtist)
-@_call_with_selection
-def _(sel, *, key):
-    return (move(*sel._replace(artist=sel.artist.container), key=key)
-            ._replace(artist=sel.artist))
+# NOTE: There is no move(ContainerArtist) as the selection directly
+# refers to the Container itself.
 
 
 @move.register(ErrorbarContainer)
