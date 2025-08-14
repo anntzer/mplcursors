@@ -1,7 +1,7 @@
 mplcursors – Interactive data selection cursors for Matplotlib
 ==============================================================
 
-|GitHub| |PyPI| |conda-forge| |Debian| |Fedora| |openSUSE|
+|GitHub| |PyPI|
 
 .. |GitHub|
    image:: https://img.shields.io/badge/github-anntzer%2Fmplcursors-brightgreen
@@ -9,18 +9,6 @@ mplcursors – Interactive data selection cursors for Matplotlib
 .. |PyPI|
    image:: https://img.shields.io/pypi/v/mplcursors.svg
    :target: https://pypi.python.org/pypi/mplcursors
-.. |conda-forge|
-   image:: https://img.shields.io/conda/v/conda-forge/mplcursors.svg?label=conda-forge
-   :target: https://anaconda.org/conda-forge/mplcursors
-.. |Debian|
-   image:: https://repology.org/badge/version-for-repo/debian_unstable/mplcursors.svg?header=Debian
-   :target: https://packages.debian.org/sid/main/python3-mplcursors
-.. |Fedora|
-   image:: https://repology.org/badge/version-for-repo/fedora_rawhide/python:mplcursors.svg?header=Fedora
-   :target: https://src.fedoraproject.org/rpms/python-mplcursors
-.. |openSUSE|
-   image:: https://repology.org/badge/version-for-repo/opensuse_tumbleweed/python:mplcursors.svg?header=openSUSE
-   :target: https://software.opensuse.org/package/python3-mplcursors
 
 :mod:`mplcursors` provides interactive data selection cursors for Matplotlib_.
 It is inspired from mpldatacursor_, with a much simplified API.
