@@ -13,6 +13,8 @@ next
 - Support :class:`~matplotlib.offsetbox.AnnotationBbox`,
   :class:`~matplotlib.image.BboxImage`,
   :class:`~matplotlib.offsetbox.OffsetBox`.
+- Support highlighting :class:`~matplotlib.collections.LineCollection` and
+  non-scatter :class:`~matplotlib.collections.PathCollection`.
 - Modified the (semi-internal) signature of `Cursor.add_selection` to be more
   robust against sub-artists without a ``.axes`` attribute.
 

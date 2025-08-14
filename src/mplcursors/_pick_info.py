@@ -783,12 +783,18 @@ def _(sel, *, highlight_kwargs):
     return hl
 
 
+@make_highlight.register(LineCollection)
 @make_highlight.register(PathCollection)
 @_call_with_selection
 def _(sel, *, highlight_kwargs):
     hl = copy.copy(sel.artist)
-    offsets = hl.get_offsets()
-    hl.set_offsets(np.where(
-        np.arange(len(offsets))[:, None] == sel.index, offsets, np.nan))
+    if _is_scatter(sel.artist):
+        offsets = hl.get_offsets()
+        hl.set_offsets(np.where(
+            np.arange(len(offsets))[:, None] == sel.index, offsets, np.nan))
+    else:
+        hl.set_paths([
+            path.vertices if i == sel.index[0] else np.empty((0, 2))
+            for i, path in enumerate(hl.get_paths())])
     _set_valid_props(hl, highlight_kwargs)
     return hl

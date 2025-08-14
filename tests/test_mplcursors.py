@@ -530,6 +530,14 @@ def test_highlight(ax, plotter, remove_click_on_annotation):
         1 if plotter is Axes.scatter and not remove_click_on_annotation else 0)
 
 
+def test_highlight_linecollection(ax):
+    ax.eventplot([0, 1])
+    cursor = mplcursors.cursor(highlight=True)
+    _process_event("__mouse_click__", ax, (0, 1), 1)
+    sel, = cursor.selections
+    assert sel.extras
+
+
 def test_misc_artists_highlight(ax):
     # Unsupported artists trigger a warning upon a highlighting attempt.
     ax.imshow([[0, 1], [2, 3]])
