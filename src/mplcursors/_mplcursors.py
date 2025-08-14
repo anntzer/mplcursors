@@ -389,6 +389,9 @@ class Cursor:
         for cb in self._callbacks["add"]:
             cb(sel)
 
+        user_set_ha = not isinstance(ann.get_horizontalalignment(), _MarkedStr)
+        user_set_va = not isinstance(ann.get_verticalalignment(), _MarkedStr)
+
         # Check that `ann.axes` is still set, as callbacks may have removed the
         # annotation.
         if ann.axes and ann.xyann == (np.nan, np.nan):
@@ -397,6 +400,14 @@ class Cursor:
             overlaps = []
             for idx, annotation_position in enumerate(
                     self.annotation_positions):
+                if user_set_ha:
+                    annotation_position = {
+                        k: v for k, v in annotation_position.items()
+                        if k not in ["ha", "horizontalalignment"]}
+                if user_set_va:
+                    annotation_position = {
+                        k: v for k, v in annotation_position.items()
+                        if k not in ["va", "verticalalignment"]}
                 ann.set(**annotation_position)
                 # Work around matplotlib/matplotlib#7614: position update is
                 # missing.
@@ -409,14 +420,23 @@ class Cursor:
                      # the last used position as default.
                      idx == self._last_auto_position))
             auto_position = max(range(len(overlaps)), key=overlaps.__getitem__)
-            ann.set(**self.annotation_positions[auto_position])
+            annotation_position = self.annotation_positions[auto_position]
+            if user_set_ha:
+                annotation_position = {
+                    k: v for k, v in annotation_position.items()
+                    if k not in ["ha", "horizontalalignment"]}
+            if user_set_va:
+                annotation_position = {
+                    k: v for k, v in annotation_position.items()
+                    if k not in ["va", "verticalalignment"]}
+            ann.set(**annotation_position)
             self._last_auto_position = auto_position
         else:
-            if isinstance(ann.get_horizontalalignment(), _MarkedStr):
+            if not user_set_ha:
                 ann.set_horizontalalignment(
                     {-1: "right", 0: "center", 1: "left"}[
                         np.sign(np.nan_to_num(ann.xyann[0]))])
-            if isinstance(ann.get_verticalalignment(), _MarkedStr):
+            if not user_set_ha:
                 ann.set_verticalalignment(
                     {-1: "top", 0: "center", 1: "bottom"}[
                         np.sign(np.nan_to_num(ann.xyann[1]))])
