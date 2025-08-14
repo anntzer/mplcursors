@@ -600,16 +600,16 @@ def test_remove_multiple_overlapping(ax):
 def test_autoalign(ax):
     ax.plot([0, 1])
     cursor = mplcursors.cursor()
-    cursor.connect(
+    cb = cursor.connect(
         "add", lambda sel: sel.annotation.set(position=(-10, 0)))
-    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    _process_event("__mouse_click__", ax, (.4, .4), 1)
     sel, = cursor.selections
     assert (sel.annotation.get_ha() == "right"
             and sel.annotation.get_va() == "center")
-    cursor.remove_selection(sel)
+    cursor.disconnect("add", cb)
     cursor.connect(
         "add", lambda sel: sel.annotation.set(ha="center", va="bottom"))
-    _process_event("__mouse_click__", ax, (.5, .5), 1)
+    _process_event("__mouse_click__", ax, (.6, .6), 1)
     sel, = cursor.selections
     assert (sel.annotation.get_ha() == "center"
             and sel.annotation.get_va() == "bottom")
