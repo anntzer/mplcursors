@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.7
+---
 
 - Mark Matplotlib 3.10.3 as incompatible.
 - Require registration in ``mpl.rcParams["figure.hooks"]`` for the
