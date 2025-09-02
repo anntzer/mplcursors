@@ -24,7 +24,7 @@ docs = [
     "pandas",
     "pydata_sphinx_theme!=0.10.1",
     "sphinx",
-    "sphinx-gallery",
+    "sphinx-gallery>=0.16",  # callables as strings.
 ]
 
 [tool.setuptools_scm]

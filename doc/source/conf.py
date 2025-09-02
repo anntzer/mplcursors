@@ -93,8 +93,7 @@ intersphinx_mapping = {
 
 # CustomSortKey cannot be defined *here* because it would be unpicklable as
 # this file is exec'd rather than imported.
-sys.path.append(".")
-from _local_ext import CustomSortKey
+sys.path.append(os.path.dirname(__file__))
 
 os.environ.pop("DISPLAY", None)  # Don't warn about non-GUI when running s-g.
 
@@ -104,5 +103,5 @@ sphinx_gallery_conf = {
     'filename_pattern': r'.*\.py',
     'gallery_dirs': 'examples',
     'min_reported_time': 1,
-    'within_subsection_order': CustomSortKey,
+    'within_subsection_order': '_local_ext.CustomSortKey',
 }

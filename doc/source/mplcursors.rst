@@ -6,33 +6,33 @@ The mplcursors API
 |
 
 .. autosummary::
-   mplcursors.Cursor
-   mplcursors.cursor
-   mplcursors.HoverMode
-   mplcursors.Selection
-   mplcursors.compute_pick
-   mplcursors.get_ann_text
-   mplcursors.move
-   mplcursors.make_highlight
+   Cursor
+   cursor
+   HoverMode
+   Selection
+   compute_pick
+   get_ann_text
+   move
+   make_highlight
 
 |
 
-.. autoclass:: mplcursors.Cursor
+.. autoclass:: Cursor
    :members:
    :special-members: __init__
    :undoc-members:
 
-.. autofunction:: mplcursors.cursor
+.. autofunction:: cursor
 
-.. autoclass:: mplcursors.HoverMode
+.. autoclass:: HoverMode
    :members:
    :undoc-members:
 
-.. autoclass:: mplcursors.Selection
+.. autoclass:: Selection
    :members:
    :undoc-members:
 
-.. autofunction:: mplcursors.compute_pick
-.. autofunction:: mplcursors.get_ann_text
-.. autofunction:: mplcursors.move
-.. autofunction:: mplcursors.make_highlight
+.. autofunction:: compute_pick
+.. autofunction:: get_ann_text
+.. autofunction:: move
+.. autofunction:: make_highlight
