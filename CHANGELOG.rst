@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.7.1
+-----
+
+- Fix disabling of bindings.
+
 0.7
 ---
 
