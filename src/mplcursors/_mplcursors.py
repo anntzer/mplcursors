@@ -75,6 +75,8 @@ def _mouse_event_matches(event, spec):
     single mouse button, or a mapping matched against ``vars(event)``, e.g.
     ``{"button": 1, "key": "control"}``.
     """
+    if spec is None:
+        return False
     if isinstance(spec, int):
         spec = {"button": spec}
     return all(getattr(event, k) == v for k, v in spec.items())
